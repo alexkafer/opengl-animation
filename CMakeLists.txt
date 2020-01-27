@@ -56,6 +56,20 @@ find_package(OpenGL 3.2 REQUIRED)
 set(MY_LIBRARIES ${OPENGL_LIBRARIES})
 set(MY_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR})
 
+# GLM
+set(GLM_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/glm )
+IF(NOT EXISTS ${GLM_ROOT_DIR})
+    execute_process(COMMAND git clone https://github.com/g-truc/glm -b master ${GLM_ROOT_DIR})
+endif()
+
+find_package(GLM REQUIRED)
+include_directories(${GLM_INCLUDE_DIRS})
+link_directories(${GLM_LIBRARY_DIRS})
+add_definitions(${GLM_DEFINITIONS})
+
+if(NOT GLM_FOUND)
+        message(Error "GLM not found")
+endif(NOT GLM_FOUND)
 
 # Glew has some opengl extensions we'll need if we don't have updated ogl headers
 if(USE_GLEW)
@@ -63,7 +77,7 @@ if(USE_GLEW)
 	if(FORCE_CLONE)
 		set(GLEW_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/glew )
 		IF(NOT EXISTS ${GLEW_DIR})
-			execute_process(COMMAND git clone https://github.com/over0219/glew-cmake.git -b glew-cmake-release ${GLEW_DIR})
+			execute_process(COMMAND git clone https://github.com/Perlmint/glew-cmake.git -b glew-cmake-release ${GLEW_DIR})
 		endif()
 		# Instead of worrying about linking, we'll just add the glew source to our build.
 		# It's less of a hassle that way.

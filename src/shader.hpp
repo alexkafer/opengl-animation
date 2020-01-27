@@ -24,6 +24,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include <unordered_map> // requires C++11
 
 //
@@ -103,9 +104,31 @@ GLuint Shader::compile( std::string source, GLenum type ){
 	glCompileShader(shaderId);
 
 	// Check the compilation status and throw a runtime_error if shader compilation failed
-	GLint shaderStatus;
-	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &shaderStatus);
-	if( shaderStatus == GL_FALSE ){ throw std::runtime_error("\n**glCompileShader Error"); }
+	GLint isCompiled = 0;
+	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &isCompiled);
+	if( isCompiled == GL_FALSE ){ 
+		GLint maxLength = 0;
+		glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &maxLength);
+
+		// The maxLength includes the NULL character
+		std::vector<GLchar> infoLog(maxLength);
+		glGetShaderInfoLog(shaderId, maxLength, &maxLength, &infoLog[0]);
+
+		glDeleteShader(shaderId); // Don't leak the shader.
+
+		std::ostringstream vts; 
+  
+		if (!infoLog.empty()) 
+		{ 
+			// Convert all but the last element to avoid a trailing "," 
+			std::copy(infoLog.begin(), infoLog.end()-1, std::ostream_iterator<char>(vts)); 
+		
+			// Now add the last element with no delimiter 
+			vts << infoLog.back(); 
+		} 
+
+		throw std::runtime_error("\n**glCompileShader " + source + " Error: " + vts.str()); 
+	}
 
 	return shaderId;
 }
