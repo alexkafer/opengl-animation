@@ -22,6 +22,17 @@
 #ifndef SHADER_HPP
 #define SHADER_HPP
 
+#ifdef _WIN32
+#include <windows.h>    // include windows.h to avoid thousands of compile errors even though this class is not depending on Windows
+#endif
+
+#ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION
+#include <OpenGL/gl3.h>
+#else
+#include <GL/gl.h>
+#endif
+
 #include <fstream>
 #include <sstream>
 #include <vector>

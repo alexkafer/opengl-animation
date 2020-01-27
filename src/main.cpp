@@ -8,16 +8,19 @@
 #ifdef USE_GLEW
 #include <GL/glew.h>
 #endif
+
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS //ensure we are using radians
-#include <glm/glm.hpp> 
+#include <glm/vec3.hpp> 
+#include <glm/mat4x4.hpp> 
+
+
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/type_ptr.hpp>
 
-// Includes
-#include "shader.hpp"
+#include "scene.hpp"
 #include <cstring> // memcpy
 #include <iostream> // memcpy
 
@@ -35,6 +38,7 @@ namespace Globals {
 	GLuint vao, vbo[2];
 
 	glm::vec3 eye;
+	glm::vec4 light;
 
 	//  Model, view and projection matrices, initialized to the identity
 	glm::mat4 model;
@@ -65,14 +69,9 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	Globals::aspect = Globals::screenWidth/ (float)Globals::screenHeight; 
 
 	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 10.0f);
-
-	std::cout << glm::to_string(Globals::projection) << std::endl;
 	
     glViewport(0,0,width,height);
 }
-
-// Function to set up geometry
-void init_scene(mcl::Shader * shader);
 
 //
 //	Main
@@ -121,36 +120,47 @@ int main(int argc, char *argv[]){
 	std::stringstream ss; ss << MY_SRC_DIR << "shader.";
 	shader.init_from_files( ss.str()+"vert", ss.str()+"frag" );
 
+
 	// Initialize the scene
 	// IMPORTANT: Only call after gl context has been created
-	init_scene(&shader);
+	init_geometry(&shader, Globals::vbo, Globals::vao);
 	framebuffer_size_callback(window, int(Globals::screenWidth), int(Globals::screenHeight)); 
-
-	// Initialize OpenGL
-	glEnable(GL_DEPTH_TEST);
-	glClearColor(.2f, 0.4f, 0.8f, 1.0f);
 
 	// Enable the shader, this allows us to set uniforms and attributes
 	shader.enable();
 
+	init_uniforms(&shader);
+
+	// Initialize OpenGL
+	glEnable(GL_DEPTH_TEST);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
 	Globals::model = glm::mat4(1.0f);
-	Globals::eye = glm::vec3(3.0f, 0.0f, 0.0f);
-	Globals::view = glm::lookAt(
-		Globals::eye, // Cam Position
-		glm::vec3(0.0f, 0.0f, 0.0f), // Look at point
-		glm::vec3(0.0f, 0.0f, 1.0f)  // Up
-	); 
+	Globals::light = glm::vec4(5.0f, 5.0f, 0.0f, 1.0f);
 
 	// Game loop
+	const float orbit_radius = 3.0f;
 	while( !glfwWindowShouldClose(window) ){
 	
 		// Clear screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		float time = glfwGetTime() / 1000.f;
+		float time = glfwGetTime();
 
-		Globals::model = glm::rotate(Globals::model,time * 3.14f/2, glm::vec3(0.0f, 1.0f, 1.0f));
-		Globals::model = glm::rotate(Globals::model, time * 3.14f/4, glm::vec3(1.0f, 0.0f, 0.0f));
+		float camX = sin(time) * orbit_radius;
+		float camZ = cos(time) * orbit_radius;
+
+		Globals::eye = glm::vec3(camX, 0.0f, camZ);
+
+		glm::mat4 view;
+		Globals::view = glm::lookAt(
+			Globals::eye, 
+			glm::vec3(0.0f, 0.0f, 0.0f), 
+			glm::vec3(0.0f, 1.0f, 0.0f)
+		);
+
+		// Globals::light = glm::rotate(Globals::light, time * 3.14f/2, glm::vec3(0.0f, 1.0f, 0.0f));
+		// Globals::model = glm::rotate(Globals::model, time * 3.14f/4, glm::vec3(1.0f, 0.0f, 0.0f));
 
 		glBindVertexArray(Globals::vao);
 
@@ -159,9 +169,12 @@ int main(int argc, char *argv[]){
 		glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
 		glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
 		glUniform3fv( shader.uniform("eye"), 1, glm::value_ptr(Globals::eye)); // used in fragment shader
+		glUniform4fv( shader.uniform("lightPosition"), 1, glm::value_ptr(Globals::light)); // used in fragment shader
 
-		// Draw
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindBuffer(GL_ARRAY_BUFFER, Globals::vbo[0]);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Globals::vbo[1]);
+
+		draw_scene();
 
 		// Finalize
 		glfwSwapBuffers(window);
@@ -178,92 +191,3 @@ int main(int argc, char *argv[]){
     
 	return EXIT_SUCCESS;
 }
-
-
-void init_scene(mcl::Shader * shader){
-
-	using namespace Globals;
-
-	GLfloat vertices[] = {
-		// X Y Z R G B U V
-		-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, //Red face
-		0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-		0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-		-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, //Green face
-		0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-		-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, //Yellow face
-		-0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, //Blue face
-		0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-		0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-		0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-		0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, //Black face
-		0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-		0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		-0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, //White face
-		0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-		0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-		0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-		-0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-		-0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f
-	};
-
-	float normals[] = { //Normals for 36 vertices
-		0.f,0.f,-1.f, 0.f,0.f,-1.f, 0.f,0.f,-1.f, 0.f,0.f,-1.f, //1-4
-		0.f,0.f,-1.f, 0.f,0.f,-1.f, 0.f,0.f,1.f, 0.f,0.f,1.f, //5-8
-		0.f,0.f,1.f, 0.f,0.f,1.f, 0.f,0.f,1.f, 0.f,0.f,1.f, //9-12
-		-1.f,0.f,0.f, -1.f,0.f,0.f, -1.f,0.f,0.f, -1.f,0.f,0.f, //13-16
-		-1.f,0.f,0.f, -1.f,0.f,0.f, 1.f,0.f,0.f, 1.f,0.f,0.f, //17-20
-		1.f,0.f,0.f, 1.f,0.f,0.f, 1.f,0.f,0.f, 1.f,0.f,0.f, //21-24
-		0.f,-1.f,0.f, 0.f,-1.f,0.f, 0.f,-1.f,0.f, 0.f,-1.f,0.f, //25-28
-		0.f,-1.f,0.f, 0.f,-1.f,0.f, 0.f,1.f,0.f, 0.f,1.f,0.f, //29-32
-		0.f,1.f,0.f, 0.f,1.f,0.f, 0.f,1.f,0.f, 0.f,1.f,0.f, //33-36
-	};
-
-	glGenBuffers(2, vbo); //Create 2 buffer called vbo
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]); //(Only one buffer can be bound at a time)
-	// If data is changing infrequently GL DYNAMIC DRAW may be better, 
-	// and GL STREAM DRAW is best used when the data changes frequently.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); 
-
-	glGenVertexArrays(1, &vao); //Create a VAO
-	glBindVertexArray(vao); // Bind the globally created VAO to the current context
-
-	// Cube
-	GLint posAttrib = shader->attribute("in_position");
-	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), 0);
-	//(above params: Attribute, vals/attrib., type, isNormalized, stride, offset)
-	glEnableVertexAttribArray(posAttrib); //Mark the attribute’s location as valid
-
-	GLint colAttrib = shader->attribute("in_color");
-	glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
-	glEnableVertexAttribArray(colAttrib);
-
-	// Normals
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW); //upload normals to vbo
-	
-	GLint normAttrib  = shader->attribute("in_normal");
-	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(normAttrib);
-
-	//Unbind the VAO so we don’t accidentally modify it
-	glBindVertexArray(0); 
-}
-

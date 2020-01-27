@@ -186,7 +186,8 @@ include_directories(${MY_INCLUDE_DIRS})
 set(MY_SOURCES
 	${GLEW_SRC} # empty unless USE_GLEW is set to ON
 	src/main.cpp
-	src/shader.hpp
+    src/scene.cpp
+    src/geometry/Sphere.cpp
 )
 
 # Now we can add an executable, link it with our rendering libraries, and we're done!
