@@ -1,6 +1,10 @@
 lib
-./GLFW_App
+GLFW_App
+
+CmakeCache.txt
+cmake_install.cmake
 CMakeFiles
+Makefile
 
 .DS_Store
 .vscode
