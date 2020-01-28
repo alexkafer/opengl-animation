@@ -35,7 +35,7 @@ namespace Globals {
 	int screenWidth;
 	int screenHeight;
 	float aspect;
-	GLuint vao, vbo[2];
+	GLuint vao, vbo, ibo;
 
 	glm::vec3 eye;
 	glm::vec4 light;
@@ -72,6 +72,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	
     glViewport(0,0,width,height);
 }
+
 
 //
 //	Main
@@ -123,69 +124,78 @@ int main(int argc, char *argv[]){
 
 	// Initialize the scene
 	// IMPORTANT: Only call after gl context has been created
-	init_geometry(&shader, Globals::vbo, Globals::vao);
+	init_geometry(&shader, Globals::vbo, Globals::ibo, Globals::vao);
 	framebuffer_size_callback(window, int(Globals::screenWidth), int(Globals::screenHeight)); 
 
 	// Enable the shader, this allows us to set uniforms and attributes
 	shader.enable();
 
-	init_uniforms(&shader);
+	init_static_uniforms(&shader);
 
 	// Initialize OpenGL
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	Globals::model = glm::mat4(1.0f);
-	Globals::light = glm::vec4(5.0f, 5.0f, 0.0f, 1.0f);
+
+	glm::vec3 up(0.0f, 1.0f, 0.0f);
+	glm::vec3 target(0.0f, 0.0f, 0.0f);
 
 	// Game loop
-	const float orbit_radius = 3.0f;
+	const float orbit_radius = 5.0f;
+	float last_time = glfwGetTime();
 	while( !glfwWindowShouldClose(window) ){
 	
 		// Clear screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		float time = glfwGetTime();
+		// Calculate time delta
+		float new_time = glfwGetTime();
+		float time_delta = new_time - last_time;
 
-		float camX = sin(time) * orbit_radius;
-		float camZ = cos(time) * orbit_radius;
+		float camX = sin(new_time) * orbit_radius;
+		float camZ = cos(new_time) * orbit_radius;
 
+		// Calculate new camera position
 		Globals::eye = glm::vec3(camX, 0.0f, camZ);
 
-		glm::mat4 view;
-		Globals::view = glm::lookAt(
-			Globals::eye, 
-			glm::vec3(0.0f, 0.0f, 0.0f), 
-			glm::vec3(0.0f, 1.0f, 0.0f)
-		);
+		// Calculate new view
+		Globals::view = glm::lookAt(Globals::eye, target, up);
 
-		// Globals::light = glm::rotate(Globals::light, time * 3.14f/2, glm::vec3(0.0f, 1.0f, 0.0f));
-		// Globals::model = glm::rotate(Globals::model, time * 3.14f/4, glm::vec3(1.0f, 0.0f, 0.0f));
-
-		glBindVertexArray(Globals::vao);
+		// Globals::light = glm::rotate(Globals::light, time * 3.14f/2, glm::vec3(0.0f, 1.0f, 0.0f));	
+		Globals::model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2 * sin(new_time), 0.0f));
+		
+		// bind vbo for ball
+		glBindBuffer(GL_ARRAY_BUFFER, Globals::vbo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Globals::ibo);
 
 		// Send updated info to the GPU
+		glm::mat4 matrix_normal = Globals::model;
+    	matrix_normal[3] = glm::vec4(0,0,0,1);
+
 		glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(Globals::model)  ); // model transformation
 		glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
 		glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
-		glUniform3fv( shader.uniform("eye"), 1, glm::value_ptr(Globals::eye)); // used in fragment shader
-		glUniform4fv( shader.uniform("lightPosition"), 1, glm::value_ptr(Globals::light)); // used in fragment shader
+		glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_normal)); // projection matrix
+		
+		// glUniform3fv( shader.uniform("eye"), 1, glm::value_ptr(Globals::eye)); // used in fragment shader
 
-		glBindBuffer(GL_ARRAY_BUFFER, Globals::vbo[0]);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Globals::vbo[1]);
+		draw_scene(&shader, Globals::vbo, Globals::ibo);
 
-		draw_scene();
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		// Finalize
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-	} // end game loop
+	} // end loop
 
 	// Disable the shader, we're done using it
 	shader.disable();
 
-	glDeleteBuffers(2, Globals::vbo);
+	glDeleteBuffers(1, &Globals::vbo);
+	glDeleteBuffers(1, &Globals::ibo);
 	glDeleteVertexArrays(1, &Globals::vao);
 
     

@@ -4,10 +4,9 @@
 #include "shader.hpp"
 #include "geometry/Sphere.h"
 
-void init_uniforms(mcl::Shader * shader);
-void init_geometry(mcl::Shader * shader, GLuint * vbo, GLuint & vao);
+void init_static_uniforms(mcl::Shader * shader);
+void init_geometry(mcl::Shader * shader, GLuint & vbo, GLuint & ibo, GLuint & vao);
 
-void calc_animations();
-void draw_scene();
+void draw_scene(mcl::Shader * shader, GLuint & vbo, GLuint & ibo);
 
 #endif
