@@ -4,6 +4,7 @@ out vec4 outColor;
 
 in vec3 vposition;
 in vec3 vnormal;
+in vec3 vcolor;
 
 uniform vec3 eye;
 uniform vec4 lightPosition;             // should be in the eye space
@@ -17,12 +18,12 @@ uniform float materialShininess;        // material specular shininess
 
 
 vec3 phong(vec3 normal, vec3 light, vec3 view) {
-    vec3 color = lightAmbient.rgb * materialAmbient.rgb;        // begin with ambient
+    vec3 color = vcolor * materialAmbient.rgb;        // begin with ambient
     
     float dotNL = max(dot(normal, light), 0.0);
-    color += lightDiffuse.rgb * materialDiffuse.rgb * dotNL;    // add diffuse
+    color += vcolor * materialDiffuse.rgb * dotNL;    // add diffuse
 
-    if( dot(normal, light) > 0.0 ){
+    if( false && dot(normal, light) > 0.0 ){
         vec3 reflectDir = reflect(-light, normal);  
         float dotNH = max(dot(view, reflectDir), 0.0);
         color += pow(dotNH, materialShininess) * lightSpecular.rgb * materialSpecular.rgb; // add specular
@@ -49,5 +50,5 @@ void main(){
     vec3 view = normalize(eye-vposition);
 
 	vec3 result = phong( normal, light_dir, view );
-	outColor = vec4(result, materialDiffuse.a);;
+	outColor = vec4(result, materialDiffuse.a);
 } 

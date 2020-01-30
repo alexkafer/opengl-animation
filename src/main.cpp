@@ -20,9 +20,11 @@
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/type_ptr.hpp>
 
-#include "scene.hpp"
+#include "Scene.hpp"
 #include <cstring> // memcpy
 #include <iostream> // memcpy
+
+// https://github.com/syoyo/tinyobjloader
 
 // Constants
 #define WIN_WIDTH 500
@@ -35,15 +37,16 @@ namespace Globals {
 	int screenWidth;
 	int screenHeight;
 	float aspect;
-	GLuint vao, vbo, ibo;
+	GLuint vao;
 
 	glm::vec3 eye;
 	glm::vec4 light;
 
-	//  Model, view and projection matrices, initialized to the identity
-	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 projection;
+
+	Scene scene;
+	bool track_ball = false;
 }
 
 //
@@ -53,12 +56,21 @@ static void error_callback(int error, const char* description){ fprintf(stderr, 
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 	// Close on escape or Q
+
 	if( action == GLFW_PRESS ){
 		switch ( key ) {
 			case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
+			case GLFW_KEY_B: Globals::track_ball = true; break;
+			case GLFW_KEY_R: Globals::track_ball = false; break;
 		}
 	}
+}
+
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	 if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        Globals::scene.add_ball_velocity(glm::vec3(1.f, 5.f, 1.5f));
+	 }
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height){
@@ -68,7 +80,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	//aspect ratio needs update on resize
 	Globals::aspect = Globals::screenWidth/ (float)Globals::screenHeight; 
 
-	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 10.0f);
+	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 50.0f);
 	
     glViewport(0,0,width,height);
 }
@@ -101,6 +113,7 @@ int main(int argc, char *argv[]){
 
 	// Bind callbacks to the window
 	glfwSetKeyCallback(window, &key_callback);
+	glfwSetMouseButtonCallback(window, &mouse_button_callback);
 	glfwSetFramebufferSizeCallback(window, &framebuffer_size_callback);
 
 	// Make current
@@ -123,67 +136,70 @@ int main(int argc, char *argv[]){
 
 
 	// Initialize the scene
+	
 	// IMPORTANT: Only call after gl context has been created
-	init_geometry(&shader, Globals::vbo, Globals::ibo, Globals::vao);
+	Globals::scene.init_geometry(&shader, Globals::vao);
 	framebuffer_size_callback(window, int(Globals::screenWidth), int(Globals::screenHeight)); 
 
 	// Enable the shader, this allows us to set uniforms and attributes
 	shader.enable();
 
-	init_static_uniforms(&shader);
+	Globals::scene.init_static_uniforms(&shader);
 
 	// Initialize OpenGL
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	Globals::model = glm::mat4(1.0f);
-
 	glm::vec3 up(0.0f, 1.0f, 0.0f);
-	glm::vec3 target(0.0f, 0.0f, 0.0f);
+	glm::vec3 target(0.0f, 2.5f, 0.0f);
 
 	// Game loop
-	const float orbit_radius = 5.0f;
+	float orbit_radius = 15.0f;
 	float last_time = glfwGetTime();
-	while( !glfwWindowShouldClose(window) ){
+	float dt = 0;
+	while( !glfwWindowShouldClose(window)){
 	
 		// Clear screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Calculate time delta
-		float new_time = glfwGetTime();
-		float time_delta = new_time - last_time;
+		dt = glfwGetTime() - last_time;
+		if (dt > .1) dt = .1; //Have some max dt
+		last_time = glfwGetTime();
 
-		float camX = sin(new_time) * orbit_radius;
-		float camZ = cos(new_time) * orbit_radius;
+		float camX = sin(last_time / 5) * orbit_radius;
+		float camZ = cos(last_time / 5) * orbit_radius;
+
+		
+
+		if (Globals::track_ball) {
+			glm::vec3 ball = Globals::scene.get_ball_position();
+			if (ball.y > 10) {
+				Globals::eye = glm::vec3((5 * camX / ball.y) + ball.x, ball.y + 10, (5 *  camZ /  ball.y) + ball.z);
+			} else {
+				Globals::eye = glm::vec3(camX, 2.5, camZ);
+			}
+			
+			Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 50.0f + ball.y);
+
+		} else {
+			// target = glm::vec3(0.0f, 2.5f, 0.0f);
+			Globals::eye = glm::vec3(camX, 2.5, camZ);
+		}
 
 		// Calculate new camera position
-		Globals::eye = glm::vec3(camX, 0.0f, camZ);
+		// Globals::eye = glm::vec3(camX, 1.0f, camZ);
 
 		// Calculate new view
 		Globals::view = glm::lookAt(Globals::eye, target, up);
 
-		// Globals::light = glm::rotate(Globals::light, time * 3.14f/2, glm::vec3(0.0f, 1.0f, 0.0f));	
-		Globals::model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2 * sin(new_time), 0.0f));
-		
-		// bind vbo for ball
-		glBindBuffer(GL_ARRAY_BUFFER, Globals::vbo);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Globals::ibo);
-
 		// Send updated info to the GPU
-		glm::mat4 matrix_normal = Globals::model;
-    	matrix_normal[3] = glm::vec4(0,0,0,1);
-
-		glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(Globals::model)  ); // model transformation
 		glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
 		glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
-		glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_normal)); // projection matrix
 		
 		// glUniform3fv( shader.uniform("eye"), 1, glm::value_ptr(Globals::eye)); // used in fragment shader
 
-		draw_scene(&shader, Globals::vbo, Globals::ibo);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		Globals::scene.draw(&shader, dt);
 
 		// Finalize
 		glfwSwapBuffers(window);
@@ -194,8 +210,7 @@ int main(int argc, char *argv[]){
 	// Disable the shader, we're done using it
 	shader.disable();
 
-	glDeleteBuffers(1, &Globals::vbo);
-	glDeleteBuffers(1, &Globals::ibo);
+	Globals::scene.cleanup();
 	glDeleteVertexArrays(1, &Globals::vao);
 
     
