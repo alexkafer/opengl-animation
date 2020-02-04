@@ -11,7 +11,8 @@
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
 
-static const glm::vec3 initial_directions[3] = {glm::vec3(10.f, 0.f, 0.f), glm::vec3(0.f, 5.f, 0.f), glm::vec3(0.f, 0.f, 0.f)};
+static const glm::vec3 initial_directions[3] = {glm::vec3(10.f, 0.f, 0.f), glm::vec3(0.f, 5.f, 0.f), glm::vec3(0.f, 0.1f, 0.f)};
+static const float initial_radius[3] = {0.075f, 0.075f, 0.5f};
 static const glm::vec4 colors[3] = {glm::vec4(0.f, 0.f, 1.f, 1.f), glm::vec4(1.f, 0.f, 0.f, 1.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f)};
 static const float max_lives[3] = { 3.f, 1.f, 0.5f };
 
@@ -38,7 +39,7 @@ void Particles::spawn(ParticleType type, glm::vec3 location, int num_particles) 
     _life_time.reserve(num_particles);
 
     for (int i = 0; i < num_particles; i++) {
-        _positions.push_back(rand_point_on_disk(0.075f, location));
+        _positions.push_back(rand_point_on_disk(initial_radius[type], initial_directions[type]) + location);
         _types.push_back(type);
         _velocities.push_back(rand_velocity(initial_directions[type]));
         _colors.push_back(colors[type]);
@@ -128,12 +129,13 @@ void Particles::cleanup() {
 
 }
 
-glm::vec3 Particles::rand_point_on_disk(float radius, glm::vec3 center) {
+glm::vec3 Particles::rand_point_on_disk(float radius, glm::vec3 direction) {
     float r = radius * sqrt((double) rand() / RAND_MAX);
     float theta  = 2 * M_PI *  (double) rand() / RAND_MAX;
-    float y = r * sin(theta);
+    float x = r * sin(theta);
     float z = r * cos(theta);
-    return glm::vec3((double) rand() / RAND_MAX, y, z) + center;
+
+    return glm::vec3(x, (double) rand() / RAND_MAX, z);
 }
 
 glm::vec3 Particles::rand_velocity(glm::vec3 general_direction) {

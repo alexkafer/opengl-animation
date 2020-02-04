@@ -105,6 +105,7 @@ void Scene::computePhysics(float dt){
     if (position.y - sphere.getRadius() < floorPos){
         position.y = floorPos + sphere.getRadius();
         velocity.y *= -.95;
+        particles.spawn(impact, glm::vec3(position.x, floorPos, position.z), 1000);
     }
 
     // Positive X wall
