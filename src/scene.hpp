@@ -1,11 +1,15 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
-#include <glm/vec3.hpp> 
+
+#include "common.h"
 
 #include "shader.hpp"
 #include "geometry/Sphere.h"
 
 class Scene {
+        mcl::Shader shader;
+        GLuint vao;
+
         Sphere sphere;
 
         glm::vec3 acceleration;
@@ -19,21 +23,20 @@ class Scene {
 
         void computePhysics(float dt);
         void init_floor();
+        void init_static_uniforms();
 
-        void draw_ball(mcl::Shader * shader, float dt);
-        void draw_floor(mcl::Shader * shader);
+        void draw_ball(float dt);
+        void draw_floor();
 
     public:
-
         Scene();
 
         glm::vec3 get_ball_position();
         void add_ball_velocity(glm::vec3 velocity);
 
-        void init_static_uniforms(mcl::Shader * shader);
-        void init_geometry(mcl::Shader * shader, GLuint & vao);
+        void init();
 
-        void draw(mcl::Shader * shader, float dt);
+        void draw(float dt);
 
         void cleanup();
 };

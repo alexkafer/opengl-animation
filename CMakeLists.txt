@@ -187,6 +187,7 @@ set(MY_SOURCES
 	${GLEW_SRC} # empty unless USE_GLEW is set to ON
 	src/main.cpp
     src/Scene.cpp
+    src/Particles.cpp
     src/geometry/Sphere.cpp
 )
 

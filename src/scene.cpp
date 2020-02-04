@@ -1,11 +1,16 @@
 #include "Scene.hpp"
 
 #include <iostream>
-#include <glm/vec4.hpp> 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 
 Scene::Scene () {
+    	// Initialize the shader (which uses glew, so we need to init that first).
+        // MY_SRC_DIR is a define that was set in CMakeLists.txt which gives
+        // the full path to this project's src/ directory.
+        std::stringstream ss; ss << MY_SRC_DIR << "shaders/phong.";
+        shader.init_from_files( ss.str()+"vert", ss.str()+"frag" );
+
         sphere = Sphere(1.f, 36, 18);
 
         acceleration = glm::vec3(0, -9.8f, 0);
@@ -28,7 +33,6 @@ void Scene::add_ball_velocity(glm::vec3 v) {
 void Scene::computePhysics(float dt){
     velocity = velocity + acceleration * dt;
     position = position + velocity * dt;
-    std::cout << "pos: " << glm::to_string(position) << ", vel: " << glm::to_string(velocity) << std::endl;
     
     if (position.y - sphere.getRadius() < floorPos){
         position.y = floorPos + sphere.getRadius();
@@ -87,19 +91,49 @@ void Scene::init_floor() {
 //  Model, view and projection matrices, initialized to the identity
 glm::mat4 ball_model;
 
+void Scene::init()
+{
+    shader.enable();
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+	glGenBuffers(1, &ball_vbo); //Create buffer called vbo
+	glBindBuffer(GL_ARRAY_BUFFER, ball_vbo); //(Only one buffer can be bound at a time)
+	glBufferData(GL_ARRAY_BUFFER, 
+        sphere.getInterleavedVertexSize(), 
+        sphere.getInterleavedVertices(), 
+        GL_STATIC_DRAW); 
+    glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind the VAO so we don’t accidentally modify it
+
+    // If data is changing infrequently GL DYNAMIC DRAW may be better, 
+	// and GL STREAM DRAW is best used when the data changes frequently.
+
+    // Index Data
+    glGenBuffers(1, &ball_ibo); //Create index buffer called ibo
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ball_ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphere.getIndexSize(), sphere.getIndices(), GL_STATIC_DRAW); 
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);  //Unbind the VAO so we don’t accidentally modify it
+
+    init_floor();
+    init_static_uniforms();
+
+    shader.disable();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // set uniform constants
 ///////////////////////////////////////////////////////////////////////////////
-void Scene::init_static_uniforms(mcl::Shader * shader)
+void Scene::init_static_uniforms()
 {
-    GLint uniformLightPosition             = shader->uniform("lightPosition");
-    // GLint uniformLightAmbient              = shader->uniform("lightAmbient");
-    // GLint uniformLightDiffuse              = shader->uniform("lightDiffuse");
-    GLint uniformLightSpecular             = shader->uniform("lightSpecular");
-    GLint uniformMaterialAmbient           = shader->uniform("materialAmbient");
-    GLint uniformMaterialDiffuse           = shader->uniform("materialDiffuse");
-    GLint uniformMaterialSpecular          = shader->uniform("materialSpecular");
-    GLint uniformMaterialShininess         = shader->uniform("materialShininess");
+    GLint uniformLightPosition             = shader.uniform("lightPosition");
+    // GLint uniformLightAmbient              = shader.uniform("lightAmbient");
+    // GLint uniformLightDiffuse              = shader.uniform("lightDiffuse");
+    GLint uniformLightSpecular             = shader.uniform("lightSpecular");
+    GLint uniformMaterialAmbient           = shader.uniform("materialAmbient");
+    GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
+    GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
+    GLint uniformMaterialShininess         = shader.uniform("materialShininess");
     
     // set uniform values
     float lightPosition[]  = {4.f, 2.0f, 4.f, 1.0f};
@@ -121,36 +155,10 @@ void Scene::init_static_uniforms(mcl::Shader * shader)
     glUniform1f(uniformMaterialShininess, materialShininess);
 }
 
-void Scene::init_geometry(mcl::Shader * shader, GLuint & vao)
-{
-
-	glGenBuffers(1, &ball_vbo); //Create buffer called vbo
-	glBindBuffer(GL_ARRAY_BUFFER, ball_vbo); //(Only one buffer can be bound at a time)
-	glBufferData(GL_ARRAY_BUFFER, 
-        sphere.getInterleavedVertexSize(), 
-        sphere.getInterleavedVertices(), 
-        GL_STATIC_DRAW); 
-    glBindBuffer(GL_ARRAY_BUFFER, 0); //Unbind the VAO so we don’t accidentally modify it
-
-    // If data is changing infrequently GL DYNAMIC DRAW may be better, 
-	// and GL STREAM DRAW is best used when the data changes frequently.
-
-    // Index Data
-    glGenBuffers(1, &ball_ibo); //Create index buffer called ibo
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ball_ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphere.getIndexSize(), sphere.getIndices(), GL_STATIC_DRAW); 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);  //Unbind the VAO so we don’t accidentally modify it
-
-    init_floor();
-   
-    glGenVertexArrays(1, &vao); //Create a VAO
-	glBindVertexArray(vao); // Bind the globally created VAO to the current context
-}
-
-void Scene::draw_ball(mcl::Shader * shader, float dt) {
-    GLint attribVertexPosition  = shader->attribute("in_position");
-    GLint attribVertexColor     = shader->attribute("in_color");
-	GLint attribVertexNormal    = shader->attribute("in_normal");
+void Scene::draw_ball(float dt) {
+    GLint attribVertexPosition  = shader.attribute("in_position");
+    GLint attribVertexColor     = shader.attribute("in_color");
+	GLint attribVertexNormal    = shader.attribute("in_normal");
 
     glVertexAttrib3f(attribVertexColor, 0.7, 0.2, 0.2);
 
@@ -167,8 +175,8 @@ void Scene::draw_ball(mcl::Shader * shader, float dt) {
     glm::mat4 matrix_ball_normal = ball_model;
     matrix_ball_normal[3] = glm::vec4(0,0,0,1);
 
-    glUniformMatrix4fv( shader->uniform("model"), 1, GL_FALSE, glm::value_ptr(ball_model)  ); // model transformation
-    glUniformMatrix4fv( shader->uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_ball_normal)); // projection matrix
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(ball_model)  ); // model transformation
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_ball_normal)); // projection matrix
 		
     // set attrib arrays using glVertexAttribPointer()
     int stride = sphere.getInterleavedStride();
@@ -188,10 +196,10 @@ void Scene::draw_ball(mcl::Shader * shader, float dt) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Scene::draw_floor(mcl::Shader * shader) {
-    GLint attribVertexPosition  = shader->attribute("in_position");
-    GLint attribVertexColor     = shader->attribute("in_color");
-	GLint attribVertexNormal    = shader->attribute("in_normal");
+void Scene::draw_floor() {
+    GLint attribVertexPosition  = shader.attribute("in_position");
+    GLint attribVertexColor     = shader.attribute("in_color");
+	GLint attribVertexNormal    = shader.attribute("in_normal");
 
     // activate attribs
     glEnableVertexAttribArray(attribVertexPosition);
@@ -202,8 +210,8 @@ void Scene::draw_floor(mcl::Shader * shader) {
     glm::mat4 matrix_normal = glm::mat4(1.0f);
     matrix_normal[3] = glm::vec4(0,0,0,1);
 
-    glUniformMatrix4fv( shader->uniform("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f))  ); // model transformation
-    glUniformMatrix4fv( shader->uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_normal)); // projection matrix
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f))  ); // model transformation
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_normal)); // projection matrix
 		
     // set attrib arrays using glVertexAttribPointer()
     // bind vbo for floor
@@ -226,15 +234,30 @@ void Scene::draw_floor(mcl::Shader * shader) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Scene::draw(mcl::Shader * shader, float dt) {
+void Scene::draw(float dt) {
 
-    draw_ball(shader, dt);
-    draw_floor(shader);
+    shader.enable();
+    glBindVertexArray(vao); // Bind the globally created VAO to the current context
+
+    glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
+	glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
+		
+
+    draw_ball(dt);
+    draw_floor();
+
+    glBindVertexArray(0);
+    shader.disable();
 
     computePhysics(dt);
 }
 
 void Scene::cleanup() {
+    // Disable the shader, we're done using it
+	shader.disable();
+
     glDeleteBuffers(1, &ball_vbo);
 	glDeleteBuffers(1, &ball_ibo);
+
+	glDeleteVertexArrays(1, &vao);
 }

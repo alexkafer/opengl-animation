@@ -33,6 +33,7 @@
 #include <GL/gl.h>
 #endif
 
+#include <iostream> 
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -45,8 +46,8 @@
 //	Example use:
 //	Shader myshader;
 //	< OpenGL context creation >
-//	myshader.init_from_files( "myshader.vert", "myshader.frag" );
-//	while( rendering ){
+	// myshader.init_from_files( "myshader.vert", "myshader.frag" );
+	// while( rendering ){
 //		< OpenGL view stuff >
 //		myshader.enable();
 //		glUniform3f( myshader.uniform("color"), 1.f, 0.f, 0.f );
@@ -80,9 +81,12 @@ public:
 
 	// Returns the bound location of a named uniform
 	inline GLuint uniform( const std::string name );
+
+
+	inline void validate( );
  
-private:
 	GLuint program_id;
+private:
 	GLuint vertex_id;
 	GLuint fragment_id;
 
@@ -167,18 +171,67 @@ void Shader::init(std::string vertex_source, std::string frag_source){
 	glDetachShader(program_id, fragment_id);
 
 	// Check the program link status and throw a runtime_error if program linkage failed.
-	GLint programLinkSuccess = GL_FALSE;
-	glGetProgramiv(program_id, GL_LINK_STATUS, &programLinkSuccess);
-	if( programLinkSuccess != GL_TRUE ){ throw std::runtime_error("\n**Shader Error: Problem with link"); }
+	GLint isLinked = GL_FALSE;
+	glGetProgramiv(program_id, GL_LINK_STATUS, &isLinked);
+	if (isLinked == GL_FALSE)
+	{
+		GLint maxLength = 0;
+		glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &maxLength);
 
-	// Check the validation status and throw a runtime_error if program validation failed.
-	// Does NOT work with corearb headers???
-//	glValidateProgram(program_id);
-//	GLint programValidatationStatus;
-//	glGetProgramiv(program_id, GL_VALIDATE_STATUS, &programValidatationStatus);
-//	if( programValidatationStatus != GL_TRUE ){ throw std::runtime_error("\n**Shader Error: Problem with validation"); }
+		// The maxLength includes the NULL character
+		std::vector<GLchar> infoLog(maxLength);
+		glGetProgramInfoLog(program_id, maxLength, &maxLength, &infoLog[0]);
+
+		// The program is useless now. So delete it.
+		glDeleteProgram(program_id);
+
+		std::ostringstream vts; 
+  
+		if (!infoLog.empty()) 
+		{ 
+			// Convert all but the last element to avoid a trailing "," 
+			std::copy(infoLog.begin(), infoLog.end()-1, std::ostream_iterator<char>(vts)); 
+		
+			// Now add the last element with no delimiter 
+			vts << infoLog.back(); 
+		} 
+
+		throw std::runtime_error("\n**glCompileShader " + vertex_source + " Error: " + vts.str()); 
+	}
 
 	glUseProgram(0);
+}
+
+void Shader::validate() {
+	// Check the validation status and throw a runtime_error if program validation failed.
+	// Does NOT work with corearb headers???
+	glValidateProgram(program_id);
+	GLint programValidatationStatus;
+	glGetProgramiv(program_id, GL_VALIDATE_STATUS, &programValidatationStatus);
+	if( programValidatationStatus != GL_TRUE ){
+		GLint maxLength = 0;
+		glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &maxLength);
+		
+		// The maxLength includes the NULL character
+		std::vector<GLchar> infoLog(maxLength);
+		glGetProgramInfoLog(program_id, maxLength, &maxLength, &infoLog[0]);
+
+		std::ostringstream vts; 
+
+		vts << program_id;
+  
+		if (!infoLog.empty()) 
+		{ 
+			// Convert all but the last element to avoid a trailing "," 
+			std::copy(infoLog.begin(), infoLog.end()-1, std::ostream_iterator<char>(vts)); 
+		
+			// Now add the last element with no delimiter 
+			vts << infoLog.back(); 
+		} 
+
+
+		throw std::runtime_error("\n**Shader Error: Problem with validation. Error: " + vts.str());
+	}
 }
 
 

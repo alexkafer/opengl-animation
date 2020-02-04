@@ -12,17 +12,16 @@
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS //ensure we are using radians
-#include <glm/vec3.hpp> 
-#include <glm/mat4x4.hpp> 
 
-
+#include "common.h"
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Scene.hpp"
+
 #include <cstring> // memcpy
 #include <iostream> // memcpy
+
 
 // https://github.com/syoyo/tinyobjloader
 
@@ -37,7 +36,6 @@ namespace Globals {
 	int screenWidth;
 	int screenHeight;
 	float aspect;
-	GLuint vao;
 
 	glm::vec3 eye;
 	glm::vec4 light;
@@ -45,9 +43,11 @@ namespace Globals {
 	glm::mat4 view;
 	glm::mat4 projection;
 
-	Scene scene;
-	bool track_ball = false;
+	bool track_ball;
 }
+
+Scene * scene; 
+Particles * particles; 
 
 //
 //	Callbacks
@@ -63,13 +63,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_B: Globals::track_ball = true; break;
 			case GLFW_KEY_R: Globals::track_ball = false; break;
+			case GLFW_KEY_S: particles->spawn(100000); break;
 		}
 	}
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 	 if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        Globals::scene.add_ball_velocity(glm::vec3(1.f, 5.f, 1.5f));
+    	scene->add_ball_velocity(glm::vec3(1.f, 5.f, 1.5f));
 	 }
 }
 
@@ -127,24 +128,17 @@ int main(int argc, char *argv[]){
 		glewInit();
 	#endif
 
-	// Initialize the shader (which uses glew, so we need to init that first).
-	// MY_SRC_DIR is a define that was set in CMakeLists.txt which gives
-	// the full path to this project's src/ directory.
-	mcl::Shader shader;
-	std::stringstream ss; ss << MY_SRC_DIR << "shader.";
-	shader.init_from_files( ss.str()+"vert", ss.str()+"frag" );
-
-
-	// Initialize the scene
+	Globals::track_ball = false;
 	
 	// IMPORTANT: Only call after gl context has been created
-	Globals::scene.init_geometry(&shader, Globals::vao);
 	framebuffer_size_callback(window, int(Globals::screenWidth), int(Globals::screenHeight)); 
 
-	// Enable the shader, this allows us to set uniforms and attributes
-	shader.enable();
+	// Initialize the scene
+	scene = new Scene();
+	scene->init();
 
-	Globals::scene.init_static_uniforms(&shader);
+	particles = new Particles();
+	particles->init();
 
 	// Initialize OpenGL
 	glEnable(GL_DEPTH_TEST);
@@ -155,25 +149,39 @@ int main(int argc, char *argv[]){
 
 	// Game loop
 	float orbit_radius = 15.0f;
-	float last_time = glfwGetTime();
+	float last_frame_time = glfwGetTime();
+	float last_second_time = glfwGetTime();
 	float dt = 0;
+	int frame_count = 0;
 	while( !glfwWindowShouldClose(window)){
 	
 		// Clear screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Calculate time delta
-		dt = glfwGetTime() - last_time;
+		float current_frame_time = glfwGetTime();
+		dt = current_frame_time - last_frame_time;
 		if (dt > .1) dt = .1; //Have some max dt
-		last_time = glfwGetTime();
 
-		float camX = sin(last_time / 5) * orbit_radius;
-		float camZ = cos(last_time / 5) * orbit_radius;
+		frame_count++;
+		if ( current_frame_time - last_second_time >= 1.0 )
+		{
+			// Display the frame count here any way you want.
+			std::cout << "Framerate: " << frame_count << std::endl;
+
+			frame_count = 0;
+			last_second_time = current_frame_time;
+		}
+
+		last_frame_time = current_frame_time;
+
+		float camX = sin(last_frame_time / 5) * orbit_radius;
+		float camZ = cos(last_frame_time / 5) * orbit_radius;
 
 		
 
 		if (Globals::track_ball) {
-			glm::vec3 ball = Globals::scene.get_ball_position();
+			glm::vec3 ball = scene->get_ball_position();
 			if (ball.y > 10) {
 				Globals::eye = glm::vec3((5 * camX / ball.y) + ball.x, ball.y + 10, (5 *  camZ /  ball.y) + ball.z);
 			} else {
@@ -187,6 +195,8 @@ int main(int argc, char *argv[]){
 			Globals::eye = glm::vec3(camX, 2.5, camZ);
 		}
 
+		particles->update(dt);
+
 		// Calculate new camera position
 		// Globals::eye = glm::vec3(camX, 1.0f, camZ);
 
@@ -194,12 +204,11 @@ int main(int argc, char *argv[]){
 		Globals::view = glm::lookAt(Globals::eye, target, up);
 
 		// Send updated info to the GPU
-		glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
-		glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
 		
 		// glUniform3fv( shader.uniform("eye"), 1, glm::value_ptr(Globals::eye)); // used in fragment shader
 
-		Globals::scene.draw(&shader, dt);
+		scene->draw(dt);
+		particles->draw();
 
 		// Finalize
 		glfwSwapBuffers(window);
@@ -207,11 +216,9 @@ int main(int argc, char *argv[]){
 
 	} // end loop
 
-	// Disable the shader, we're done using it
-	shader.disable();
+	scene->cleanup();
 
-	Globals::scene.cleanup();
-	glDeleteVertexArrays(1, &Globals::vao);
+	delete scene;
 
     
 	return EXIT_SUCCESS;
