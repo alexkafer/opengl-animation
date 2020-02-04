@@ -43,6 +43,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # file input/output as it provides a full path.
 add_definitions( -DMY_SRC_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/" )
 add_definitions( -DMY_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/" )
+add_definitions( -DMY_MODELS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/models/" )
 
 # ====================================================
 #		Dependencies

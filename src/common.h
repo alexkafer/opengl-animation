@@ -2,8 +2,6 @@
 #include <glm/vec4.hpp> 
 #include <glm/mat4x4.hpp> 
 
-#include "Scene.hpp"
-#include "Particles.hpp"
 
 //
 //	Global state variables
@@ -18,6 +16,6 @@ namespace Globals {
 
 	extern glm::mat4 view;
 	extern glm::mat4 projection;
-    
+
 	extern bool track_ball;
 }

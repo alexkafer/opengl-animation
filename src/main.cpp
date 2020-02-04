@@ -14,6 +14,7 @@
 #define GLM_FORCE_RADIANS //ensure we are using radians
 
 #include "common.h"
+#include "Scene.hpp"
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/type_ptr.hpp>
@@ -55,7 +56,6 @@ namespace Globals {
 }
 
 Scene * scene; 
-Particles * particles; 
 
 //
 //	Callbacks
@@ -70,7 +70,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		switch ( key ) {
 			case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
-			case GLFW_KEY_SPACE: particles->spawn(100000); break;
 			case GLFW_KEY_W: Globals::eye_pos += cameraSpeed * Globals::eye_dir; break;
 			case GLFW_KEY_S: Globals::eye_pos -= cameraSpeed * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::eye_pos -= glm::normalize(glm::cross( Globals::eye_dir, up)) * cameraSpeed; break;
@@ -131,7 +130,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	//aspect ratio needs update on resize
 	Globals::aspect = Globals::screen_width/ (float)Globals::screen_height; 
 
-	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 50.0f);
+	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 100.0f);
 	
     glViewport(0,0,width,height);
 }
@@ -198,9 +197,6 @@ int main(int argc, char *argv[]){
 	scene = new Scene();
 	scene->init();
 
-	particles = new Particles();
-	particles->init();
-
 	// Initialize OpenGL
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -241,8 +237,7 @@ int main(int argc, char *argv[]){
 		// float camX = sin(last_frame_time / 5) * orbit_radius;
 		// float camZ = cos(last_frame_time / 5) * orbit_radius;
 
-
-		particles->update(dt);
+		
 
 		// Calculate new camera position
 		// Globals::eye = glm::vec3(camX, 1.0f, camZ);
@@ -255,7 +250,6 @@ int main(int argc, char *argv[]){
 		// glUniform3fv( shader.uniform("eye"), 1, glm::value_ptr(Globals::eye)); // used in fragment shader
 
 		scene->draw(dt);
-		particles->draw();
 
 		// Finalize
 		glfwSwapBuffers(window);

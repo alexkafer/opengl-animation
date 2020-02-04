@@ -10,8 +10,10 @@
 #include <time.h> 
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
-static glm::vec3 up(0.f, 100.f, 0.f);
-static float max_life = 2.f;
+
+static const glm::vec3 initial_directions[3] = {glm::vec3(10.f, 0.f, 0.f), glm::vec3(0.f, 5.f, 0.f), glm::vec3(0.f, 0.f, 0.f)};
+static const glm::vec4 colors[3] = {glm::vec4(0.f, 0.f, 1.f, 1.f), glm::vec4(1.f, 0.f, 0.f, 1.0f), glm::vec4(0.2f, 0.2f, 0.2f, 1.0f)};
+static const float max_lives[3] = { 3.f, 1.f, 0.5f };
 
 Particles::Particles () {
     srand(time(0));
@@ -27,18 +29,19 @@ void Particles::init() {
     glGenBuffers(2, vbo);
 }
 
-void Particles::spawn(int num_particles) { 
+void Particles::spawn(ParticleType type, glm::vec3 location, int num_particles) { 
 
-    std::cout << "Spawning " << num_particles << " particles." << std::endl;
     _positions.reserve(num_particles);
+    _types.reserve(num_particles);
     _velocities.reserve(num_particles);
     _colors.reserve(num_particles);
     _life_time.reserve(num_particles);
 
     for (int i = 0; i < num_particles; i++) {
-        _positions.push_back(rand_point_on_disk(2.f));
-        _velocities.push_back(rand_velocity(up));
-        _colors.push_back(glm::vec4(1.0f, 0.f, 0.f, 1.f));
+        _positions.push_back(rand_point_on_disk(0.075f, location));
+        _types.push_back(type);
+        _velocities.push_back(rand_velocity(initial_directions[type]));
+        _colors.push_back(colors[type]);
         _life_time.push_back(0.f);
     }
 
@@ -49,23 +52,27 @@ void Particles::spawn(int num_particles) {
 void Particles::update(float dt){
     for(size_t i = 0, size = _positions.size(); i != size; ++i)
     {
+        ParticleType type = _types[i];
+
         _positions[i] += _velocities[i] * dt;
         _velocities[i] += gravity * dt;
 
-        _colors[i].g = _life_time[i] / max_life;
-        _colors[i].a = max_life / (_life_time[i] + 0.01);
+        // _colors[i].g = _life_time[i] / max_life;
+        // _colors[i].a = max_life / (_life_time[i] + 0.01);
 
-        bound_particle(i);
+        bound_particle(i, type);
 
         // Update the life time and purge if needed.
-        if ((_life_time[i] += dt) > max_life) {
+        if ((_life_time[i] += dt) > max_lives[type]) {
             _positions[i] = std::move(_positions.back());
+            _types[i] = std::move(_types.back());
             _velocities[i] = std::move(_velocities.back());
             _colors[i] = std::move(_colors.back());
             _life_time[i] = std::move(_life_time.back());
 
 
             _positions.pop_back();
+            _types.pop_back();
             _velocities.pop_back();
             _colors.pop_back();
             _life_time.pop_back();
@@ -121,22 +128,25 @@ void Particles::cleanup() {
 
 }
 
-glm::vec3 Particles::rand_point_on_disk(float radius) {
-    float r = radius * (double) rand() / RAND_MAX;
+glm::vec3 Particles::rand_point_on_disk(float radius, glm::vec3 center) {
+    float r = radius * sqrt((double) rand() / RAND_MAX);
     float theta  = 2 * M_PI *  (double) rand() / RAND_MAX;
-    return glm::vec3(r * sin(theta), 2.0f, r * cos(theta));
+    float y = r * sin(theta);
+    float z = r * cos(theta);
+    return glm::vec3((double) rand() / RAND_MAX, y, z) + center;
 }
 
 glm::vec3 Particles::rand_velocity(glm::vec3 general_direction) {
     return glm::vec3(
-        general_direction.x * 0.1 * (double) rand() / RAND_MAX,
-        general_direction.y * 0.1 * (double) rand() / RAND_MAX,
-        general_direction.z * 0.1 * (double) rand() / RAND_MAX);
+        general_direction.x + 0.5 * (double) rand() / RAND_MAX,
+        general_direction.y + 0.5 * (double) rand() / RAND_MAX,
+        general_direction.z + 0.5 * (double) rand() / RAND_MAX);
 }
 
-void Particles::bound_particle(size_t particle) {
+void Particles::bound_particle(size_t particle, ParticleType type) {
     if (_positions[particle].y < 0) {
         _positions[particle].y = 0;
         _velocities[particle].y *= -.4; //bounce factor
+        return;
     }
 }

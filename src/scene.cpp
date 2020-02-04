@@ -1,17 +1,28 @@
 #include "Scene.hpp"
 
+#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
+#include "tiny_obj_loader.h"
+
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 
 Scene::Scene () {
     	// Initialize the shader (which uses glew, so we need to init that first).
         // MY_SRC_DIR is a define that was set in CMakeLists.txt which gives
         // the full path to this project's src/ directory.
-        std::stringstream ss; ss << MY_SRC_DIR << "shaders/phong.";
-        shader.init_from_files( ss.str()+"vert", ss.str()+"frag" );
+        std::stringstream shader_ss; shader_ss << MY_SRC_DIR << "shaders/phong.";
+        shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
+
+        particles = Particles();
+	    particles.init();
 
         sphere = Sphere(1.f, 36, 18);
+
+        std::stringstream model_ss; model_ss << MY_MODELS_DIR << "Firehydrant/";
+        fire_hydrant_size = load_model(fire_hydrant_vbo, model_ss.str() + "firehydrant.obj", model_ss.str());
 
         acceleration = glm::vec3(0, -9.8f, 0);
         position = glm::vec3(0, 10.0f, 0);
@@ -19,6 +30,63 @@ Scene::Scene () {
 
         floorPos = 0;
         wallPos = 5;
+}
+
+// Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
+GLuint Scene::load_model(GLuint & vbo, std::string obj_file, std::string mtl_dir) {
+    tinyobj::attrib_t attributes;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+
+    std::string warn;
+    std::string err;
+
+    bool ret = tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, obj_file.c_str(), mtl_dir.c_str());
+
+    if (!warn.empty()) {
+        std::cout << warn << std::endl;
+    }
+
+    if (!err.empty()) {
+        std::cerr << err << std::endl;
+    }
+
+    if (!ret) {
+        exit(1);
+    }
+
+    std::vector<Vertex> vertices;
+    for (int i = 0; i < shapes.size(); i ++) {
+        tinyobj::shape_t &shape = shapes[i];
+        tinyobj::mesh_t &mesh = shape.mesh;
+        // we could visit the mesh index by using mesh.indices
+        for (int j = 0; j < mesh.indices.size(); j++) {
+            tinyobj::index_t i = mesh.indices[j];
+            glm::vec3 position = {
+                attributes.vertices[i.vertex_index * 3],
+                attributes.vertices[i.vertex_index * 3 + 1],
+                attributes.vertices[i.vertex_index * 3 + 2]
+            };
+            glm::vec3 normal = {
+                attributes.vertices[i.normal_index * 3],
+                attributes.vertices[i.normal_index * 3 + 1],
+                attributes.vertices[i.normal_index * 3 + 2]
+            };
+            glm::vec2 texCoord = {
+                attributes.vertices[i.texcoord_index * 2],
+                attributes.vertices[i.texcoord_index * 2 + 1],
+            };
+            // Not gonna care about texCoord right now.
+            Vertex vert = { position, normal, texCoord };
+            vertices.push_back(vert);
+        }
+    }
+
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+    return vertices.size();
 }
 
 glm::vec3 Scene::get_ball_position() {
@@ -62,17 +130,23 @@ void Scene::computePhysics(float dt){
         position.z = -wallPos + sphere.getRadius();
         velocity.z *= -.95;
     }
+
+    particles.spawn(water, glm::vec3(0.35f, 1.2f, 0.f), 1000);
+    particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 1000);
+
+
+    particles.update(dt);
 }
 
 void Scene::init_floor() {
     float vertices[] = {
         // X      Y     Z     R     G      B      U      V
-        -5.f, 0.f, -5.f, 0.2f, 0.2f, 0.8f, 0.0f, 1.0f,
-        5.f, 0.f, -5.f, 0.2f, 0.2f, 0.8f, 1.0f, 1.0f,
-        5.f, 0.f,  5.f, 0.2f, 0.2f, 0.8f, 1.0f, 0.0f,
-        5.f, 0.f,  5.f, 0.2f, 0.2f, 0.8f, 1.0f, 0.0f,
-        -5.f, 0.f,  5.f, 0.2f, 0.2f, 0.8f, 0.0f, 0.0f,
-        -5.f, 0.f, -5.f, 0.2f, 0.2f, 0.8f, 0.0f, 1.0f,
+        -5.f, 0.f, -5.f, 0.2f, 0.5f, 0.2f, 0.0f, 1.0f,
+        5.f, 0.f, -5.f, 0.2f, 0.5f, 0.2f, 1.0f, 1.0f,
+        5.f, 0.f,  5.f, 0.2f, 0.5f, 0.2f, 1.0f, 0.0f,
+        5.f, 0.f,  5.f, 0.2f, 0.5f, 0.2f, 1.0f, 0.0f,
+        -5.f, 0.f,  5.f, 0.2f, 0.5f, 0.2f, 0.0f, 0.0f,
+        -5.f, 0.f, -5.f, 0.2f, 0.5f, 0.2f, 0.0f, 1.0f,
     };
 
     float normals[] = {
@@ -136,12 +210,12 @@ void Scene::init_static_uniforms()
     GLint uniformMaterialShininess         = shader.uniform("materialShininess");
     
     // set uniform values
-    float lightPosition[]  = {4.f, 2.0f, 4.f, 1.0f};
+    float lightPosition[]  = {4.f, 3.0f, 0.f, 1.0f};
     // float lightAmbient[]  = {0.3f, 0.1f, 0.1f, 1};
     // float lightDiffuse[]  = {0.7f, 0.2f, 0.2f, 1};
     float lightSpecular[] = {1.0f, 1.0f, 1.0f, 1};
-    float materialAmbient[]  = {0.5f, 0.5f, 0.5f, 1};
-    float materialDiffuse[]  = {0.7f, 0.7f, 0.7f, 1};
+    float materialAmbient[]  = {0.4f, 0.4f, 0.4f, 1};
+    float materialDiffuse[]  = {0.5f, 0.5f, 0.5f, 1};
     float materialSpecular[] = {0.4f, 0.4f, 0.4f, 1};
     float materialShininess  = 4;
 
@@ -153,6 +227,46 @@ void Scene::init_static_uniforms()
     glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
     glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
     glUniform1f(uniformMaterialShininess, materialShininess);
+}
+
+void Scene::draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size) {
+    GLint attribVertexPosition  = shader.attribute("in_position");
+	GLint attribVertexNormal    = shader.attribute("in_normal");
+    GLint attribVertexColor     = shader.attribute("in_color");
+	// GLint attribVertexTexture    = shader.attribute("in_texture");
+
+    glVertexAttrib3f(attribVertexColor, 0.5, 0.2, 0.2);
+
+    // activate attribs
+    glEnableVertexAttribArray(attribVertexPosition);
+    glEnableVertexAttribArray(attribVertexNormal);
+    // glEnableVertexAttribArray(attribVertexTexture)
+
+    // glm::mat4 matrix_normal = glm::mat4(0.1f);
+    // matrix_normal[3] = glm::vec4(0,0,0,1);
+
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(matrix_model)); // model transformation
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_model)); // projection matrix
+		
+    // set attrib arrays using glVertexAttribPointer()
+    // bind vbo for floor
+    glBindBuffer(GL_ARRAY_BUFFER, model_vao);
+    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, nullptr);
+    glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 3));
+    // glVertexAttribPointer(attribVertexTexture, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 6));
+
+    // draw a sphere with VBO
+    glDrawArrays(GL_TRIANGLES, 0, model_size); //(Primitives, Which VBO, Number of vertices)
+
+    glDisableVertexAttribArray(attribVertexPosition);
+    glDisableVertexAttribArray(attribVertexNormal);
+    // glDisableVertexAttribArray(attribVertexTexture);
+
+    // glUniform1i(shader.uniform("texture_map"), 0);
+    // glUniform1i(shader.uniform("texture_used"), 1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void Scene::draw_ball(float dt) {
@@ -206,12 +320,16 @@ void Scene::draw_floor() {
     glEnableVertexAttribArray(attribVertexColor);
     glEnableVertexAttribArray(attribVertexNormal);
 
+    glm::mat4 scale_model = glm::scale(  // Scale first
+        glm::mat4( 1.0f ),              // Translate second
+        glm::vec3( 10.0f, 10.0f, 10.0f )
+    );
 
-    glm::mat4 matrix_normal = glm::mat4(1.0f);
-    matrix_normal[3] = glm::vec4(0,0,0,1);
+    // glm::mat4 matrix_normal = glm::mat4(1.0f);
+    // matrix_normal[3] = glm::vec4(0,0,0,1);
 
-    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f))  ); // model transformation
-    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_normal)); // projection matrix
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(scale_model)  ); // model transformation
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(scale_model)); // projection matrix
 		
     // set attrib arrays using glVertexAttribPointer()
     // bind vbo for floor
@@ -246,8 +364,22 @@ void Scene::draw(float dt) {
     draw_ball(dt);
     draw_floor();
 
+    // glm::mat4 fire_hydrant_translate = glm::translate(
+    //     glm::mat4( 1.0f ),
+    //     glm::vec3( 0.0f, 0.5f, 0.0f )
+    // );
+
+    glm::mat4 fire_hydrant_model = glm::scale(  // Scale first
+        glm::mat4( 1.0f ),              // Translate second
+        glm::vec3( 0.5f, 0.5f, 0.5f )
+    );
+
+    draw_model(fire_hydrant_model, fire_hydrant_vbo, fire_hydrant_size);
+
+
+	particles.draw();
+
     glBindVertexArray(0);
-    shader.disable();
 
     computePhysics(dt);
 }
