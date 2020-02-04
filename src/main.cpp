@@ -29,21 +29,29 @@
 #define WIN_WIDTH 500
 #define WIN_HEIGHT 500
 
+static const glm::vec3 up(0.0f, 1.0f, 0.0f);
+
 //
 //	Global state variables
 //
 namespace Globals {
-	int screenWidth;
-	int screenHeight;
+	int screen_width;
+	int screen_height;
 	float aspect;
 
-	glm::vec3 eye;
+	float mouse_x;
+	float mouse_y;
+	bool first_mouse;
+
+	float yaw;
+	float pitch;
+
+	glm::vec3 eye_pos;
+	glm::vec3 eye_dir;
 	glm::vec4 light;
 
 	glm::mat4 view;
 	glm::mat4 projection;
-
-	bool track_ball;
 }
 
 Scene * scene; 
@@ -56,14 +64,17 @@ static void error_callback(int error, const char* description){ fprintf(stderr, 
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 	// Close on escape or Q
+	const float cameraSpeed = 0.5f;
 
-	if( action == GLFW_PRESS ){
+	if( action == GLFW_PRESS || action == GLFW_REPEAT){
 		switch ( key ) {
 			case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
-			case GLFW_KEY_B: Globals::track_ball = true; break;
-			case GLFW_KEY_R: Globals::track_ball = false; break;
-			case GLFW_KEY_S: particles->spawn(100000); break;
+			case GLFW_KEY_SPACE: particles->spawn(100000); break;
+			case GLFW_KEY_W: Globals::eye_pos += cameraSpeed * Globals::eye_dir; break;
+			case GLFW_KEY_S: Globals::eye_pos -= cameraSpeed * Globals::eye_dir; break;
+			case GLFW_KEY_A: Globals::eye_pos -= glm::normalize(glm::cross( Globals::eye_dir, up)) * cameraSpeed; break;
+			case GLFW_KEY_D: Globals::eye_pos += glm::normalize(glm::cross( Globals::eye_dir, up)) * cameraSpeed; break;
 		}
 	}
 }
@@ -74,16 +85,64 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 	 }
 }
 
+void calculate_eye_direction() {
+	glm::vec3 direction;
+	direction.x = cos(Globals::yaw)* cos(Globals::pitch);
+	direction.y = sin(Globals::pitch);
+	direction.z = sin(Globals::yaw)* cos(Globals::pitch);
+	Globals::eye_dir = glm::normalize(direction);
+}
+
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	if(Globals::first_mouse)
+    {
+        Globals::mouse_x = xpos;
+        Globals::mouse_y = ypos;
+        Globals::first_mouse = false;
+    }
+
+	float xoffset = xpos - Globals::mouse_x;
+	float yoffset = Globals::mouse_y - ypos; // reversed since y-coordinates range from bottom to top
+	
+	Globals::mouse_x = xpos;
+	Globals::mouse_y = ypos;
+
+	const float sensitivity = 0.001f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	Globals::yaw   += xoffset;
+	Globals::pitch += yoffset;  
+
+	if(Globals::pitch > 89.0f)
+		Globals::pitch =  89.0f;
+	if(Globals::pitch < -89.0f)
+		Globals::pitch = -89.0f;	
+
+	calculate_eye_direction();
+}
+
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height){
-	Globals::screenWidth = width;
-	Globals::screenHeight = height;
+	
+	Globals::screen_width = width;
+	Globals::screen_height = height;
 
 	//aspect ratio needs update on resize
-	Globals::aspect = Globals::screenWidth/ (float)Globals::screenHeight; 
+	Globals::aspect = Globals::screen_width/ (float)Globals::screen_height; 
 
 	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 50.0f);
 	
     glViewport(0,0,width,height);
+}
+
+void lookAt(glm::vec3 center)
+{
+	glm::vec3 direction = glm::normalize(center - Globals::eye_pos);
+	Globals::pitch = asin(direction.y);
+	Globals::yaw = atan2(direction.x, direction.z);
+
+	calculate_eye_direction();
 }
 
 
@@ -106,15 +165,18 @@ int main(int argc, char *argv[]){
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	// Create the glfw window
-	Globals::screenWidth = WIN_WIDTH;
-	Globals::screenHeight = WIN_HEIGHT;
-	window = glfwCreateWindow(int(Globals::screenWidth), int(Globals::screenHeight), "CSCI5611 - Alex Kafer", NULL, NULL);
+	Globals::first_mouse = true;
+	window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "CSCI5611 - Alex Kafer", NULL, NULL);
+
+	glfwGetFramebufferSize(window, &Globals::screen_width, &Globals::screen_height);
 	
 	if( !window ){ glfwTerminate(); return EXIT_FAILURE; }
 
 	// Bind callbacks to the window
 	glfwSetKeyCallback(window, &key_callback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
 	glfwSetMouseButtonCallback(window, &mouse_button_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetFramebufferSizeCallback(window, &framebuffer_size_callback);
 
 	// Make current
@@ -128,10 +190,9 @@ int main(int argc, char *argv[]){
 		glewInit();
 	#endif
 
-	Globals::track_ball = false;
 	
 	// IMPORTANT: Only call after gl context has been created
-	framebuffer_size_callback(window, int(Globals::screenWidth), int(Globals::screenHeight)); 
+	framebuffer_size_callback(window, int(Globals::screen_width), int(Globals::screen_height)); 
 
 	// Initialize the scene
 	scene = new Scene();
@@ -144,8 +205,10 @@ int main(int argc, char *argv[]){
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	glm::vec3 up(0.0f, 1.0f, 0.0f);
-	glm::vec3 target(0.0f, 2.5f, 0.0f);
+	// Initialize camera
+	Globals::eye_pos = glm::vec3(15.f, 2.5f, 15.f);
+	
+	lookAt(glm::vec3(0.f, 0.f, 0.f));
 
 	// Game loop
 	float orbit_radius = 15.0f;
@@ -175,25 +238,9 @@ int main(int argc, char *argv[]){
 
 		last_frame_time = current_frame_time;
 
-		float camX = sin(last_frame_time / 5) * orbit_radius;
-		float camZ = cos(last_frame_time / 5) * orbit_radius;
+		// float camX = sin(last_frame_time / 5) * orbit_radius;
+		// float camZ = cos(last_frame_time / 5) * orbit_radius;
 
-		
-
-		if (Globals::track_ball) {
-			glm::vec3 ball = scene->get_ball_position();
-			if (ball.y > 10) {
-				Globals::eye = glm::vec3((5 * camX / ball.y) + ball.x, ball.y + 10, (5 *  camZ /  ball.y) + ball.z);
-			} else {
-				Globals::eye = glm::vec3(camX, 2.5, camZ);
-			}
-			
-			Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 50.0f + ball.y);
-
-		} else {
-			// target = glm::vec3(0.0f, 2.5f, 0.0f);
-			Globals::eye = glm::vec3(camX, 2.5, camZ);
-		}
 
 		particles->update(dt);
 
@@ -201,7 +248,7 @@ int main(int argc, char *argv[]){
 		// Globals::eye = glm::vec3(camX, 1.0f, camZ);
 
 		// Calculate new view
-		Globals::view = glm::lookAt(Globals::eye, target, up);
+		Globals::view = glm::lookAt(Globals::eye_pos, Globals::eye_pos + Globals::eye_dir, up);
 
 		// Send updated info to the GPU
 		
