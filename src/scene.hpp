@@ -14,6 +14,8 @@ class Vertex {
         glm::vec2 texCoord;
 };
 
+static const glm::vec3 up(0.0f, 1.0f, 0.0f);
+
 class Scene {
         mcl::Shader shader;
 
@@ -37,7 +39,9 @@ class Scene {
         GLuint ball_vbo, ball_ibo;
 
 
-        void computePhysics(float dt);
+        void compute_physics(float dt);
+        void check_collisions();
+
         void init_floor();
         void init_static_uniforms();
 
@@ -49,6 +53,7 @@ class Scene {
 
     public:
         Scene();
+        void print_stats();
 
         glm::vec3 get_ball_position();
         void add_ball_velocity(glm::vec3 velocity);

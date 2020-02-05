@@ -32,6 +32,10 @@ Scene::Scene () {
         wallPos = 5;
 }
 
+void Scene::print_stats() {
+    particles.print_stats();
+}
+
 // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
 GLuint Scene::load_model(GLuint & vbo, std::string obj_file, std::string mtl_dir) {
     tinyobj::attrib_t attributes;
@@ -98,14 +102,18 @@ void Scene::add_ball_velocity(glm::vec3 v) {
 }
 
 
-void Scene::computePhysics(float dt){
+void Scene::compute_physics(float dt){
     velocity = velocity + acceleration * dt;
     position = position + velocity * dt;
     
+    particles.update(dt, position, sphere.getRadius());
+}
+
+void Scene::check_collisions() {
     if (position.y - sphere.getRadius() < floorPos){
         position.y = floorPos + sphere.getRadius();
         velocity.y *= -.95;
-        particles.spawn(impact, glm::vec3(position.x, floorPos, position.z), 1000);
+        particles.spawn(impact, glm::vec3(position.x, floorPos, position.z), 0.5f * velocity.y * up, sphere.getRadius(), false);
     }
 
     // Positive X wall
@@ -132,22 +140,19 @@ void Scene::computePhysics(float dt){
         velocity.z *= -.95;
     }
 
-    particles.spawn(water, glm::vec3(0.35f, 1.2f, 0.f), 1000);
-    particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 1000);
-
-
-    particles.update(dt);
+    particles.spawn(water, glm::vec3(0.35f, 1.2f, 0.f), glm::vec3(10.f, 0.f, 0.f), 0.075f, true);
+    particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 10.f * up, 0.075f, false);
 }
 
 void Scene::init_floor() {
     float vertices[] = {
         // X      Y     Z     R     G      B      U      V
-        -5.f, 0.f, -5.f, 0.2f, 0.5f, 0.2f, 0.0f, 1.0f,
-        5.f, 0.f, -5.f, 0.2f, 0.5f, 0.2f, 1.0f, 1.0f,
-        5.f, 0.f,  5.f, 0.2f, 0.5f, 0.2f, 1.0f, 0.0f,
-        5.f, 0.f,  5.f, 0.2f, 0.5f, 0.2f, 1.0f, 0.0f,
-        -5.f, 0.f,  5.f, 0.2f, 0.5f, 0.2f, 0.0f, 0.0f,
-        -5.f, 0.f, -5.f, 0.2f, 0.5f, 0.2f, 0.0f, 1.0f,
+        -5.f, 0.f, -5.f, 0.376f, 0.502f, 0.22f, 0.0f, 1.0f,
+        5.f, 0.f, -5.f, 0.376f, 0.502f, 0.22f, 1.0f, 1.0f,
+        5.f, 0.f,  5.f, 0.376f, 0.502f, 0.22f, 1.0f, 0.0f,
+        5.f, 0.f,  5.f, 0.376f, 0.502f, 0.22f, 1.0f, 0.0f,
+        -5.f, 0.f,  5.f, 0.376f, 0.502f, 0.22f, 0.0f, 0.0f,
+        -5.f, 0.f, -5.f, 0.376f, 0.502f, 0.22f, 0.0f, 1.0f,
     };
 
     float normals[] = {
@@ -382,7 +387,9 @@ void Scene::draw(float dt) {
 
     glBindVertexArray(0);
 
-    computePhysics(dt);
+    compute_physics(dt);
+
+    check_collisions();
 }
 
 void Scene::cleanup() {

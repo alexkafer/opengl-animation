@@ -30,8 +30,6 @@
 #define WIN_WIDTH 500
 #define WIN_HEIGHT 500
 
-static const glm::vec3 up(0.0f, 1.0f, 0.0f);
-
 //
 //	Global state variables
 //
@@ -199,7 +197,7 @@ int main(int argc, char *argv[]){
 
 	// Initialize OpenGL
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.529f, 0.808f, .922f, 1.0f);
 
 	// Initialize camera
 	Globals::eye_pos = glm::vec3(15.f, 2.5f, 15.f);
@@ -228,6 +226,8 @@ int main(int argc, char *argv[]){
 			// Display the frame count here any way you want.
 			std::cout << "Framerate: " << frame_count << std::endl;
 
+			scene->print_stats();
+
 			frame_count = 0;
 			last_second_time = current_frame_time;
 		}
@@ -237,17 +237,8 @@ int main(int argc, char *argv[]){
 		// float camX = sin(last_frame_time / 5) * orbit_radius;
 		// float camZ = cos(last_frame_time / 5) * orbit_radius;
 
-		
-
-		// Calculate new camera position
-		// Globals::eye = glm::vec3(camX, 1.0f, camZ);
-
 		// Calculate new view
 		Globals::view = glm::lookAt(Globals::eye_pos, Globals::eye_pos + Globals::eye_dir, up);
-
-		// Send updated info to the GPU
-		
-		// glUniform3fv( shader.uniform("eye"), 1, glm::value_ptr(Globals::eye)); // used in fragment shader
 
 		scene->draw(dt);
 
