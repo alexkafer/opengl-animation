@@ -8,6 +8,7 @@
 
 enum ParticleType { water, fire, impact };
 
+
 class Particles {
         mcl::Shader shader;
         GLuint vao;

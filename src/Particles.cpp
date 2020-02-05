@@ -66,13 +66,15 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
         float life_percent = _life_time[i] / max_lives[type];
 
         _positions[i] += _velocities[i] * dt;
-        _velocities[i] += gravity * dt;
+       
 
         if (_types[i] == fire) {
             _colors[i].g = life_percent;
+        } else {
+            _velocities[i] += gravity * dt;
         }
 
-        _colors[i].a = 1 - life_percent;
+        _colors[i].a = (1 - life_percent) * 0.5f;
 
         bound_particle(i, ball_center, ball_radius);
 
@@ -101,6 +103,9 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
 void Particles::draw(){
     shader.enable();
 
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	glBindVertexArray(vao); // Bind the globally created VAO to the current context
 
 	glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)) ); // model transformation
@@ -126,7 +131,7 @@ void Particles::draw(){
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     
     glDrawArrays(GL_POINTS, 
             0,                   // start

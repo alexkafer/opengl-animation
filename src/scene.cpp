@@ -141,7 +141,7 @@ void Scene::check_collisions() {
     }
 
     particles.spawn(water, glm::vec3(0.35f, 1.2f, 0.f), glm::vec3(10.f, 0.f, 0.f), 0.075f, true);
-    particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 10.f * up, 0.075f, false);
+    particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 5.f * up, 0.075f, false);
 }
 
 void Scene::init_floor() {
