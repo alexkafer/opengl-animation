@@ -17,8 +17,6 @@ struct Vertex {
     glm::vec3 position;
     // normal
     glm::vec3 normal;
-    // normal
-    glm::vec3 color;
     // texCoords
     glm::vec2 texture_coord;
 };
