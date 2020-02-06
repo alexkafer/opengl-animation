@@ -15,6 +15,8 @@
 
 #include "common.h"
 #include "Scene.hpp"
+#include "utils/GLError.h"
+
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtc/type_ptr.hpp>
@@ -191,6 +193,8 @@ int main(int argc, char *argv[]){
 	// IMPORTANT: Only call after gl context has been created
 	framebuffer_size_callback(window, int(Globals::screen_width), int(Globals::screen_height)); 
 
+	check_gl_error();
+
 	// Initialize the scene
 	scene = new Scene();
 	scene->init();
@@ -203,6 +207,8 @@ int main(int argc, char *argv[]){
 	Globals::eye_pos = glm::vec3(15.f, 2.5f, 15.f);
 	
 	lookAt(glm::vec3(0.f, 0.f, 0.f));
+
+	check_gl_error();
 
 	// Game loop
 	float orbit_radius = 15.0f;

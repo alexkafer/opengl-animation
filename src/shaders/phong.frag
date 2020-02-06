@@ -4,7 +4,7 @@ out vec4 outColor;
 
 in vec3 vposition;
 in vec3 vnormal;
-// in vec2 vtexture_coord;
+in vec2 vtexture_coord;
 in vec3 vcolor;
 
 uniform vec3 eye;
@@ -18,8 +18,8 @@ uniform vec4 materialSpecular;          // material specular color
 uniform float materialShininess;        // material specular shininess
 
 // uniform sampler2D texture_map;
-// uniform sampler2D texture_map;                 // texture map #1
-// uniform bool texture_used;
+uniform sampler2D texture_map;                 // texture map #1
+uniform bool texture_used;
 
 
 vec3 phong(vec3 normal, vec3 light, vec3 view) {
@@ -28,8 +28,9 @@ vec3 phong(vec3 normal, vec3 light, vec3 view) {
     float dotNL = max(dot(normal, light), 0.0);
     color += vcolor * materialDiffuse.rgb * dotNL;    // add diffuse
 
-    // if(texture_used)
-        // color *= texture(texture_map, vtexture_coord).rgb;                // modulate texture map
+    if(texture_used) {
+        color *= texture(texture_map, vtexture_coord).rgb;                // modulate texture map
+    }
 
     if( false && dot(normal, light) > 0.0 ){
         vec3 reflectDir = reflect(-light, normal);  
@@ -58,6 +59,5 @@ void main(){
     vec3 view = normalize(eye-vposition);
 
 	vec3 result = phong( normal, light_dir, view );
-    // outColor = texture(texture_map, vtexture_coord);
 	outColor = vec4(result, materialDiffuse.a);
 } 

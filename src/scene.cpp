@@ -154,7 +154,7 @@ void Scene::check_collisions() {
     }
 
     particles.spawn(water, glm::vec3(0.35f, 1.2f, 0.f), glm::vec3(10.f, 0.f, 0.f), 0.075f, true);
-    // particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 5.f * up, 0.075f, false);
+    particles.spawn(fire, glm::vec3(-1.2f, 0.f, -8.f), 1.f * up, 0.075f, false);
 }
 
 void Scene::init_floor() {
@@ -392,7 +392,7 @@ void Scene::draw(float dt) {
 
     glm::mat4 camp_fire_translate = glm::translate(
         glm::mat4( 1.0f ),
-        glm::vec3( -2.0f, -0.1f, -4.0f )
+        glm::vec3( -4.0f, -0.1f, -8.0f )
     );
 
     glm::mat4 camp_fire_model = glm::scale(  // Scale first
