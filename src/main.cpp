@@ -80,7 +80,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 	 if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-    	scene->add_ball_velocity(glm::vec3(1.f, 5.f, 1.5f));
+    	// scene->add_ball_velocity(glm::vec3(1.f, 5.f, 1.5f));
 	 }
 }
 

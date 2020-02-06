@@ -6,15 +6,21 @@
 //	Global state variables
 //
 namespace Globals {
-	extern int screenWidth;
-	extern int screenHeight;
+	extern int screen_width;
+	extern int screen_height;
 	extern float aspect;
 
-	extern glm::vec3 eye;
+	extern float mouse_x;
+	extern float mouse_y;
+	extern bool first_mouse;
+
+	extern float yaw;
+	extern float pitch;
+
+	extern glm::vec3 eye_pos;
+	extern glm::vec3 eye_dir;
 	extern glm::vec4 light;
 
 	extern glm::mat4 view;
 	extern glm::mat4 projection;
-
-	extern bool track_ball;
 }

@@ -8,6 +8,7 @@
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <time.h> 
+#include <algorithm>    // std::sort
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
 
@@ -36,7 +37,7 @@ void Particles::init() {
 }
 
 void Particles::spawn(ParticleType type, glm::vec3 location, glm::vec3 magnitude, float radius, bool face_x) { 
-    int num_particles = int(150*glm::length(magnitude));
+    int num_particles = int(500*glm::length(magnitude));
 
     _positions.reserve(num_particles);
     _types.reserve(num_particles);
@@ -54,6 +55,10 @@ void Particles::spawn(ParticleType type, glm::vec3 location, glm::vec3 magnitude
         }
         _types.push_back(type);
         _velocities.push_back(rand_velocity(magnitude));
+
+        glm::vec3 color = colors[type];
+        color.g += 0.5f * (double) rand() / RAND_MAX;
+
         _colors.push_back(colors[type]);
         _life_time.push_back(0.f);
     }
@@ -66,19 +71,15 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
         float life_percent = _life_time[i] / max_lives[type];
 
         _positions[i] += _velocities[i] * dt;
-       
 
-        if (_types[i] == fire) {
-            _colors[i].g = life_percent;
-        } else {
-            _velocities[i] += gravity * dt;
-        }
-
-        if (_types[i] == water) {
-            _colors[i] += 0.001f * glm::length(_velocities[i]);
-        }
-
-        _colors[i].a = (1 - life_percent) * 0.5f;
+    
+        _velocities[i].x += 20.f * (ball_center.x - _positions[i].x) * dt;
+        _velocities[i].y += 0.1f;
+        _velocities[i].z += 20.f * (ball_center.z - _positions[i].z) * dt;
+    
+        _colors[i].g = fmin(_colors[i].g + dt, 1.0f);
+      
+        // _colors[i].a = (1 - life_percent) * 0.5f;
 
         bound_particle(i, ball_center, ball_radius);
 
@@ -103,8 +104,36 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
     }
 }
 
+struct FurthestDistance {
+        FurthestDistance(const Particles& c) : particles(c) {}
+        bool operator () ( const size_t & i1, const size_t & i2 ) {
+            return (glm::distance(particles._positions[i1], Globals::eye_pos) < glm::distance(particles._positions[i2], Globals::eye_pos)); 
+        } 
+        const Particles& particles;
+};
+
+void Particles::sort_particles() {
+
+    std::sort(_sorted_particles.begin(), _sorted_particles.end(), FurthestDistance(*this));
+}
+
+
+
 
 void Particles::draw(){
+
+    sort_particles();
+
+    size_t num_particles = _sorted_particles.size();
+    glm::vec3 positions[num_particles];
+    glm::vec4 colors[num_particles];
+
+    for (size_t i = 0; i < num_particles; i++)
+    {
+        positions[i] = _positions[_sorted_particles[i]];
+        colors[i] = _colors[_sorted_particles[i]];
+    }
+
     shader.enable();
 
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -125,11 +154,11 @@ void Particles::draw(){
 
     
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, 3 * _positions.size() * sizeof(float), _positions.data(), GL_DYNAMIC_DRAW);   
+    glBufferData(GL_ARRAY_BUFFER, 3 * num_particles * sizeof(float), positions, GL_DYNAMIC_DRAW);   
     glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);  
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * _colors.size() * sizeof(float), _colors.data(), GL_DYNAMIC_DRAW);   
+    glBufferData(GL_ARRAY_BUFFER, 4 * num_particles * sizeof(float), colors, GL_DYNAMIC_DRAW);   
     glVertexAttribPointer(attribVertexColor, 4, GL_FLOAT, GL_FALSE, 0, (void*) 0);  
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -158,7 +187,7 @@ glm::vec3 Particles::rand_point_on_disk_up(float radius) {
     float x = r * sin(theta);
     float z = r * cos(theta);
 
-    return glm::vec3(x, (double) rand() / RAND_MAX, z);
+    return glm::vec3(x, 0.1f, z);
 }
 
 glm::vec3 Particles::rand_point_on_disk_x(float radius) {
@@ -172,9 +201,9 @@ glm::vec3 Particles::rand_point_on_disk_x(float radius) {
 
 glm::vec3 Particles::rand_velocity(glm::vec3 general_direction) {
     return glm::vec3(
-        general_direction.x + (float) rand() / RAND_MAX - 0.5f,
-        general_direction.y + (float) rand() / RAND_MAX - 0.5f,
-        general_direction.z + (float) rand() / RAND_MAX - 0.5f);
+        general_direction.x + 10.f * ((float) rand() / RAND_MAX - .5f),
+        general_direction.y + 10.f * ((float) rand() / RAND_MAX - .5f),
+        general_direction.z + 10.f * ((float) rand() / RAND_MAX - .5f));
 }
 
 void Particles::bound_particle(size_t particle, glm::vec3 ball_center, float ball_radius) {
@@ -189,12 +218,13 @@ void Particles::bound_particle(size_t particle, glm::vec3 ball_center, float bal
  
     glm::vec3 diff_vec = _positions[particle] - ball_center;
 
-    if (abs(glm::length(diff_vec)) <= ball_radius) {
+    if (abs(glm::length(diff_vec)) < ball_radius) {
         glm::vec3 normal = glm::normalize(diff_vec);
-        _positions[particle] = ball_center + (ball_radius * 1.01f) * normal;
+        _positions[particle] = ball_center + (ball_radius * 1.05f) * normal;
 
         glm::vec3 vnorm = glm::dot(normal, _velocities[particle]) * normal;
         _velocities[particle] -= vnorm;
-        _velocities[particle] = 0.5f * vnorm;
+        _velocities[particle] -= 0.5f * vnorm;
+        _velocities[particle].y  = 0;
     }
 }
