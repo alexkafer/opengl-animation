@@ -1,13 +1,16 @@
 #include "Scene.hpp"
 
-#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
-#include "tiny_obj_loader.h"
-
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 Scene::Scene () {
     	// Initialize the shader (which uses glew, so we need to init that first).
@@ -19,11 +22,16 @@ Scene::Scene () {
         particles = Particles();
 	    particles.init();
 
-        sphere = Sphere(1.f, 36, 18);
+        sphere = Sphere(0.75f, 36, 18);
 
-        std::stringstream model_ss; model_ss << MY_MODELS_DIR << "Firehydrant/";
-        fire_hydrant_size = load_model(fire_hydrant_vbo, model_ss.str() + "firehydrant.obj", model_ss.str());
+        fire_hydrant = new Model("Firehydrant/", "firehydrant.obj", shader);
+        camp_fire = new Model("campfire/", "Campfire.obj", shader);
 
+        // std::stringstream fire_hydrant_ss; fire_hydrant_ss << MY_MODELS_DIR << "Firehydrant/";
+        // fire_hydrant_size = load_model(fire_hydrant_vbo, fire_hydrant_ss.str() + "firehydrant.obj", fire_hydrant_ss.str());
+
+        // std::stringstream camp_fire_ss; camp_fire_ss << MY_MODELS_DIR << "campfire/";
+        // camp_fire_size = load_model(camp_fire_vbo, camp_fire_ss.str() + "Campfire.obj", camp_fire_ss.str());
         acceleration = glm::vec3(0, -9.8f, 0);
         position = glm::vec3(0, 10.0f, 0);
         velocity = glm::vec3(2.f, 0, 2.5f);
@@ -37,61 +45,66 @@ void Scene::print_stats() {
 }
 
 // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
-GLuint Scene::load_model(GLuint & vbo, std::string obj_file, std::string mtl_dir) {
-    tinyobj::attrib_t attributes;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
+// GLuint Scene::load_model(GLuint & vbo, std::string obj_file, std::string mtl_dir) {
+//     tinyobj::attrib_t attributes;
+//     std::vector<tinyobj::shape_t> shapes;
+//     std::vector<tinyobj::material_t> materials;
 
-    std::string warn;
-    std::string err;
+//     std::string warn;
+//     std::string err;
 
-    bool ret = tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, obj_file.c_str(), mtl_dir.c_str());
+//     bool ret = tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, obj_file.c_str(), mtl_dir.c_str());
 
-    if (!warn.empty()) {
-        std::cout << warn << std::endl;
-    }
+//     if (!warn.empty()) {
+//         std::cout << warn << std::endl;
+//     }
 
-    if (!err.empty()) {
-        std::cerr << err << std::endl;
-    }
+//     if (!err.empty()) {
+//         std::cerr << err << std::endl;
+//     }
 
-    if (!ret) {
-        exit(1);
-    }
+//     if (!ret) {
+//         exit(1);
+//     }
 
-    std::vector<Vertex> vertices;
-    for (int i = 0; i < shapes.size(); i ++) {
-        tinyobj::shape_t &shape = shapes[i];
-        tinyobj::mesh_t &mesh = shape.mesh;
-        // we could visit the mesh index by using mesh.indices
-        for (int j = 0; j < mesh.indices.size(); j++) {
-            tinyobj::index_t i = mesh.indices[j];
-            glm::vec3 position = {
-                attributes.vertices[i.vertex_index * 3],
-                attributes.vertices[i.vertex_index * 3 + 1],
-                attributes.vertices[i.vertex_index * 3 + 2]
-            };
-            glm::vec3 normal = {
-                attributes.vertices[i.normal_index * 3],
-                attributes.vertices[i.normal_index * 3 + 1],
-                attributes.vertices[i.normal_index * 3 + 2]
-            };
-            glm::vec2 texCoord = {
-                attributes.vertices[i.texcoord_index * 2],
-                attributes.vertices[i.texcoord_index * 2 + 1],
-            };
-            // Not gonna care about texCoord right now.
-            Vertex vert = { position, normal, texCoord };
-            vertices.push_back(vert);
-        }
-    }
+//     std::vector<Vertex> vertices;
+//     for (int i = 0; i < shapes.size(); i ++) {
+//         tinyobj::shape_t &shape = shapes[i];
+//         tinyobj::mesh_t &mesh = shape.mesh;
+//         // we could visit the mesh index by using mesh.indices
+//         for (int j = 0; j < mesh.indices.size(); j++) {
+//             tinyobj::index_t i = mesh.indices[j];
+//             glm::vec3 position = {
+//                 attributes.vertices[i.vertex_index * 3],
+//                 attributes.vertices[i.vertex_index * 3 + 1],
+//                 attributes.vertices[i.vertex_index * 3 + 2]
+//             };
+//             glm::vec3 normal = {
+//                 attributes.vertices[i.normal_index * 3],
+//                 attributes.vertices[i.normal_index * 3 + 1],
+//                 attributes.vertices[i.normal_index * 3 + 2]
+//             };
+//             glm::vec2 texCoord = {
+//                 attributes.vertices[i.texcoord_index * 2],
+//                 attributes.vertices[i.texcoord_index * 2 + 1],
+//             };
+//             // Not gonna care about texCoord right now.
+//             Vertex vert = { position, normal, texCoord };
+//             vertices.push_back(vert);
+//         }
+//     }
 
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+//     // std::vector<Vertex> vertices;
+//     for (const auto& material : materials) {
+//         std::cout << "material name: " << material.name << "asking for: " << material.diffuse_texname  << std::endl;
+//     }
 
-    return vertices.size();
-}
+//     glGenBuffers(1, &vbo);
+//     glBindBuffer(GL_ARRAY_BUFFER, vbo);
+//     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+
+//     return vertices.size();
+// }
 
 glm::vec3 Scene::get_ball_position() {
     return position;
@@ -113,7 +126,7 @@ void Scene::check_collisions() {
     if (position.y - sphere.getRadius() < floorPos){
         position.y = floorPos + sphere.getRadius();
         velocity.y *= -.95;
-        particles.spawn(impact, glm::vec3(position.x, floorPos, position.z), 0.5f * velocity.y * up, sphere.getRadius(), false);
+        particles.spawn(impact, glm::vec3(position.x, floorPos, position.z), 0.3f * velocity.y * up, sphere.getRadius(), false);
     }
 
     // Positive X wall
@@ -141,7 +154,7 @@ void Scene::check_collisions() {
     }
 
     particles.spawn(water, glm::vec3(0.35f, 1.2f, 0.f), glm::vec3(10.f, 0.f, 0.f), 0.075f, true);
-    particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 5.f * up, 0.075f, false);
+    // particles.spawn(fire, glm::vec3(0.f, 2.f, 0.f), 5.f * up, 0.075f, false);
 }
 
 void Scene::init_floor() {
@@ -235,45 +248,45 @@ void Scene::init_static_uniforms()
     glUniform1f(uniformMaterialShininess, materialShininess);
 }
 
-void Scene::draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size) {
-    GLint attribVertexPosition  = shader.attribute("in_position");
-	GLint attribVertexNormal    = shader.attribute("in_normal");
-    GLint attribVertexColor     = shader.attribute("in_color");
-	// GLint attribVertexTexture    = shader.attribute("in_texture");
+// void Scene::draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size) {
+//     GLint attribVertexPosition  = shader.attribute("in_position");
+// 	GLint attribVertexNormal    = shader.attribute("in_normal");
+//     GLint attribVertexColor     = shader.attribute("in_color");
+// 	// GLint attribVertexTexture    = shader.attribute("in_texture");
 
-    glVertexAttrib3f(attribVertexColor, 0.5, 0.2, 0.2);
+//     glVertexAttrib3f(attribVertexColor, 0.5, 0.2, 0.2);
 
-    // activate attribs
-    glEnableVertexAttribArray(attribVertexPosition);
-    glEnableVertexAttribArray(attribVertexNormal);
-    // glEnableVertexAttribArray(attribVertexTexture)
+//     // activate attribs
+//     glEnableVertexAttribArray(attribVertexPosition);
+//     glEnableVertexAttribArray(attribVertexNormal);
+//     // glEnableVertexAttribArray(attribVertexTexture)
 
-    // glm::mat4 matrix_normal = glm::mat4(0.1f);
-    // matrix_normal[3] = glm::vec4(0,0,0,1);
+//     // glm::mat4 matrix_normal = glm::mat4(0.1f);
+//     // matrix_normal[3] = glm::vec4(0,0,0,1);
 
-    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(matrix_model)); // model transformation
-    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_model)); // projection matrix
+//     glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(matrix_model)); // model transformation
+//     glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_model)); // projection matrix
 		
-    // set attrib arrays using glVertexAttribPointer()
-    // bind vbo for floor
-    glBindBuffer(GL_ARRAY_BUFFER, model_vao);
-    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, nullptr);
-    glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 3));
-    // glVertexAttribPointer(attribVertexTexture, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 6));
+//     // set attrib arrays using glVertexAttribPointer()
+//     // bind vbo for floor
+//     glBindBuffer(GL_ARRAY_BUFFER, model_vao);
+//     glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, nullptr);
+//     glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 3));
+//     // glVertexAttribPointer(attribVertexTexture, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 6));
 
-    // draw a sphere with VBO
-    glDrawArrays(GL_TRIANGLES, 0, model_size); //(Primitives, Which VBO, Number of vertices)
+//     // draw a sphere with VBO
+//     glDrawArrays(GL_TRIANGLES, 0, model_size); //(Primitives, Which VBO, Number of vertices)
 
-    glDisableVertexAttribArray(attribVertexPosition);
-    glDisableVertexAttribArray(attribVertexNormal);
-    // glDisableVertexAttribArray(attribVertexTexture);
+//     glDisableVertexAttribArray(attribVertexPosition);
+//     glDisableVertexAttribArray(attribVertexNormal);
+//     // glDisableVertexAttribArray(attribVertexTexture);
 
-    // glUniform1i(shader.uniform("texture_map"), 0);
-    // glUniform1i(shader.uniform("texture_used"), 1);
+//     // glUniform1i(shader.uniform("texture_map"), 0);
+//     // glUniform1i(shader.uniform("texture_used"), 1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-}
+//     glBindBuffer(GL_ARRAY_BUFFER, 0);
+//     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+// }
 
 void Scene::draw_ball(float dt) {
     GLint attribVertexPosition  = shader.attribute("in_position");
@@ -370,17 +383,38 @@ void Scene::draw(float dt) {
     draw_ball(dt);
     draw_floor();
 
-    // glm::mat4 fire_hydrant_translate = glm::translate(
-    //     glm::mat4( 1.0f ),
-    //     glm::vec3( 0.0f, 0.5f, 0.0f )
-    // );
+    
 
     glm::mat4 fire_hydrant_model = glm::scale(  // Scale first
         glm::mat4( 1.0f ),              // Translate second
         glm::vec3( 0.5f, 0.5f, 0.5f )
     );
 
-    draw_model(fire_hydrant_model, fire_hydrant_vbo, fire_hydrant_size);
+    glm::mat4 camp_fire_translate = glm::translate(
+        glm::mat4( 1.0f ),
+        glm::vec3( -2.0f, -0.1f, -4.0f )
+    );
+
+    glm::mat4 camp_fire_model = glm::scale(  // Scale first
+        camp_fire_translate,              // Translate second
+        glm::vec3( 0.2f, 0.2f, 0.2f )
+    );
+    
+    glm::mat4 fire_hydrant_normal = fire_hydrant_model;
+    fire_hydrant_normal[3] = glm::vec4(0,0,0,1);
+
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(fire_hydrant_model)  );
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(fire_hydrant_normal)); // projection matrix
+    fire_hydrant->draw(shader);
+
+    glm::mat4 camp_fire_normal = camp_fire_model;
+    camp_fire_normal[3] = glm::vec4(0,0,0,1);
+
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(camp_fire_model)  );
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(camp_fire_normal)); // projection matrix
+    camp_fire->draw(shader);
+    // draw_model(fire_hydrant_model, fire_hydrant_vbo, fire_hydrant_size);
+    // draw_model(camp_fire_model, camp_fire_vbo, camp_fire_size);
 
 
 	particles.draw();

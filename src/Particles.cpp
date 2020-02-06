@@ -13,7 +13,7 @@ static glm::vec3 gravity(0.f, -9.8f, 0.f);
 
 // static const glm::vec3 initial_directions[3] = {glm::vec3(10.f, 0.f, 0.f), glm::vec3(0.f, 5.f, 0.f), glm::vec3(0.f, 0.1f, 0.f)};
 // static const float initial_radius[3] = {0.075f, 0.075f, 0.5f};
-static const glm::vec4 colors[3] = {glm::vec4(0.f, 0.467f, 0.745f, .5f), glm::vec4(1.f, 0.f, 0.f, 1.0f), glm::vec4(0.05f, 0.2f, 0.0f, 1.0f)};
+static const glm::vec4 colors[3] = {glm::vec4(0.f, 0.367f, 0.645f, .7f), glm::vec4(1.f, 0.f, 0.f, 1.0f), glm::vec4(0.05f, 0.2f, 0.0f, 1.0f)};
 static const float max_lives[3] = { 3.f, 1.f, 1.5f };
 
 Particles::Particles () {
@@ -36,7 +36,7 @@ void Particles::init() {
 }
 
 void Particles::spawn(ParticleType type, glm::vec3 location, glm::vec3 magnitude, float radius, bool face_x) { 
-    int num_particles = int(100*glm::length(magnitude));
+    int num_particles = int(150*glm::length(magnitude));
 
     _positions.reserve(num_particles);
     _types.reserve(num_particles);
@@ -72,6 +72,10 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
             _colors[i].g = life_percent;
         } else {
             _velocities[i] += gravity * dt;
+        }
+
+        if (_types[i] == water) {
+            _colors[i] += 0.001f * glm::length(_velocities[i]);
         }
 
         _colors[i].a = (1 - life_percent) * 0.5f;
@@ -168,21 +172,29 @@ glm::vec3 Particles::rand_point_on_disk_x(float radius) {
 
 glm::vec3 Particles::rand_velocity(glm::vec3 general_direction) {
     return glm::vec3(
-        general_direction.x + 0.5 * (double) rand() / RAND_MAX,
-        general_direction.y + 0.5 * (double) rand() / RAND_MAX,
-        general_direction.z + 0.5 * (double) rand() / RAND_MAX);
+        general_direction.x + (float) rand() / RAND_MAX - 0.5f,
+        general_direction.y + (float) rand() / RAND_MAX - 0.5f,
+        general_direction.z + (float) rand() / RAND_MAX - 0.5f);
 }
 
 void Particles::bound_particle(size_t particle, glm::vec3 ball_center, float ball_radius) {
     if (_positions[particle].y < 0) {
         _positions[particle].y = 0;
-        _velocities[particle].y *= -.4; //bounce factor
+        _velocities[particle].x += 2.f * (float) rand() / RAND_MAX - 1.f;
+        _velocities[particle].y *= -0.5; //bounce factor
+        _velocities[particle].z += 2.f * (float) rand() / RAND_MAX - 1.f;
+        _velocities[particle] *= 0.8; //bounce factor
         return;
     }
  
-    glm::vec3 normal = _positions[particle] - ball_center;
+    glm::vec3 diff_vec = _positions[particle] - ball_center;
 
-    if (glm::length(normal) < ball_radius) {
-        _velocities[particle] = 2 * glm::dot(normal, _velocities[particle]) * normal - _velocities[particle];
+    if (abs(glm::length(diff_vec)) <= ball_radius) {
+        glm::vec3 normal = glm::normalize(diff_vec);
+        _positions[particle] = ball_center + (ball_radius * 1.01f) * normal;
+
+        glm::vec3 vnorm = glm::dot(normal, _velocities[particle]) * normal;
+        _velocities[particle] -= vnorm;
+        _velocities[particle] = 0.5f * vnorm;
     }
 }

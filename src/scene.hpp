@@ -4,15 +4,9 @@
 #include "common.h"
 
 #include "Particles.hpp"
-#include "shader.hpp"
-#include "geometry/Sphere.h"
 
-class Vertex {
-    public:
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 texCoord;
-};
+#include "geometry/model.h"
+#include "geometry/Sphere.h"
 
 static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
@@ -26,9 +20,9 @@ class Scene {
         // GLuint mobile_launcher_size;
         // GLuint mobile_launcher_vbo;
 
-        GLuint fire_hydrant_size;
-        GLuint fire_hydrant_vbo;
-
+        Model * fire_hydrant;
+        Model * camp_fire;
+        
         glm::vec3 acceleration;
         glm::vec3 position;
         glm::vec3 velocity;
@@ -45,7 +39,7 @@ class Scene {
         void init_floor();
         void init_static_uniforms();
 
-        GLuint load_model(GLuint & vbo, std::string obj_file, std::string mtl_dir);
+        // GLuint load_model(GLuint & vbo, std::string obj_file, std::string mtl_dir);
 
         void draw_ball(float dt);
         void draw_floor();
