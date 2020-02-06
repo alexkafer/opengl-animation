@@ -14,6 +14,6 @@ void main() {
     vposition = vec3(model * vec4(in_position, 1.0));
     vcolor = in_color;
 	gl_Position = projection * view * vec4(vposition, 1.0);
-    gl_PointSize = 10.0;
+    gl_PointSize = 5.0;
 }
 

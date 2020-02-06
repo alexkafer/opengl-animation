@@ -85,6 +85,11 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
     }
 }
 
+// Compares two particles and sort back to front for the rendering 
+bool CompareParticles(Particle p1, Particle p2) 
+{ 
+    return (glm::distance( p1.position, Globals::eye_pos ) > glm::distance( p2.position, Globals::eye_pos )); 
+} 
 
 void Particles::draw(){
 
@@ -106,6 +111,7 @@ void Particles::draw(){
     glEnableVertexAttribArray(attribVertexPosition);    
     glEnableVertexAttribArray(attribVertexColor);    
 
+sort(_particles.begin(), _particles.end(), CompareParticles);
     
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, _particles.size() * sizeof(Particle), _particles.data(), GL_DYNAMIC_DRAW);   
