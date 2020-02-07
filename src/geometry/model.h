@@ -56,7 +56,6 @@ public:
     Model(const std::string &directory, const std::string &obj_file, mcl::Shader & shader)
     {
         textures = std::map<std::string, GLuint>();
-        // meshes = std::vector<Mesh>();
         materials = std::vector<tinyobj::material_t>();
         mtl_dir = directory;
 
@@ -68,11 +67,6 @@ public:
     // draws the model, and thus all its meshes
     void draw(mcl::Shader & shader)
     {
-        // for(unsigned int i = 0; i < meshes.size(); i++)
-        //     meshes[i].draw(shader, materials, textures);
-        // for(unsigned int i = 0; i < meshes.size(); i++) {}
-        //     meshes[i].draw(shader, materials, textures);
-
         GLuint attribVertexPosition  = shader.attribute("in_position");
         GLuint attribVertexNormal    = shader.attribute("in_normal");
         GLuint attribVertexColor    = shader.attribute("in_color");

@@ -1,6 +1,7 @@
 #include "Particles.hpp"
 
 #include "common.h"
+#include "stb_image.h"
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -8,13 +9,14 @@
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <time.h> 
+#include <algorithm>    // std::sort
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
 
 // static const glm::vec3 initial_directions[3] = {glm::vec3(10.f, 0.f, 0.f), glm::vec3(0.f, 5.f, 0.f), glm::vec3(0.f, 0.1f, 0.f)};
 // static const float initial_radius[3] = {0.075f, 0.075f, 0.5f};
 static const glm::vec4 colors[3] = {glm::vec4(0.f, 0.367f, 0.645f, .7f), glm::vec4(1.f, 0.f, 0.f, 1.0f), glm::vec4(0.05f, 0.2f, 0.0f, 1.0f)};
-static const float max_lives[3] = { 3.f, 1.f, 1.5f };
+static const float max_lives[3] = { 3.f, .75f, 1.5f };
 
 Particles::Particles () {
     srand(time(0));
@@ -24,7 +26,7 @@ Particles::Particles () {
 }
 
 void Particles::print_stats() {
-    std::cout << "Particles: " << _positions.size() << std::endl;
+    std::cout << "Particles: " << _particles.size() << std::endl;
 }
 
 void Particles::init() {
@@ -36,66 +38,41 @@ void Particles::init() {
 }
 
 void Particles::spawn(ParticleType type, glm::vec3 location, glm::vec3 magnitude, float radius, bool face_x) { 
-    int num_particles = int(150*glm::length(magnitude));
 
-    _positions.reserve(num_particles);
-    _types.reserve(num_particles);
-    _velocities.reserve(num_particles);
-    _colors.reserve(num_particles);
-    _life_time.reserve(num_particles);
+    int num_particles = int(1000*glm::length(magnitude));
 
-    
+    _particles.reserve(num_particles);
 
     for (int i = 0; i < num_particles; i++) {
+        glm::vec3 position;
         if (face_x) {
-            _positions.push_back(rand_point_on_disk_x(radius) + location);
+           position = (rand_point_on_disk_x(radius) + location);
         } else {
-            _positions.push_back(rand_point_on_disk_up(radius) + location);
+            position = (rand_point_on_disk_up(radius) + location);
         }
-        _types.push_back(type);
-        _velocities.push_back(rand_velocity(magnitude));
-        _colors.push_back(colors[type]);
-        _life_time.push_back(0.f);
+
+        _particles.emplace_back(position, .05f, rand_velocity(magnitude),  colors[type], type);
     }
 }
 
 void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
-    for(size_t i = 0, size = _positions.size(); i != size; ++i)
+    for(size_t i = 0, size = _particles.size(); i != size; ++i)
     {
-        ParticleType type = _types[i];
-        float life_percent = _life_time[i] / max_lives[type];
+        float life_percent = _particles[i].life_time / max_lives[_particles[i].type];
 
-        _positions[i] += _velocities[i] * dt;
+        _particles[i].position += _particles[i].velocity * dt;
+
+        _particles[i].velocity. += gravity * dt;
        
+        _particles[i].color += 0.001f * glm::length(_velocities[i]);
+        _particles[i].color.a = (1 - life_percent) * 0.5f;
 
-        if (_types[i] == fire) {
-            _colors[i].g = life_percent;
-        } else {
-            _velocities[i] += gravity * dt;
-        }
+        bound_particle(_particles[i], ball_center, ball_radius);
 
-        if (_types[i] == water) {
-            _colors[i] += 0.001f * glm::length(_velocities[i]);
-        }
+        if ((_particles[i].life_time += dt) > max_lives[_particles[i].type]) {
+            _particles[i] = std::move(_particles.back());
 
-        _colors[i].a = (1 - life_percent) * 0.5f;
-
-        bound_particle(i, ball_center, ball_radius);
-
-        // Update the life time and purge if needed.
-        if ((_life_time[i] += dt) > max_lives[type]) {
-            _positions[i] = std::move(_positions.back());
-            _types[i] = std::move(_types.back());
-            _velocities[i] = std::move(_velocities.back());
-            _colors[i] = std::move(_colors.back());
-            _life_time[i] = std::move(_life_time.back());
-
-
-            _positions.pop_back();
-            _types.pop_back();
-            _velocities.pop_back();
-            _colors.pop_back();
-            _life_time.pop_back();
+            _particles.pop_back();
 
             size--;
             i--;
@@ -103,12 +80,20 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
     }
 }
 
+// Compares two particles and sort back to front for the rendering 
+bool CompareParticles(Particle p1, Particle p2) 
+{ 
+    return (glm::distance( p1.position, Globals::eye_pos ) > glm::distance( p2.position, Globals::eye_pos )); 
+} 
 
 void Particles::draw(){
+
     shader.enable();
 
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);
 
 	glBindVertexArray(vao); // Bind the globally created VAO to the current context
 
@@ -134,9 +119,6 @@ void Particles::draw(){
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-    
     glDrawArrays(GL_POINTS, 
             0,                   // start
             _positions.size());   // # of particples
@@ -172,29 +154,30 @@ glm::vec3 Particles::rand_point_on_disk_x(float radius) {
 
 glm::vec3 Particles::rand_velocity(glm::vec3 general_direction) {
     return glm::vec3(
-        general_direction.x + (float) rand() / RAND_MAX - 0.5f,
-        general_direction.y + (float) rand() / RAND_MAX - 0.5f,
-        general_direction.z + (float) rand() / RAND_MAX - 0.5f);
+        general_direction.x + ((float) rand() / RAND_MAX - .5f),
+        general_direction.y + ((float) rand() / RAND_MAX - .5f),
+        general_direction.z + ((float) rand() / RAND_MAX - .5f));
 }
 
-void Particles::bound_particle(size_t particle, glm::vec3 ball_center, float ball_radius) {
-    if (_positions[particle].y < 0) {
-        _positions[particle].y = 0;
-        _velocities[particle].x += 2.f * (float) rand() / RAND_MAX - 1.f;
-        _velocities[particle].y *= -0.5; //bounce factor
-        _velocities[particle].z += 2.f * (float) rand() / RAND_MAX - 1.f;
-        _velocities[particle] *= 0.8; //bounce factor
+void Particles::bound_particle(Particle &particle, glm::vec3 ball_center, float ball_radius) {
+    if (particle.position.y < 0) {
+        particle.position.y = 0;
+        particle.velocity.x += 2.f * (float) rand() / RAND_MAX - 1.f;
+        particle.velocity.y *= -0.5; //bounce factor
+        particle.velocity.z += 2.f * (float) rand() / RAND_MAX - 1.f;
+        particle.velocity *= 0.8; //bounce factor
         return;
     }
  
-    glm::vec3 diff_vec = _positions[particle] - ball_center;
+    glm::vec3 diff_vec = particle.position - ball_center;
 
-    if (abs(glm::length(diff_vec)) <= ball_radius) {
+    if (abs(glm::length(diff_vec)) < ball_radius) {
         glm::vec3 normal = glm::normalize(diff_vec);
-        _positions[particle] = ball_center + (ball_radius * 1.01f) * normal;
+        particle.position = ball_center + (ball_radius * 1.01f) * normal;
 
-        glm::vec3 vnorm = glm::dot(normal, _velocities[particle]) * normal;
-        _velocities[particle] -= vnorm;
-        _velocities[particle] = 0.5f * vnorm;
+        glm::vec3 vnorm = glm::dot(normal, particle.velocity) * normal;
+        particle.velocity -= vnorm;
+        particle.velocity -= 0.5f * vnorm;
+        // particle.velocity.y  = 0;
     }
 }
