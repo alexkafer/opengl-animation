@@ -1,6 +1,7 @@
 #include "Particles.hpp"
 
 #include "common.h"
+#include "stb_image.h"
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -34,11 +35,36 @@ void Particles::init() {
 
     glGenVertexArrays(1, &vao); //Create a VAO
     glGenBuffers(2, vbo);
+
+
+    int w, h;
+    int comp;
+
+    std::stringstream texture_ss; texture_ss << MY_MODELS_DIR << "/particles/FireAtlas.png";
+
+    unsigned char* image = stbi_load(texture_ss.str().c_str(), &w, &h, &comp, STBI_default);
+
+    if (!image) {
+        std::cerr << "Unable to load texture: " << texture_ss.str()
+                << std::endl;
+        exit(1);
+    }
+    std::cout << "Loaded texture: " << texture_ss.str() << ", w = " << w
+                << ", h = " << h << ", comp = " << comp << std::endl;
+
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+                                    GL_UNSIGNED_BYTE, image);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(image);
 }
 
 void Particles::spawn(ParticleType type, glm::vec3 location, glm::vec3 magnitude, float radius, bool face_x) { 
 
-    int num_particles = int(50*glm::length(magnitude));
+    int num_particles = int(500*glm::length(magnitude));
 
     _particles.reserve(num_particles);
 
@@ -64,13 +90,13 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
 
         _particles[i].position += _particles[i].velocity * dt;
 
-        _particles[i].velocity.x += 20.f * (ball_center.x - _particles[i].position.x) * dt;
-        _particles[i].velocity.y += 0.1f;
-        _particles[i].velocity.z += 20.f * (ball_center.z - _particles[i].position.z) * dt;
+        _particles[i].velocity.x += 10.f * (ball_center.x - _particles[i].position.x) * dt;
+        // _particles[i].velocity.y += 0.1f;
+        _particles[i].velocity.z += 10.f * (ball_center.z - _particles[i].position.z) * dt;
 
          _particles[i].color.a = (1 - life_percent) * 0.5f;
        
-        _particles[i].color.g = fmin(_particles[i].color.g + dt, 1.0f);
+        _particles[i].color.g = 1 - life_percent; //fmin(_particles[i].color.g + dt, 1.0f);
 
         bound_particle(_particles[i], ball_center, ball_radius);
 
@@ -98,6 +124,8 @@ void Particles::draw(){
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
 	glBindVertexArray(vao); // Bind the globally created VAO to the current context
 
 	glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)) ); // model transformation
@@ -107,16 +135,19 @@ void Particles::draw(){
     
     GLint attribVertexPosition  = shader.attribute("in_position");
     GLint attribVertexColor     = shader.attribute("in_color");
+    GLint attribVertexAge     = shader.attribute("in_age");
 
     glEnableVertexAttribArray(attribVertexPosition);    
     glEnableVertexAttribArray(attribVertexColor);    
+    glEnableVertexAttribArray(attribVertexAge);    
 
-sort(_particles.begin(), _particles.end(), CompareParticles);
+    sort(_particles.begin(), _particles.end(), CompareParticles);
     
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, _particles.size() * sizeof(Particle), _particles.data(), GL_DYNAMIC_DRAW);   
     glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*) 0); 
     glVertexAttribPointer(attribVertexColor, 4, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)offsetof(Particle, color));  
+    glVertexAttribPointer(attribVertexAge, 1, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)offsetof(Particle, life_time));  
     
     glDrawArrays(GL_POINTS, 
             0,                   // start
@@ -153,9 +184,9 @@ glm::vec3 Particles::rand_point_on_disk_x(float radius) {
 
 glm::vec3 Particles::rand_velocity(glm::vec3 general_direction) {
     return glm::vec3(
-        general_direction.x + 10.f * ((float) rand() / RAND_MAX - .5f),
-        general_direction.y + 10.f * ((float) rand() / RAND_MAX - .5f),
-        general_direction.z + 10.f * ((float) rand() / RAND_MAX - .5f));
+        general_direction.x + 5.f * ((float) rand() / RAND_MAX - .5f),
+        general_direction.y + 5.f * ((float) rand() / RAND_MAX - .5f),
+        general_direction.z + 5.f * ((float) rand() / RAND_MAX - .5f));
 }
 
 void Particles::bound_particle(Particle &particle, glm::vec3 ball_center, float ball_radius) {
@@ -174,9 +205,9 @@ void Particles::bound_particle(Particle &particle, glm::vec3 ball_center, float 
         glm::vec3 normal = glm::normalize(diff_vec);
        particle.position = ball_center + (ball_radius * 1.05f) * normal;
 
-        glm::vec3 vnorm = glm::dot(normal, particle.velocity) * normal;
-        particle.velocity -= vnorm;
-        particle.velocity -= 0.5f * vnorm;
-        particle.velocity.y  = 0;
+        // glm::vec3 vnorm = glm::dot(normal, particle.velocity) * normal;
+        // particle.velocity -= vnorm;
+        // particle.velocity -= 0.5f * vnorm;
+        // particle.velocity.y  = 0;
     }
 }

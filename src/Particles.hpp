@@ -24,6 +24,7 @@ class Particles {
         mcl::Shader shader;
         GLuint vao;
         GLuint vbo[2];
+        GLuint texture_id;
 
         std::vector <Particle> _particles;
 
