@@ -9,22 +9,23 @@
 enum ParticleType { water, fire, impact };
 
 struct Particle {
-    glm::vec3 position;
+    glm::vec3 position; // w is the particle size
+    float size;
     glm::vec3 velocity;
     glm::vec4 color;
     float life_time;
     ParticleType type;
 
-    Particle(const glm::vec3 &position_, const glm::vec3& velocity_, const glm::vec4& color_, const ParticleType type_) 
-        : position( position_ ), velocity( velocity_ ), color( color_ ), life_time(0), type(type_){}
+    Particle(const glm::vec3 &position_, float size_, const glm::vec3& velocity_, const glm::vec4& color_, const ParticleType type_) 
+        : position( position_ ), size(size_), velocity( velocity_ ), color( color_ ), life_time(0), type(type_){}
 };
 
 
 class Particles {
         mcl::Shader shader;
         GLuint vao;
-        GLuint vbo[2];
-        GLuint texture_id;
+        GLuint billboard_vertex_buffer, particles_buffer;
+        GLuint texture_id, age_uv_buffer_id;
 
         std::vector <Particle> _particles;
 

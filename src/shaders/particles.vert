@@ -1,26 +1,40 @@
 #version 150 core
 
+in vec3 in_billboard;
 in vec3 in_position;
 in vec4 in_color;
-in float in_age;
+in vec2 in_texture_coord;
+in float in_size;
 
-out vec3 vposition;
+// out vec3 vposition;
 out vec4 vcolor;
 out vec2 vtexture_coord;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+// Values that stay constant for the whole mesh.
+uniform vec3 camera_right_worldspace;
+uniform vec3 camera_up_worldspace;
+uniform mat4 view_projection;
+
+// uniform mat4 model;
+// uniform mat4 view;
+// uniform mat4 projection;
 
 void main() {
-    vposition = vec3(model * vec4(in_position, 1.0));
-    vcolor = in_color;
-    vtexture_coord = vec2((int(in_age * 64.f) % 8) / 8.0, (int(in_age * 64.f) / 8) / 16.0);
+    vec3 vertex_position = in_position
+		+ camera_right_worldspace * in_billboard.x * in_size
+		+ camera_up_worldspace * in_billboard.y * in_size;
+
+
+    // vposition = vec3(model * vec4(in_position, 1.0));
+    // vcolor = in_color;
     
-	gl_Position = projection * view * vec4(vposition, 1.0);
+	gl_Position = view_projection * vec4(vertex_position, 1.0);
+    // in_texture_coord;
+    vtexture_coord = in_billboard.xy + in_texture_coord; //vec2(0.5, 0.5);
+	vcolor = in_color;
     
-    float dist = length(vposition.xyz);
-    float att = inversesqrt(0.1f*dist);
-    gl_PointSize = 8.0f * att;
+    // float dist = length(vposition.xyz);
+    // float att = inversesqrt(0.1f*dist);
+    // gl_PointSize = 8.0f * att;
 }
 
