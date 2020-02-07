@@ -7,5 +7,6 @@ out vec4 outColor;
 uniform sampler2D sprite;
 
 void main() {
-    outColor = texture(sprite, vtexture_coord);
+    // outColor = texture(sprite, vtexture_coord);
+    outColor = vcolor;
 }

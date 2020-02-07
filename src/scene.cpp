@@ -34,7 +34,7 @@ void Scene::compute_physics(float dt){
 }
 
 void Scene::check_collisions() {
-    particles.spawn(fire, glm::vec3(-1.3f, 0.f, -8.f), 1.f * up, 0.1f, false);
+    particles.spawn(fire, glm::vec3(-1.3f, 0.f, -8.f), .5f * up, 0.1f, false);
 }
 
 void Scene::init_floor() {

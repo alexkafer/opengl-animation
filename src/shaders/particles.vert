@@ -29,12 +29,12 @@ void main() {
     // vcolor = in_color;
     
 	gl_Position = view_projection * vec4(vertex_position, 1.0);
-    // in_texture_coord;
-    vtexture_coord = in_billboard.xy + in_texture_coord; //vec2(0.5, 0.5);
+    vtexture_coord = in_texture_coord;
+    // vtexture_coord = in_billboard.xy + vec2(0.5, 0.5);
 	vcolor = in_color;
     
-    // float dist = length(vposition.xyz);
-    // float att = inversesqrt(0.1f*dist);
-    // gl_PointSize = 8.0f * att;
+    float dist = length(vertex_position);
+    float att = inversesqrt(0.1f*dist);
+    gl_PointSize = 8.0f * att;
 }
 
