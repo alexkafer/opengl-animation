@@ -34,12 +34,12 @@ void Particles::init() {
     shader.init_from_files( ss.str()+"vert", ss.str()+"frag" );
 
     glGenVertexArrays(1, &vao); //Create a VAO
-    glGenBuffers(2, vbo);
+    glGenBuffers(1, &vbo);
 }
 
 void Particles::spawn(ParticleType type, glm::vec3 location, glm::vec3 magnitude, float radius, bool face_x) { 
 
-    int num_particles = int(1000*glm::length(magnitude));
+    int num_particles = int(200*glm::length(magnitude));
 
     _particles.reserve(num_particles);
 
@@ -62,9 +62,9 @@ void Particles::update(float dt, glm::vec3 ball_center, float ball_radius){
 
         _particles[i].position += _particles[i].velocity * dt;
 
-        _particles[i].velocity. += gravity * dt;
+        _particles[i].velocity += gravity * dt;
        
-        _particles[i].color += 0.001f * glm::length(_velocities[i]);
+        _particles[i].color += 0.001f * glm::length(_particles[i].velocity);
         _particles[i].color.a = (1 - life_percent) * 0.5f;
 
         bound_particle(_particles[i], ball_center, ball_radius);
@@ -93,8 +93,6 @@ void Particles::draw(){
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-
 	glBindVertexArray(vao); // Bind the globally created VAO to the current context
 
 	glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)) ); // model transformation
@@ -108,20 +106,16 @@ void Particles::draw(){
     glEnableVertexAttribArray(attribVertexPosition);    
     glEnableVertexAttribArray(attribVertexColor);    
 
+    // sort(_particles.begin(), _particles.end(), CompareParticles);
     
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, 3 * _positions.size() * sizeof(float), _positions.data(), GL_DYNAMIC_DRAW);   
-    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0);  
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * _colors.size() * sizeof(float), _colors.data(), GL_DYNAMIC_DRAW);   
-    glVertexAttribPointer(attribVertexColor, 4, GL_FLOAT, GL_FALSE, 0, (void*) 0);  
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, _particles.size() * sizeof(Particle), _particles.data(), GL_DYNAMIC_DRAW);   
+    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(Particle), (void*) 0); 
+    glVertexAttribPointer(attribVertexColor, 4, GL_FLOAT, GL_FALSE, sizeof(Particle), (GLvoid*)offsetof(Particle, color));  
 
     glDrawArrays(GL_POINTS, 
             0,                   // start
-            _positions.size());   // # of particples
+            _particles.size());   // # of particples
 
     glBindVertexArray(0);
 

@@ -25,7 +25,7 @@ struct Particle {
 class Particles {
         mcl::Shader shader;
         GLuint vao;
-         GLuint vbo[2];
+         GLuint vbo;
 
         std::vector <Particle> _particles;
 

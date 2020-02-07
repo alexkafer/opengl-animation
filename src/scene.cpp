@@ -154,7 +154,6 @@ void Scene::check_collisions() {
     }
 
     particles.spawn(water, glm::vec3(0.35f, 1.2f, 0.f), glm::vec3(10.f, 0.f, 0.f), 0.075f, true);
-    particles.spawn(fire, glm::vec3(-1.2f, 0.f, -8.f), 1.f * up, 0.075f, false);
 }
 
 void Scene::init_floor() {
@@ -406,13 +405,7 @@ void Scene::draw(float dt) {
     glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(fire_hydrant_model)  );
     glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(fire_hydrant_normal)); // projection matrix
     fire_hydrant->draw(shader);
-
-    glm::mat4 camp_fire_normal = camp_fire_model;
-    camp_fire_normal[3] = glm::vec4(0,0,0,1);
-
-    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(camp_fire_model)  );
-    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(camp_fire_normal)); // projection matrix
-    camp_fire->draw(shader);
+    
     // draw_model(fire_hydrant_model, fire_hydrant_vbo, fire_hydrant_size);
     // draw_model(camp_fire_model, camp_fire_vbo, camp_fire_size);
 

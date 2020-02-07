@@ -374,7 +374,7 @@ private:
                 //     c[2] /= len;
                 // }
                 // float c[3] = {0.7f, 0.2f, 0.2f};
-                float c[3] = {1.f, 1.f, 1.f};
+                float c[3] = {.7f, .2f, .2f};
 
                 buffer.push_back(c[0]);
                 buffer.push_back(c[1]);
