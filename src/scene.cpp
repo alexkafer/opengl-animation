@@ -166,6 +166,10 @@ void Scene::draw(float dt) {
     compute_physics(dt);
 }
 
+Draggable* Scene::find_draggable(glm::vec3 origin, glm::vec3 direction) {
+    return cloth->find_draggable(origin, direction);
+}
+
 void Scene::cleanup() {
     // Disable the shader, we're done using it
 	shader.disable();

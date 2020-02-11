@@ -1,6 +1,8 @@
 #include "cloth.h"
 
 #include <iostream>
+
+#include <glm/gtx/intersect.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -87,13 +89,11 @@ void Cloth::update(float dt) {
         pointMasses[i].velocity += dt * (gravity + forces[i]);
         pointMasses[i].position += dt * pointMasses[i].velocity;
 
-        std::cout << "Position " << i << " " << glm::to_string(pointMasses[i].position) << std::endl;
+        // std::cout << "Position " << i << " " << glm::to_string(pointMasses[i].position) << std::endl;
 
-        if (pointMasses[i].position.y < 0) {
-            pointMasses[i].position.y = 0;
-            pointMasses[i].velocity.x += 2.f * (((float) rand() / RAND_MAX) - 0.5f);
+        if (pointMasses[i].position.y < ball.getRadius()) {
+            pointMasses[i].position.y = ball.getRadius() + 0.01f;
             pointMasses[i].velocity.y *= -0.5; //bounce factor
-            pointMasses[i].velocity.z += 2.f * (float) rand() / RAND_MAX - 1.f;
             pointMasses[i].velocity *= 0.8; //bounce factor
             return;
         }
@@ -153,6 +153,20 @@ void Cloth::draw(mcl::Shader & shader) {
     glBindVertexArray(0);
 
     shader.disable();
+}
+
+Draggable * Cloth::find_draggable(glm::vec3 origin, glm::vec3 direction) {
+    float radius = pow(ball.getRadius(), 2);
+    for(size_t i = 0; i < pointMasses.size(); i++) {
+        // Ray sphere intersection
+        float distance; 
+        if (glm::intersectRaySphere(origin, direction, pointMasses[i].position, radius, distance)) {
+            std::cout << "Found intersection! " << distance << std::endl;
+            return &pointMasses[i];
+        }
+    }
+
+    return nullptr;
 }
 
 void Cloth::cleanup() {

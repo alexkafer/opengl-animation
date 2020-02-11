@@ -8,6 +8,7 @@
 #include "geometry/model.h"
 #include "geometry/sphere.h"
 #include "geometry/cloth.h"
+#include "geometry/draggable.h"
 
 static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
@@ -30,6 +31,7 @@ class Scene {
 
         void draw_floor();
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);
+        
 
     public:
         Scene();
@@ -38,6 +40,7 @@ class Scene {
         void init();
 
         void draw(float dt);
+        Draggable* find_draggable(glm::vec3 origin, glm::vec3 direction);
 
         void cleanup();
 };

@@ -15,6 +15,7 @@
 
 #include "common.h"
 #include "scene.h"
+#include "geometry/draggable.h"
 #include "utils/GLError.h"
 
 #include <glm/gtx/string_cast.hpp>
@@ -42,13 +43,18 @@ namespace Globals {
 
 	float mouse_x;
 	float mouse_y;
-	bool first_mouse;
+	bool reset_mouse;
+
+	bool picking_object;
+	Draggable * selected;
+	bool dragging_object;
 
 	float yaw;
 	float pitch;
 
-	glm::vec3 eye_pos;
-	glm::vec3 eye_dir;
+	glm::vec3 camera_target; // Camera is the location we will lerp to
+	glm::vec3 eye_pos; // The current position of the eye
+	glm::vec3 eye_dir; // The current direction 
 	glm::vec4 light;
 
 	glm::mat4 view;
@@ -57,6 +63,10 @@ namespace Globals {
 
 Scene * scene; 
 
+static const float camera_height = 1.f;
+static const float camera_speed = 5.f;
+static const float camera_distance = 1.f;
+
 //
 //	Callbacks
 //
@@ -64,24 +74,40 @@ static void error_callback(int error, const char* description){ fprintf(stderr, 
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 	// Close on escape or Q
-	const float cameraSpeed = 0.5f;
+	
 
 	if( action == GLFW_PRESS || action == GLFW_REPEAT){
 		switch ( key ) {
 			case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
-			case GLFW_KEY_W: Globals::eye_pos += cameraSpeed * Globals::eye_dir; break;
-			case GLFW_KEY_S: Globals::eye_pos -= cameraSpeed * Globals::eye_dir; break;
-			case GLFW_KEY_A: Globals::eye_pos -= glm::normalize(glm::cross( Globals::eye_dir, up)) * cameraSpeed; break;
-			case GLFW_KEY_D: Globals::eye_pos += glm::normalize(glm::cross( Globals::eye_dir, up)) * cameraSpeed; break;
+			case GLFW_KEY_LEFT_SHIFT: Globals::camera_target.y -= camera_distance; break;
+			case GLFW_KEY_SPACE: Globals::camera_target.y += camera_distance; break;
+			case GLFW_KEY_W: Globals::camera_target += camera_distance * Globals::eye_dir; break;
+			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
+			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
+			case GLFW_KEY_D: Globals::camera_target += 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
+			case GLFW_KEY_P: Globals::picking_object = true; glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); break;
 		}
 	}
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	 if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-    	// scene->add_ball_velocity(glm::vec3(1.f, 5.f, 1.5f));
-	 }
+	if (button == GLFW_MOUSE_BUTTON_LEFT && Globals::picking_object) {
+
+		if (action == GLFW_PRESS) {
+			std::cout << "Picking object" << std::endl;
+			Globals::dragging_object = true;
+		}
+
+		if (action == GLFW_RELEASE) {
+			Globals::picking_object = false;
+			Globals::dragging_object = false;
+			Globals::reset_mouse = true;
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
+			glfwSetCursorPos(window, Globals::screen_width / 2, Globals::screen_height / 2);
+			std::cout << "stopped picking object" << std::endl;
+		}
+	}
 }
 
 void calculate_eye_direction() {
@@ -94,11 +120,37 @@ void calculate_eye_direction() {
 
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-	if(Globals::first_mouse)
+	if (Globals::picking_object) {
+		// Need to convert the click into a 3D normalized device coordinates
+		// and then 4d Homogeneous Clip Clip coordinates
+		float x = (2.0f * xpos) / Globals::screen_width - 1.0f;
+		float y = 1.0f - (2.0f * ypos) / Globals::screen_height;
+		glm::vec4 ray_clip = glm::vec4(x, y, -1.f, 1.f);
+
+		// Transform from the clip space to view space using the projection matrix
+		glm::vec4 ray_view = glm::inverse(Globals::projection) * ray_clip;
+
+		// We only need x and y, so z should be set to forward (in view space), and homogeneous vector
+		ray_view = glm::vec4(ray_view.x, ray_view.y, -1.0, 0.0);
+
+		glm::vec3 ray_world = glm::normalize(glm::inverse(Globals::view) * ray_view);
+
+		if (Globals::dragging_object && Globals::selected != nullptr) {
+			float distance_from_camera = glm::distance(Globals::eye_pos, Globals::selected->get_position());
+			std::cout << "Distance from camera" << distance_from_camera << std::endl;
+			Globals::selected->set_position(Globals::eye_pos + distance_from_camera * ray_world);
+		} else {
+			Globals::selected = scene->find_draggable(Globals::eye_pos, ray_world);
+		}
+
+		return;
+	};
+
+	if(Globals::reset_mouse)
     {
         Globals::mouse_x = xpos;
         Globals::mouse_y = ypos;
-        Globals::first_mouse = false;
+        Globals::reset_mouse = false;
     }
 
 	float xoffset = xpos - Globals::mouse_x;
@@ -145,6 +197,7 @@ void lookAt(glm::vec3 center)
 }
 
 
+
 //
 //	Main
 //
@@ -164,7 +217,9 @@ int main(int argc, char *argv[]){
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	// Create the glfw window
-	Globals::first_mouse = true;
+	Globals::reset_mouse = true;
+	Globals::picking_object = true;
+	Globals::dragging_object = false;
 	window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "CSCI5611 - Alex Kafer", NULL, NULL);
 
 	glfwGetFramebufferSize(window, &Globals::screen_width, &Globals::screen_height);
@@ -173,7 +228,7 @@ int main(int argc, char *argv[]){
 
 	// Bind callbacks to the window
 	glfwSetKeyCallback(window, &key_callback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+	// glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
 	glfwSetMouseButtonCallback(window, &mouse_button_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetFramebufferSizeCallback(window, &framebuffer_size_callback);
@@ -204,7 +259,7 @@ int main(int argc, char *argv[]){
 	glClearColor(0.529f, 0.808f, .922f, 1.0f);
 
 	// Initialize camera
-	Globals::eye_pos = glm::vec3(15.f, 2.5f, 15.f);
+	Globals::camera_target = Globals::eye_pos = glm::vec3(15.f, 2.5f, 15.f);
 	
 	lookAt(glm::vec3(0.f, 0.f, 0.f));
 
@@ -216,6 +271,8 @@ int main(int argc, char *argv[]){
 	float last_second_time = glfwGetTime();
 	float dt = 0;
 	int frame_count = 0;
+
+	float camera_t = 0;
 	while( !glfwWindowShouldClose(window)){
 	
 		// Clear screen
@@ -239,6 +296,13 @@ int main(int argc, char *argv[]){
 		}
 
 		last_frame_time = current_frame_time;
+
+		Globals::camera_target.y = fmax(camera_height, Globals::camera_target.y);
+		// LERP the eye towards the camera location
+		glm::vec3 camera_direction = Globals::camera_target - Globals::eye_pos;
+		// float camera_frac = fmin(1.0, glm::length(camera_direction) / camera_speed);
+
+		Globals::eye_pos += camera_speed * dt * camera_direction;
 
 		// float camX = sin(last_frame_time / 5) * orbit_radius;
 		// float camZ = cos(last_frame_time / 5) * orbit_radius;
