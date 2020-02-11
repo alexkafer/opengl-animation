@@ -14,7 +14,7 @@
 #define GLM_FORCE_RADIANS //ensure we are using radians
 
 #include "common.h"
-#include "Scene.hpp"
+#include "scene.h"
 #include "utils/GLError.h"
 
 #include <glm/gtx/string_cast.hpp>

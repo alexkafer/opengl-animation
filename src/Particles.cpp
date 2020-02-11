@@ -1,4 +1,4 @@
-#include "Particles.hpp"
+#include "particles.h"
 
 #include "common.h"
 #include "stb_image.h"

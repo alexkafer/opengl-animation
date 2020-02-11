@@ -3,10 +3,11 @@
 
 #include "common.h"
 
-#include "Particles.hpp"
+#include "particles.h"
 
 #include "geometry/model.h"
-#include "geometry/Sphere.h"
+#include "geometry/sphere.h"
+#include "geometry/cloth.h"
 
 static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
@@ -15,13 +16,14 @@ class Scene {
 
         Particles particles; 
         GLuint vao;
+
         Model * camp_fire;
+        Cloth * cloth; 
         
 
         GLuint floor_vbo[2];
 
         void compute_physics(float dt);
-        void check_collisions();
 
         void init_floor();
         void init_static_uniforms();

@@ -14,8 +14,6 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/normal.hpp>
 
-#include "mesh.h"
-
 #include "../tiny_obj_loader.h"
 #include "../stb_image.h"
 #include "../shader.hpp"
@@ -411,57 +409,6 @@ private:
         }
 
         drawObjects.push_back(o);
-    }
-
-    Mesh process_mesh_split(tinyobj::attrib_t &attributes, tinyobj::mesh_t &mesh, mcl::Shader & shader)
-    {
-        // data to fill
-        vector<Vertex> vertices;
-        vector<unsigned int> indices;
-
-        // Check for smoothing group and compute smoothing normals
-        // std::map<int, vec3> smoothVertexNormals;
-        // if (hasSmoothingGroup(shapes[s]) > 0) {
-        //     std::cout << "Compute smoothingNormal for shape [" << s << "]" << std::endl;
-        //     computeSmoothingNormals(attrib, shapes[s], smoothVertexNormals);
-        // }
-
-        // we could visit the mesh index by using mesh.indices
-        for (int j = 0; j < mesh.indices.size(); j++) {
-            tinyobj::index_t i = mesh.indices[j];
-            glm::vec3 position = {
-                attributes.vertices[i.vertex_index * 3],
-                attributes.vertices[i.vertex_index * 3 + 1],
-                attributes.vertices[i.vertex_index * 3 + 2]
-            };
-            
-            glm::vec3 normal = {
-                attributes.normals[i.normal_index * 3],
-                attributes.normals[i.normal_index * 3 + 1],
-                attributes.normals[i.normal_index * 3 + 2]
-            };
-            glm::vec2 texCoord = {
-                attributes.texcoords[i.texcoord_index * 2],
-                attributes.texcoords[i.texcoord_index * 2 + 1],
-            };
-
-            // Not gonna care about texCoord right now.
-            Vertex vert = { position, normal, texCoord };
-            vertices.push_back(vert);
-            indices.push_back(i.vertex_index);
-        }
-
-        size_t material_id;
-
-        // OpenGL viewer does not support texturing with per-face material.
-        if (mesh.material_ids.size() > 0) {
-            material_id = mesh.material_ids[0];  // use the material ID of the first face.
-        } else {
-            material_id = materials.size() - 1;  // = ID for default material.
-        }
-        
-        // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, material_id, shader);
     }
 
     // Source: https://github.com/syoyo/tinyobjloader/blob/eba1fc037e89a593f50d670621c0dbf9882ec78d/examples/viewer/viewer.cc#L221

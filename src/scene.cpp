@@ -1,4 +1,4 @@
-#include "Scene.hpp"
+#include "scene.h"
 
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
@@ -20,9 +20,8 @@ Scene::Scene () {
         shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
 
         particles = Particles();
+        cloth = new Cloth(10);
 	    particles.init();
-
-        camp_fire = new Model("campfire/", "Campfire.obj", shader);
 }
 
 void Scene::print_stats() {
@@ -30,11 +29,8 @@ void Scene::print_stats() {
 }
 
 void Scene::compute_physics(float dt){
+    cloth->update(dt);
     particles.update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
-}
-
-void Scene::check_collisions() {
-    particles.spawn(fire, glm::vec3(-1.3f, 0.f, -8.f), .5f * up, 0.1f, false);
 }
 
 void Scene::init_floor() {
@@ -70,6 +66,7 @@ void Scene::init()
 
     init_floor();
     init_static_uniforms();
+    cloth->init(shader);
 
     shader.disable();
 }
@@ -160,37 +157,21 @@ void Scene::draw(float dt) {
 		
     draw_floor();
 
-    
-    glm::mat4 camp_fire_translate = glm::translate(
-        glm::mat4( 1.0f ),
-        glm::vec3( -4.0f, -0.1f, -8.0f )
-    );
-
-    glm::mat4 camp_fire_model = glm::scale(  // Scale first
-        camp_fire_translate,              // Translate second
-        glm::vec3( 0.2f, 0.2f, 0.2f )
-    );
-
-    glm::mat4 camp_fire_normal = camp_fire_model;
-    camp_fire_normal[3] = glm::vec4(0,0,0,1);
-
-    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(camp_fire_model)  );
-    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(camp_fire_normal)); // projection matrix
-    camp_fire->draw(shader);
-
+    cloth->draw(shader);
 
 	particles.draw();
 
     glBindVertexArray(0);
 
     compute_physics(dt);
-
-    check_collisions();
 }
 
 void Scene::cleanup() {
     // Disable the shader, we're done using it
 	shader.disable();
+
+    cloth->cleanup();
+    delete cloth;
 
 	glDeleteVertexArrays(1, &vao);
 }
