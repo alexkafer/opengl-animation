@@ -13,7 +13,9 @@ static glm::vec3 gravity(0.f, -9.8f, 0.f);
 // static glm::vec3 gravity(0.f, -1.f, 0.f);
 
 float restLen = .1f;
+// float k = 100.f; //TRY-IT: How does changing k affect resting length?
 float k = 5000.f; //TRY-IT: How does changing k affect resting length?
+// float kv = 1.f;
 float kv = 30.f;
 float mass = 0.5f;
 
@@ -120,12 +122,17 @@ void Cloth::update_physics(float dt) {
             pointMasses[i].position += dt * pointMasses[i].velocity;
         }
 
-        // if (pointMasses[i].position.y < ball.getRadius()) {
-        //     pointMasses[i].position.y = ball.getRadius() + 0.01f;
-        //     pointMasses[i].velocity.y *= -0.5; //bounce factor
-        //     pointMasses[i].velocity *= 0.8; //bounce factor
-        //     return;
+        // if (i == _y_dim-1) {
+        //     std::cout << "Position: " << glm::to_string(pointMasses[i].position) << std::endl;
         // }
+
+        if (pointMasses[i].position.y <= ball.getRadius()) {
+            // std::cout << "COLLISION!" << glm::to_string(pointMasses[i].position) << std::endl;
+            // pointMasses[i].position.y = ball.getRadius(); 
+            // pointMasses[i].position.y = 0.1f;
+            pointMasses[i].velocity.y *= -0.8; //bounce factor
+            pointMasses[i].velocity *= 0.8; //bounce factor
+        }
     }
 }
 
@@ -133,7 +140,7 @@ void Cloth::update(float dt) {
     size_t steps = 10; 
     for (size_t i = 0; i < steps; i++) {
         update_physics(dt / steps);
-    }    
+    }   
 }
 
 void Cloth::draw(mcl::Shader & shader) {

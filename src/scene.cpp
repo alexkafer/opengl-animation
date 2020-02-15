@@ -21,6 +21,7 @@ Scene::Scene () {
 
         particles = Particles();
         cloth = new Cloth(50, 50);
+        // cloth = new Cloth(5, 50);
 	    particles.init();
 }
 
@@ -86,7 +87,7 @@ void Scene::init_static_uniforms()
     GLint uniformMaterialShininess         = shader.uniform("materialShininess");
     
     // set uniform values
-    float lightPosition[]  = {4.f, 3.0f, 0.f, 1.0f};
+    float lightPosition[]  = {4.f, 3.0f, 2.f, 1.0f};
     // float lightAmbient[]  = {0.3f, 0.1f, 0.1f, 1};
     // float lightDiffuse[]  = {0.7f, 0.2f, 0.2f, 1};
     float lightSpecular[] = {1.0f, 1.0f, 1.0f, 1};

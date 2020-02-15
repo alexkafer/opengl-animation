@@ -292,7 +292,7 @@ int main(int argc, char *argv[]){
 		if ( current_frame_time - last_second_time >= 1.0 )
 		{
 			// Display the frame count here any way you want.
-			// std::cout << "Framerate: " << frame_count << std::endl;
+			std::cout << "Framerate: " << frame_count << std::endl;
 
 			// scene->print_stats();
 
