@@ -20,7 +20,7 @@ Scene::Scene () {
         shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
 
         particles = Particles();
-        cloth = new Cloth(10);
+        cloth = new Cloth(50, 50);
 	    particles.init();
 }
 

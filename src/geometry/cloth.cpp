@@ -1,6 +1,7 @@
 #include "cloth.h"
 
 #include <iostream>
+#include <utility>
 
 #include <glm/gtx/intersect.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -9,28 +10,52 @@
 
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
+// static glm::vec3 gravity(0.f, -1.f, 0.f);
 
 float restLen = .1f;
-float k = 500.f; //TRY-IT: How does changing k affect resting length?
-float kv = 10.f;
+float k = 5000.f; //TRY-IT: How does changing k affect resting length?
+float kv = 30.f;
+float mass = 0.5f;
 
-Cloth::Cloth(size_t points) {
+Cloth::Cloth(size_t x_dim, size_t y_dim) {
+    _x_dim = x_dim;
+    _y_dim = y_dim;
 
     pointMasses = std::vector<PointMass>();
-    pointMasses.reserve(points);
+    pointMasses.reserve(x_dim * y_dim);
 
-    ball = Sphere(0.1f, 36, 18);
+    edges = std::vector<std::pair<size_t, size_t>>();
+    size_t edge_count = (x_dim-1)*y_dim + (y_dim-1)*x_dim;
+    edges.reserve(edge_count);
 
-    pointMasses.push_back(PointMass(glm::vec3(2.f * (float) rand() / RAND_MAX - 1.f, (points + 1.f) / 5.f, 2.f * (float) rand() / RAND_MAX - 1.f), 0));
+    ball = Sphere(2.f*restLen, 36, 18);
 
-    for (size_t i = 1; i <= points; i++) {
-        Sphere * sphere = new Sphere(0.1f, 36, 18);
+    // pointMasses.push_back(PointMass(glm::vec3(2.f * (float) rand() / RAND_MAX - 1.f, (points + 15.f) / 5.f, 2.f * (float) rand() / RAND_MAX - 1.f), 0));
+    size_t vertex[x_dim][y_dim];
 
-        pointMasses.push_back(PointMass(glm::vec3(0.f, ((float) points - i + 1.f) / 5.f, 0.f), i-1));
+    for (size_t x = 0; x < x_dim; x++) {
+        for (size_t y = 0; y < y_dim; y++) {
+            vertex[x][y] = pointMasses.size();
+            // std::cout << "Generated " << vertex[x][y] << " at (" << x << ", "<< y << ")" << std::endl;
+            pointMasses.push_back(PointMass(glm::vec3(x * restLen, restLen * (y_dim - y) + 5.f, 0.f)));
+        }
     }
 
-    glEnable(GL_PROGRAM_POINT_SIZE); 
 
+    for (size_t x = 0; x < x_dim; x++) {
+        for (size_t y = 0; y < y_dim; y++) {
+            
+            if (x < x_dim-1) {
+                // std::cout << "Paired " << vertex[x][y] << " with " <<vertex[x+1][y] << std::endl;
+                edges.push_back(std::make_pair(vertex[x][y], vertex[x+1][y]));
+            }
+            
+            if (y < y_dim-1) {
+                // std::cout << "Paired " << vertex[x][y] << " with " <<vertex[x][y+1] << std::endl;
+                edges.push_back(std::make_pair(vertex[x][y], vertex[x][y+1]));
+            }
+        }
+    }
 }
 
 void Cloth::init(mcl::Shader & shader) {
@@ -56,48 +81,59 @@ void Cloth::init(mcl::Shader & shader) {
     shader.disable();
 }
 
-void Cloth::update(float dt) {
+void Cloth::update_physics(float dt) {
+    size_t total_points = pointMasses.size();
+    glm::vec3 forces [total_points];
 
-    size_t points = pointMasses.size();
-    glm::vec3 forces [points];
+    for(size_t i = 0; i < total_points; i++) forces[i] = glm::vec3(0.f);
 
-    for(size_t i = 0; i < points; i++) forces[i] = glm::vec3(0.f);
- 
-    for(size_t i = 0; i < points; i++) {
-        size_t parent = pointMasses[i].connected_to;
+    for ( const std::pair<size_t, size_t> &edge : edges )
+    {
+        glm::vec3 edge_vector = pointMasses[edge.first].position - pointMasses[edge.second].position;
 
-        if (parent == i) continue;
-
-        glm::vec3 edge = pointMasses[i].position - pointMasses[parent].position;
-
-        float string_length = glm::length(edge); 
+        float string_length = glm::length(edge_vector); 
         float string_force = -k*(string_length - restLen);
 
-        glm::vec3 damp_force = -kv * (pointMasses[i].velocity - pointMasses[parent].velocity);
+        // std::cout << "String between" << edge.first << " - " << edge.second << " is length " << string_length; 
+        // std::cout << "and produced a force " << string_force << std::endl;
 
-        forces[i] += (string_force * glm::normalize(edge) + damp_force);
 
+        glm::vec3 damp_force = -kv * (pointMasses[edge.first].velocity - pointMasses[edge.second].velocity);
+
+        glm::vec3 force_added = (string_force * glm::normalize(edge_vector) + damp_force) / 2.f;
+
+        // If the cloth is not being held on to, apply the force
+        forces[edge.first] += force_added;
+        
         // Equal and opposite force
-        forces[parent] -= forces[i];
+        forces[edge.second] -= force_added;
     }
-
+ 
     // After we've calculated all the forces at play, apply them;
-    for(size_t i = 0; i < points; i++) {
+    for(size_t i = 0; i < total_points; i++) {
+
         // A mass connected to itself is an anchor
-        if (pointMasses[i].connected_to == i) continue;
-
-        pointMasses[i].velocity += dt * (gravity + forces[i]);
-        pointMasses[i].position += dt * pointMasses[i].velocity;
-
-        // std::cout << "Position " << i << " " << glm::to_string(pointMasses[i].position) << std::endl;
-
-        if (pointMasses[i].position.y < ball.getRadius()) {
-            pointMasses[i].position.y = ball.getRadius() + 0.01f;
-            pointMasses[i].velocity.y *= -0.5; //bounce factor
-            pointMasses[i].velocity *= 0.8; //bounce factor
-            return;
+        if ((i % _y_dim == 0 && i % 3 == 0) || (Globals::dragging_object && Globals::selected == &pointMasses[i])) {
+            pointMasses[i].velocity = glm::vec3(0.f);
+        } else {
+            pointMasses[i].velocity += dt * (gravity + forces[i]) / mass;
+            pointMasses[i].position += dt * pointMasses[i].velocity;
         }
+
+        // if (pointMasses[i].position.y < ball.getRadius()) {
+        //     pointMasses[i].position.y = ball.getRadius() + 0.01f;
+        //     pointMasses[i].velocity.y *= -0.5; //bounce factor
+        //     pointMasses[i].velocity *= 0.8; //bounce factor
+        //     return;
+        // }
     }
+}
+
+void Cloth::update(float dt) {
+    size_t steps = 10; 
+    for (size_t i = 0; i < steps; i++) {
+        update_physics(dt / steps);
+    }    
 }
 
 void Cloth::draw(mcl::Shader & shader) {
@@ -114,11 +150,9 @@ void Cloth::draw(mcl::Shader & shader) {
 
     glVertexAttrib3f(attribVertexColor, 0.7, 0.2, 0.2);
 
-     // activate attribs
+    // activate attribs
     glEnableVertexAttribArray(attribVertexPosition);
     glEnableVertexAttribArray(attribVertexNormal);
-
-
 
     glm::mat4 ball_model;
 
@@ -158,10 +192,9 @@ void Cloth::draw(mcl::Shader & shader) {
 Draggable * Cloth::find_draggable(glm::vec3 origin, glm::vec3 direction) {
     float radius = pow(ball.getRadius(), 2);
     for(size_t i = 0; i < pointMasses.size(); i++) {
-        // Ray sphere intersection
         float distance; 
         if (glm::intersectRaySphere(origin, direction, pointMasses[i].position, radius, distance)) {
-            std::cout << "Found intersection! " << distance << std::endl;
+            std::cout << "Found point: " << i << std::endl;
             return &pointMasses[i];
         }
     }

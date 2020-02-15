@@ -142,7 +142,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 		if (Globals::dragging_object && Globals::selected != nullptr) {
 			float distance_from_camera = glm::distance(Globals::eye_pos, Globals::selected->get_position());
-			std::cout << "Distance from camera" << distance_from_camera << std::endl;
+			// std::cout << "Distance from camera" << distance_from_camera << std::endl;
 			Globals::selected->set_position(Globals::eye_pos + distance_from_camera * ray_world);
 		} else {
 			Globals::selected = scene->find_draggable(Globals::eye_pos, ray_world);
@@ -292,9 +292,9 @@ int main(int argc, char *argv[]){
 		if ( current_frame_time - last_second_time >= 1.0 )
 		{
 			// Display the frame count here any way you want.
-			std::cout << "Framerate: " << frame_count << std::endl;
+			// std::cout << "Framerate: " << frame_count << std::endl;
 
-			scene->print_stats();
+			// scene->print_stats();
 
 			frame_count = 0;
 			last_second_time = current_frame_time;

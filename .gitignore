@@ -9,3 +9,6 @@ Makefile
 
 .DS_Store
 .vscode
+debug.log
+
+build

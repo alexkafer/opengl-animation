@@ -11,10 +11,9 @@
 struct PointMass : public Draggable {
     glm::vec3 position;
     glm::vec3 velocity;
-    size_t connected_to;
 
-    PointMass(const glm::vec3 &_position, size_t _connected_to) 
-        : position(_position), velocity(0.f),connected_to(_connected_to) {} 
+    PointMass(const glm::vec3 &_position) 
+        : position(_position), velocity(0.f) {} 
 
     glm::vec3 get_position() {
         return position;
@@ -26,7 +25,10 @@ struct PointMass : public Draggable {
 };
 
 class Cloth {
+    size_t _x_dim;
+    size_t _y_dim;
     std::vector<PointMass> pointMasses;
+    std::vector<std::pair<size_t, size_t>> edges;
 
     Sphere ball;
 
@@ -34,8 +36,10 @@ class Cloth {
     GLuint ball_vbo;
     GLuint ball_ibo;
 
+    void update_physics(float dt);
+
 public:
-    Cloth(size_t points);
+    Cloth(size_t x, size_t y);
 
     void init(mcl::Shader & shader);
 
