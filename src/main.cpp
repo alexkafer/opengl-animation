@@ -103,8 +103,8 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 			Globals::picking_object = false;
 			Globals::dragging_object = false;
 			Globals::reset_mouse = true;
+			Globals::selected = nullptr;
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
-			glfwSetCursorPos(window, Globals::screen_width / 2, Globals::screen_height / 2);
 			std::cout << "stopped picking object" << std::endl;
 		}
 	}
@@ -120,11 +120,16 @@ void calculate_eye_direction() {
 
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	
 	if (Globals::picking_object) {
 		// Need to convert the click into a 3D normalized device coordinates
 		// and then 4d Homogeneous Clip Clip coordinates
-		float x = (2.0f * xpos) / Globals::screen_width - 1.0f;
-		float y = 1.0f - (2.0f * ypos) / Globals::screen_height;
+
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
+
+		float x = (2.0f * xpos) / width - 1.0f;
+		float y = 1.0f - (2.0f * ypos) / height;
 		glm::vec4 ray_clip = glm::vec4(x, y, -1.f, 1.f);
 
 		// Transform from the clip space to view space using the projection matrix
