@@ -15,7 +15,6 @@
 
 #include "common.h"
 #include "scene.h"
-#include "geometry/draggable.h"
 #include "utils/GLError.h"
 
 #include <glm/gtx/string_cast.hpp>
@@ -46,7 +45,7 @@ namespace Globals {
 	bool reset_mouse;
 
 	bool picking_object;
-	Draggable * selected;
+	int selected;
 	bool dragging_object;
 
 	float yaw;
@@ -103,7 +102,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 			Globals::picking_object = false;
 			Globals::dragging_object = false;
 			Globals::reset_mouse = true;
-			Globals::selected = nullptr;
+			Globals::selected = -1;
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
 			std::cout << "stopped picking object" << std::endl;
 		}
@@ -140,12 +139,12 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 		glm::vec3 ray_world = glm::normalize(glm::inverse(Globals::view) * ray_view);
 
-		if (Globals::dragging_object && Globals::selected != nullptr) {
-			float distance_from_camera = glm::distance(Globals::eye_pos, Globals::selected->get_position());
-			// std::cout << "Distance from camera" << distance_from_camera << std::endl;
-			Globals::selected->set_position(Globals::eye_pos + distance_from_camera * ray_world);
-		} else {
-			Globals::selected = scene->find_draggable(Globals::eye_pos, ray_world);
+		if (Globals::dragging_object) {
+			if (Globals::selected != -1) {
+				scene->drag_object(Globals::selected, ray_world);
+			} else {
+				Globals::selected = scene->find_object(Globals::eye_pos, ray_world);
+			}
 		}
 
 		return;
@@ -225,6 +224,7 @@ int main(int argc, char *argv[]){
 	Globals::reset_mouse = true;
 	Globals::picking_object = true;
 	Globals::dragging_object = false;
+	Globals::selected = -1;
 	window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "CSCI5611 - Alex Kafer", NULL, NULL);
 
 	glfwGetFramebufferSize(window, &Globals::screen_width, &Globals::screen_height);

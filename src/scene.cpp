@@ -20,6 +20,7 @@ Scene::Scene () {
         shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
 
         particles = Particles();
+        // cloth = new Cloth(30, 30);
         cloth = new Cloth(50, 50);
         // cloth = new Cloth(5, 50);
 	    particles.init();
@@ -167,8 +168,12 @@ void Scene::draw(float dt) {
     compute_physics(dt);
 }
 
-Draggable* Scene::find_draggable(glm::vec3 origin, glm::vec3 direction) {
-    return cloth->find_draggable(origin, direction);
+int Scene::find_object(glm::vec3 origin, glm::vec3 direction) {
+    return cloth->find_object(origin, direction);
+}
+
+void Scene::drag_object(int object, glm::vec3 direction) {
+    cloth->drag_object(object, direction);
 }
 
 void Scene::cleanup() {

@@ -1,8 +1,6 @@
 #include <glm/vec3.hpp> 
 #include <glm/vec4.hpp> 
-#include <glm/mat4x4.hpp> 
-
-#include "geometry/draggable.h"
+#include <glm/mat4x4.hpp>
 
 //
 //	Global state variables
@@ -17,7 +15,7 @@ namespace Globals {
 	extern bool reset_mouse;
 
 	extern bool picking_object;
-	extern Draggable * selected;
+	extern int selected;
 	extern bool dragging_object;
 
 	extern float yaw;
