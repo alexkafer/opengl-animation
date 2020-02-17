@@ -15,10 +15,10 @@ static glm::vec3 gravity(0.f, -9.8f, 0.f);
 // static glm::vec3 gravity(0.f, -1.f, 0.f);
 
 static const float STEPS = 10;
-static const float REST_LENGTH = .2f;
+static const float REST_LENGTH = 0.5f;
 // static const float K = 500.f; 
-static const float K = 300.f; 
-static const float KV = 3.f;
+static const float K = 100.f; 
+static const float KV = 5.f;
 static const float MASS = 0.5f;
 
 static const int GRID_SIZE = 2;
@@ -47,7 +47,7 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
     size_t edge_count = (x_dim-1)*y_dim + (y_dim-1)*x_dim;
     edges.reserve(edge_count);
 
-    ball = Sphere(2 * REST_LENGTH, 36, 18);
+    ball = Sphere(2.f * REST_LENGTH, 36, 18);
 
     // spatial_hash = spatial_hash_map(HASH_TABLE_SIZE); //, spatial_hashing_func);
 
@@ -116,18 +116,20 @@ void Cloth::update_forces(float dt) {
         float string_length = glm::length(edge_vector); 
         float string_force = -K * STEPS *(string_length - (REST_LENGTH));
 
-        // std::cout << "String between" << edge.first << " - " << edge.second << " is length " << string_length; 
-        // std::cout << "and produced a force " << string_force << std::endl;
+        edge_vector /= string_length; // Normalize
 
+        float velocity_one = glm::dot(pointMasses[edge.first].velocity, edge_vector);
+        float velocity_two = glm::dot(pointMasses[edge.second].velocity, edge_vector);
 
-        glm::vec3 damp_force = -KV * STEPS * (pointMasses[edge.first].velocity - pointMasses[edge.second].velocity);
+     
+
+        float damp_force = -KV * STEPS * (velocity_one - velocity_two);
 
         if (edge.first == Globals::selected || edge.second == Globals::selected) {
             string_force *= 10.f;
-            damp_force = glm::vec3(0.f);
         }
 
-        glm::vec3 force_added = (string_force * glm::normalize(edge_vector) + damp_force) / 2.f;
+        glm::vec3 force_added = ((string_force + damp_force) * glm::normalize(edge_vector)) / 2.f;
 
         // If the cloth is not being held on to, apply the force
         forces[edge.first] += force_added;
@@ -138,15 +140,7 @@ void Cloth::update_forces(float dt) {
  
     // After we've calculated all the forces at play, apply them to the velocity;
     for(size_t i = 0; i < total_points; i++) {
-        //  if (i == _y_dim-1) {
-        //     std::cout << "Position: " << glm::to_string(pointMasses[i].position) << std::endl;
-        //     std::cout << "Velocity: " << glm::to_string(pointMasses[i].velocity) << std::endl;
-        //     std::cout << "Forces: " << glm::to_string(forces[i]) << std::endl;
-        //     std::cout << "----- " << std::endl;
-        // }
-
-        // 
-        if ((i % _y_dim == 0 && i % 3 == 0) || (Globals::dragging_object && Globals::selected == i)) {
+        if ((i % _y_dim == 0 && i % 2 == 0) || (Globals::dragging_object && Globals::selected == i)) {
             // Kill all forces for an object being held
             forces[i] = glm::vec3(0.f);
         }
@@ -236,11 +230,11 @@ void Cloth::check_collisions() {
             // if (i == _y_dim-1) {
                 // std::cout << "COLLISION!" << glm::to_string(pointMasses[i].position) << std::endl;
             // }
-            // pointMasses[i].position.y = ball.getRadius(); 
+            pointMasses[i].position.y = ball.getRadius() + 0.01f; 
             // pointMasses[i].position.y = 0.1f;
-            pointMasses[i].velocity.y *= -0.8; //bounce factor
-            pointMasses[i].velocity.x *= 0.8; //bounce factor
-            pointMasses[i].velocity.z *= 0.8; //bounce factor
+            pointMasses[i].velocity.y *= -0.5; //bounce factor
+            pointMasses[i].velocity.x *= 0.95; //bounce factor
+            pointMasses[i].velocity.z *= 0.95; //bounce factor
         }
     }
 }
