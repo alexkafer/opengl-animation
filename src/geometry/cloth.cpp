@@ -9,6 +9,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/normal.hpp>
 
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
@@ -47,8 +48,6 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
     size_t edge_count = (x_dim-1)*y_dim + (y_dim-1)*x_dim;
     edges.reserve(edge_count);
 
-    ball = Sphere(2.f * REST_LENGTH, 36, 18);
-
     // spatial_hash = spatial_hash_map(HASH_TABLE_SIZE); //, spatial_hashing_func);
 
     // pointMasses.push_back(PointMass(glm::vec3(2.f * (float) rand() / RAND_MAX - 1.f, (points + 15.f) / 5.f, 2.f * (float) rand() / RAND_MAX - 1.f), 0));
@@ -67,14 +66,35 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
     for (size_t x = 0; x < x_dim; x++) {
         for (size_t y = 0; y < y_dim; y++) {
             
+            // If not on the x edge
             if (x < x_dim-1) {
                 // std::cout << "Paired " << vertex[x][y] << " with " <<vertex[x+1][y] << std::endl;
                 edges.push_back(std::make_pair(vertex[x][y], vertex[x+1][y]));
             }
             
+            // If not on the bottom row
             if (y < y_dim-1) {
                 // std::cout << "Paired " << vertex[x][y] << " with " <<vertex[x][y+1] << std::endl;
                 edges.push_back(std::make_pair(vertex[x][y], vertex[x][y+1]));
+            }
+
+            // Left down triangle
+            if (x < x_dim-1 && y < y_dim-1) {
+                indices.push_back(vertex[x][y]);
+                indices.push_back(vertex[x+1][y]);
+                indices.push_back(vertex[x][y+1]);
+
+                // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x+1][y] << ", " <<vertex[x][y+1] << std::endl;
+            }
+
+            // Up right triangle
+            if (x > 0 && y > 0) {
+                indices.push_back(vertex[x][y]);
+                indices.push_back(vertex[x-1][y]);
+                indices.push_back(vertex[x][y-1]);
+
+                // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x-1][y] << ", " <<vertex[x][y-1] << std::endl;
+            
             }
         }
     }
@@ -86,22 +106,44 @@ void Cloth::init(mcl::Shader & shader) {
     glGenVertexArrays(1, &vao); //Create a VAO
     glBindVertexArray(vao);
 
-    glGenBuffers(1, &ball_vbo);
-    glGenBuffers(1, &ball_ibo);
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, pointMasses.size() * sizeof(PointMass), NULL, GL_DYNAMIC_DRAW);
 
-    // The VBO containing the positions and sizes of the spheres representing a point mass
-    glBindBuffer(GL_ARRAY_BUFFER, ball_vbo);
-    glBufferData(GL_ARRAY_BUFFER, ball.getInterleavedVertexSize(), ball.getInterleavedVertices(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);  //Unbind the VAO so we don’t accidentally modify it
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ball_ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, ball.getIndexSize(), ball.getIndices(), GL_STATIC_DRAW); 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);  //Unbind the VAO so we don’t accidentally modify it
-    
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
+  
     glBindVertexArray(0);
 
     shader.disable();
 }
+
+// Algorithm adapted from TinyObj loader
+void Cloth::compute_normals() {
+    for(size_t i = 0; i < pointMasses.size(); i++) {
+        pointMasses[i].normal = glm::vec3(0.f);
+    }
+
+    for (size_t f = 0; f < indices.size() / 3; f++) {
+        // Get the three indexes of the face (all faces are triangular)
+        GLushort idx0 = indices[3 * f + 0];
+        GLushort idx1 = indices[3 * f + 1];
+        GLushort idx2 = indices[3 * f + 2];
+
+        glm::vec3 normal = glm::triangleNormal(pointMasses[idx0].position, pointMasses[idx1].position, pointMasses[idx2].position);
+
+        pointMasses[idx0].normal += normal;
+        pointMasses[idx1].normal += normal;
+        pointMasses[idx2].normal += normal;
+
+    } 
+
+    for(size_t i = 0; i < pointMasses.size(); i++) {
+        pointMasses[i].normal = glm::normalize(pointMasses[i].normal);
+    }
+}
+
 
 void Cloth::update_forces(float dt) {
     size_t total_points = pointMasses.size();
@@ -148,10 +190,14 @@ void Cloth::update_forces(float dt) {
 }
 
 void Cloth::update_positions(float dt) {
+    spatial_hash.clear(); // Clear the hash since we're calculating new positions
+
     // After we've calculated all the velocities and made modifications, apply them;
     for(size_t i = 0; i < pointMasses.size(); i++) {
         pointMasses[i].velocity += dt * forces[i] / MASS;
-        pointMasses[i].position += dt * pointMasses[i].velocity;   
+        pointMasses[i].position += dt * pointMasses[i].velocity;  
+
+        spatial_hash.insert(std::make_pair<size_t, size_t>(spatial_hashing_func(pointMasses[i].position), (size_t) i));
     }
 }
 
@@ -160,7 +206,7 @@ void Cloth::check_collisions() {
     // Optimized Spatial Hashing for Collision Detection of Deformable Objects
     // https://matthias-research.github.io/pages/publications/tetraederCollision.pdf
 
-    // std::pair <spatial_hash_map::iterator, spatial_hash_map::iterator> ret;
+    std::pair <spatial_hash_map::iterator, spatial_hash_map::iterator> ret;
     // spatial_hash.clear();
 
     // // Populate the hash table
@@ -173,10 +219,10 @@ void Cloth::check_collisions() {
 
     for(size_t i = 0; i < pointMasses.size(); i++) {
         
-        // ret = spatial_hash.equal_range(spatial_hashing_func(pointMasses[i].position));
+        ret = spatial_hash.equal_range(spatial_hashing_func(pointMasses[i].position));
 
         // std::cout << "near " << i << " => ";
-        // for (spatial_hash_map::iterator it=ret.first; it!=ret.second; ++it) {
+        for (spatial_hash_map::iterator it=ret.first; it!=ret.second; ++it) {
         // for(size_t nearby_point_index = 0; nearby_point_index < pointMasses.size(); nearby_point_index++) {
         //     // std::cout << ' ' << it->second;
 
@@ -219,19 +265,14 @@ void Cloth::check_collisions() {
 
         //         // std::cout << "Final Positions: " << glm::to_string(pointMasses[i].position) << " and " << glm::to_string(pointMasses[nearby_point_index].position) <<std::endl;
                 
-        //     }
-        // }
+        }
 
         // std::cout << '\n';
 
 
 
-        if (pointMasses[i].position.y < ball.getRadius()) {
-            // if (i == _y_dim-1) {
-                // std::cout << "COLLISION!" << glm::to_string(pointMasses[i].position) << std::endl;
-            // }
-            pointMasses[i].position.y = ball.getRadius() + 0.01f; 
-            // pointMasses[i].position.y = 0.1f;
+        if (pointMasses[i].position.y < 0) {
+            pointMasses[i].position.y = 0.01f; 
             pointMasses[i].velocity.y *= -0.5; //bounce factor
             pointMasses[i].velocity.x *= 0.95; //bounce factor
             pointMasses[i].velocity.z *= 0.95; //bounce factor
@@ -265,32 +306,32 @@ void Cloth::draw(mcl::Shader & shader) {
     glEnableVertexAttribArray(attribVertexPosition);
     glEnableVertexAttribArray(attribVertexNormal);
 
-    glm::mat4 ball_model;
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+   
 
-    for (size_t i = 0; i < pointMasses.size(); i++) {
+    glm::mat4 cloth_model = glm::mat4(1.0f);
 
-        ball_model = glm::translate(glm::mat4(1.0f), pointMasses[i].position);
+    glm::mat4 matrix_cloth_normal = cloth_model;
+    // matrix_ball_normal[3] = glm::vec4(0,0,0,1);
 
-        glm::mat4 matrix_ball_normal = ball_model;
-        matrix_ball_normal[3] = glm::vec4(0,0,0,1);
+    compute_normals();
 
-        glBindBuffer(GL_ARRAY_BUFFER, ball_vbo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ball_ibo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, pointMasses.size() * sizeof(PointMass), &pointMasses[0], GL_DYNAMIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-        glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(ball_model)  ); // model transformation
-        glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_ball_normal)); // projection matrix
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(cloth_model)  ); // model transformation
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_cloth_normal)); // projection matrix
 
-        int stride = ball.getInterleavedStride();
-        glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, stride, (void*) 0);
-        glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(PointMass), (void*) 0);
+    glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(PointMass), (GLvoid*)offsetof(PointMass, normal));
 
-        // draw a sphere with VBO
-        glDrawElements(GL_TRIANGLES,                    // primitive type
-                    ball.getIndexCount(),          // # of indices
-                    GL_UNSIGNED_INT,                 // data type
-                    (void*)0);                       // offset to indices
-
-    }
+    // draw the cloth
+    glDrawElements(GL_TRIANGLES,                    // primitive type
+                indices.size(),          // # of indices
+                GL_UNSIGNED_SHORT,                 // data type
+                (void*)0);                       // offset to indices
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -301,7 +342,7 @@ void Cloth::draw(mcl::Shader & shader) {
 }
 
 int Cloth::find_object(glm::vec3 origin, glm::vec3 direction) {
-    float radius = pow(ball.getRadius(), 2);
+    float radius = REST_LENGTH * REST_LENGTH / 4.0f;
     for(int i = 0; i < pointMasses.size(); i++) {
         float distance; 
         if (glm::intersectRaySphere(origin, direction, pointMasses[i].position, radius, distance)) {
@@ -314,20 +355,13 @@ int Cloth::find_object(glm::vec3 origin, glm::vec3 direction) {
 }
 
 void Cloth::drag_object(int object, glm::vec3 direction) {
-    // std::pair <spatial_hash_map::iterator, spatial_hash_map::iterator> ret;
-
-    // ret = spatial_hash.equal_range(spatial_hashing_func(pointMasses[object].position));
-    
-    // for (spatial_hash_map::iterator it=ret.first; it!=ret.second; ++it) {
-        float distance_from_camera = glm::distance(Globals::eye_pos, pointMasses[object].position);
-        // std::cout << "Point at " << glm::to_string(pointMasses[object].position) << " is " << distance_from_camera << " units from the camera" << std::endl;
-        pointMasses[object].position = Globals::eye_pos + distance_from_camera * direction;   
-    // }
+    float distance_from_camera = glm::distance(Globals::eye_pos, pointMasses[object].position);
+    pointMasses[object].position = Globals::eye_pos + distance_from_camera * direction; 
 }
 
 void Cloth::cleanup() {
 
-    glDeleteBuffers(1, &ball_vbo);
-    glDeleteBuffers(1, &ball_ibo);
+    glDeleteBuffers(1, &ibo);
+    glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
 }

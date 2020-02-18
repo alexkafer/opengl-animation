@@ -6,14 +6,13 @@
 #include "../common.h"
 #include "../shader.hpp"
 
-#include "sphere.h"
-
 struct PointMass {
     glm::vec3 position;
     glm::vec3 velocity;
+    glm::vec3 normal;
 
     PointMass(const glm::vec3 &_position) 
-        : position(_position), velocity(0.f) {} 
+        : position(_position), velocity(0.f), normal(0.f) {} 
 };
 
 // This spatial map stores a position with a list of points in that region
@@ -26,21 +25,26 @@ typedef std::unordered_multimap<
 class Cloth {
     size_t _x_dim;
     size_t _y_dim;
+
     std::vector<glm::vec3> forces;
     std::vector<PointMass> pointMasses;
     std::vector<std::pair<size_t, size_t>> edges;
 
+    std::vector<GLushort> indices;
+
     spatial_hash_map spatial_hash;
 
-    Sphere ball;
+    std::vector<size_t> selected;
 
     GLuint vao;
-    GLuint ball_vbo;
-    GLuint ball_ibo;
+    GLuint ibo; // Indicies
+    GLuint vbo; // Vertexes
 
     void update_forces(float dt);
     void check_collisions();
     void update_positions(float dt);
+
+    void compute_normals();
 
 public:
     Cloth(size_t x, size_t y);

@@ -54,9 +54,15 @@ vec3 get_light() {
 
 void main(){
 	vec3 normal = normalize(vnormal);
+
+    
     vec3 light_dir = get_light();
 
     vec3 view = normalize(eye-vposition);
+
+    if (dot(normal, light_dir) < 0) {
+        normal *= -1;
+    }
 
 	vec3 result = phong( normal, light_dir, view );
 	outColor = vec4(result, materialDiffuse.a);
