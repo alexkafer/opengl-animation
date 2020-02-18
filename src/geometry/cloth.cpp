@@ -22,15 +22,15 @@ static const float K = 100.f;
 static const float KV = 5.f;
 static const float MASS = 0.5f;
 
-static const int GRID_SIZE = 2;
+static const float GRID_VOLUME = 0.5f;
 static const int HASH_TABLE_SIZE = 599;
 static const int PRIMES[3] = {73856093, 19349663, 83492791};
 
 static size_t spatial_hashing_func(const glm::vec3 & key) {
     return (
-          PRIMES[0] * (int) floor(key.x / GRID_SIZE) ^ 
-          PRIMES[1] * (int) floor(key.y / GRID_SIZE) ^ 
-          PRIMES[2] * (int) floor(key.z / GRID_SIZE)
+          PRIMES[0] * (int) floor(key.x / GRID_VOLUME) ^ 
+          PRIMES[1] * (int) floor(key.y / GRID_VOLUME) ^ 
+          PRIMES[2] * (int) floor(key.z / GRID_VOLUME)
     ) % HASH_TABLE_SIZE;
 }
 
@@ -57,7 +57,7 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
         for (size_t y = 0; y < y_dim; y++) {
             vertex[x][y] = pointMasses.size();
             // std::cout << "Generated " << vertex[x][y] << " at (" << x << ", "<< y << ")" << std::endl;
-            pointMasses.push_back(PointMass(glm::vec3(x * REST_LENGTH, REST_LENGTH * (y_dim - y) + 5.f, 0.f)));
+            pointMasses.push_back(PointMass(glm::vec3(x * REST_LENGTH, 5.f, REST_LENGTH * y)));
             forces.push_back(glm::vec3(0.0f));
         }
     }
@@ -182,10 +182,7 @@ void Cloth::update_forces(float dt) {
  
     // After we've calculated all the forces at play, apply them to the velocity;
     for(size_t i = 0; i < total_points; i++) {
-        if ((i % _y_dim == 0 && i % 2 == 0) || (Globals::dragging_object && Globals::selected == i)) {
-            // Kill all forces for an object being held
-            forces[i] = glm::vec3(0.f);
-        }
+        
     }
 }
 
@@ -194,14 +191,21 @@ void Cloth::update_positions(float dt) {
 
     // After we've calculated all the velocities and made modifications, apply them;
     for(size_t i = 0; i < pointMasses.size(); i++) {
-        pointMasses[i].velocity += dt * forces[i] / MASS;
-        pointMasses[i].position += dt * pointMasses[i].velocity;  
+        
+        if ((i % _y_dim == (_y_dim / 2)) || (i % _y_dim == (_y_dim / 2) + 1)|| (Globals::dragging_object && Globals::selected == i)) {
+            // Kill all forces for an object being held
+            forces[i] = glm::vec3(0.f);
+            pointMasses[i].velocity = glm::vec3(0.f);
+        } else {
+            pointMasses[i].velocity += dt * forces[i] / MASS;
+            pointMasses[i].position += dt * pointMasses[i].velocity;  
+        }
 
         spatial_hash.insert(std::make_pair<size_t, size_t>(spatial_hashing_func(pointMasses[i].position), (size_t) i));
     }
 }
 
-void Cloth::check_collisions() {
+void Cloth::check_collisions(float dt) {
     // This code is my own implementation of Matthias Teschner's collision detection algorithm
     // Optimized Spatial Hashing for Collision Detection of Deformable Objects
     // https://matthias-research.github.io/pages/publications/tetraederCollision.pdf
@@ -217,75 +221,81 @@ void Cloth::check_collisions() {
     // Check for collisions
     // printUmm(spatial_hash);
 
-    for(size_t i = 0; i < pointMasses.size(); i++) {
-        
-        ret = spatial_hash.equal_range(spatial_hashing_func(pointMasses[i].position));
+    for (size_t f = 0; f < indices.size() / 3; f++) {
+        // Get the three indexes of the face (all faces are triangular)
+        PointMass * triangle_points [3];
 
-        // std::cout << "near " << i << " => ";
-        for (spatial_hash_map::iterator it=ret.first; it!=ret.second; ++it) {
-        // for(size_t nearby_point_index = 0; nearby_point_index < pointMasses.size(); nearby_point_index++) {
-        //     // std::cout << ' ' << it->second;
+        for (size_t i = 0; i < 3; i++) {
+            triangle_points[i] = &pointMasses[indices[3 * f + i]];
 
-        //     // size_t nearby_point_index = it->second;
-
-        //     if (nearby_point_index == i) continue;
-
-        //     glm::vec3 diff = pointMasses[i].position - pointMasses[nearby_point_index].position;
-
-        //     // std::cout << "Distance between " << i << " and " << nearby_point_index << " is " << glm::length(diff) << std::endl;
-        //     float len = glm::length(diff);
-        //     if (len < (REST_LENGTH)) {
-        //         // std::cout << "We have a collision " << len << " between " << i << " and " << nearby_point_index <<std::endl;
-        //         // diff /= len;
-
-        //         // glm::vec3 nv1 = pointMasses[i].velocity; // new velocity for sphere 1
-        //         // glm::vec3 nv2 = pointMasses[nearby_point_index].velocity; // new velocity for sphere 2
-                
-        //         // std::cout << "Initial Velocities: " << glm::to_string(nv1) << " and " << glm::to_string(nv2) <<std::endl;
-
-        //         // nv1 += glm::proj(pointMasses[nearby_point_index].velocity, -1.f * diff);
-        //         // nv1 -= glm::proj(pointMasses[i].velocity, diff);
-                
-        //         // nv2 += glm::proj(pointMasses[i].velocity, -1.f * diff);
-        //         // nv2 -= glm::proj(pointMasses[nearby_point_index].velocity, diff);
-
-        //         // std::cout << "Final Velocities: " << glm::to_string(nv1) << " and " << glm::to_string(nv2) <<std::endl;
-        //         // pointMasses[i].velocity = nv1;
-        //         // pointMasses[nearby_point_index].velocity = nv2;
-
-        //         // forces[i] = glm::vec3(0.f);
-        //         // forces[nearby_point_index] = glm::vec3(0.f);
-
-        //         // pointMasses[i].velocity = glm::vec3(0.f);
-        //         // pointMasses[nearby_point_index].velocity = glm::vec3(0.f);
-        //         // std::cout << "Initial Positions: " << glm::to_string(pointMasses[i].position) << " and " << glm::to_string(pointMasses[nearby_point_index].position) <<std::endl;
-        //         // std::cout << " diff: " << glm::to_string(diff) <<std::endl;
-
-        //         pointMasses[i].position = pointMasses[nearby_point_index].position + (REST_LENGTH) * (diff / len);
-
-        //         // std::cout << "Final Positions: " << glm::to_string(pointMasses[i].position) << " and " << glm::to_string(pointMasses[nearby_point_index].position) <<std::endl;
-                
+            if (triangle_points[i]->position.y < 0) {
+                triangle_points[i]->position.y = 0.01f; 
+                triangle_points[i]->velocity.y *= -0.5; //bounce factor
+                triangle_points[i]->velocity.x *= 0.95; //bounce factor
+                triangle_points[i]->velocity.z *= 0.95; //bounce factor
+            }
         }
+        
+        // ret = spatial_hash.equal_range(spatial_hashing_func(triangle_points[0]->position));
 
-        // std::cout << '\n';
+        // for (spatial_hash_map::iterator it=ret.first; it!=ret.second; ++it) {
+        //     PointMass * point = &pointMasses[it->second];
 
+        for (PointMass & mass : pointMasses) {
+            PointMass * point = &mass;
+            // Make sure the point isn't a member of the triangle
+            if (point == triangle_points[0] || point == triangle_points[1] || point == triangle_points[2]) continue;
 
+            glm::vec3 direction = glm::normalize(point->velocity);
 
-        if (pointMasses[i].position.y < 0) {
-            pointMasses[i].position.y = 0.01f; 
-            pointMasses[i].velocity.y *= -0.5; //bounce factor
-            pointMasses[i].velocity.x *= 0.95; //bounce factor
-            pointMasses[i].velocity.z *= 0.95; //bounce factor
+            // ray collision
+            glm::vec2 barycentric_position; 
+            float distance;
+            if (glm::intersectRayTriangle(point->position, direction, 
+                    triangle_points[0]->position, 
+                    triangle_points[1]->position, 
+                    triangle_points[2]->position, barycentric_position, distance)) {
+
+                // std::cout << "Found " << distance << " I expect it to travel " << glm::length(dt * point->velocity) << std::endl;
+
+                if (distance < 0 || distance > glm::length(dt * point->velocity)) continue;
+                
+                std::cout << "Detected to " << distance << " intersection at " << glm::to_string(point->position) << " traveling " << glm::to_string(point->velocity) << std::endl;
+                
+                // Triangle bounce
+                glm::vec3 triangle_normal = glm::normalize(
+                    triangle_points[0]->normal 
+                    + triangle_points[1]->normal 
+                    + triangle_points[2]->normal
+                );
+
+                float bounce = 2.9f * glm::dot(point->velocity, triangle_normal);
+                point->velocity -= (bounce * triangle_normal);
+
+                glm::vec3 opp_velocity = (bounce * triangle_normal) / 3.f;
+
+                triangle_points[0]->velocity += opp_velocity;
+                triangle_points[1]->velocity += opp_velocity;
+                triangle_points[2]->velocity += opp_velocity;
+
+                std::cout << "Bounce:" << bounce << std::endl;
+                
+                float remaining = glm::length(point->velocity) - (distance);
+                std::cout << "Remaining:" << remaining << std::endl;
+                // point->position += ((0.9f * distance) * direction); // Places it at the impact
+                // point->position += (direction *  distance); 
+            }
         }
     }
 }
 
 void Cloth::update(float dt) {
+
     for (size_t i = 0; i < STEPS; i++) {
         update_forces(dt / STEPS);
         update_positions(dt / STEPS);
-        check_collisions();
-    }   
+        check_collisions(dt / STEPS);
+    }
 }
 
 void Cloth::draw(mcl::Shader & shader) {

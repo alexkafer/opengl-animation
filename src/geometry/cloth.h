@@ -41,7 +41,7 @@ class Cloth {
     GLuint vbo; // Vertexes
 
     void update_forces(float dt);
-    void check_collisions();
+    void check_collisions(float dt);
     void update_positions(float dt);
 
     void compute_normals();
