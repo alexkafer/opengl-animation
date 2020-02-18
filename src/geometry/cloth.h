@@ -44,6 +44,8 @@ class Cloth {
     void check_collisions(float dt);
     void update_positions(float dt);
 
+    void test_triangle_intersection(PointMass * triangle_points [3]);
+
     void compute_normals();
 
 public:

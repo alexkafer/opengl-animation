@@ -21,8 +21,8 @@ Scene::Scene () {
 
         particles = Particles();
         // cloth = new Cloth(30, 30);
-        // cloth = new Cloth(30, 30);
-        cloth = new Cloth(5, 10);
+        cloth = new Cloth(30, 30);
+        // cloth = new Cloth(5, 10);
 	    particles.init();
 }
 
