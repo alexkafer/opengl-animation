@@ -189,9 +189,10 @@ set(MY_SOURCES
 	src/main.cpp
 	src/utils/GLError.cpp
     src/scene.cpp
-    src/particles.cpp
+    src/geometry/particles.cpp
     src/geometry/sphere.cpp
     src/geometry/cloth.cpp
+    src/geometry/fluid.cpp
 )
 
 # Now we can add an executable, link it with our rendering libraries, and we're done!

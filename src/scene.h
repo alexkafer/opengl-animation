@@ -3,22 +3,24 @@
 
 #include "common.h"
 
-#include "particles.h"
+#include "geometry/particles.h"
 
 #include "geometry/model.h"
 #include "geometry/sphere.h"
 #include "geometry/cloth.h"
+#include "geometry/fluid.h"
 
 static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 class Scene {
         mcl::Shader shader;
 
-        Particles particles; 
+        Particles * particles; 
         GLuint vao;
 
         Model * camp_fire;
         Cloth * cloth; 
+        Fluid * fluid;
         
 
         GLuint floor_vbo[2];

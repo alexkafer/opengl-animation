@@ -7,10 +7,10 @@
 #include <glm/gtx/transform.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
+#include "utils/tiny_obj_loader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "utils/stb_image.h"
 
 Scene::Scene () {
     	// Initialize the shader (which uses glew, so we need to init that first).
@@ -19,20 +19,21 @@ Scene::Scene () {
         std::stringstream shader_ss; shader_ss << MY_SRC_DIR << "shaders/phong.";
         shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
 
-        particles = Particles();
+        particles = new Particles();
         // cloth = new Cloth(30, 30);
         cloth = new Cloth(30, 30);
         // cloth = new Cloth(5, 10);
-	    particles.init();
+        fluid = new Fluid(30, 30);
 }
 
 void Scene::print_stats() {
-    particles.print_stats();
+    particles->print_stats();
 }
 
 void Scene::compute_physics(float dt){
     cloth->update(dt);
-    particles.update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
+    fluid->update(dt);
+    particles->update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
 }
 
 void Scene::init_floor() {
@@ -159,9 +160,9 @@ void Scene::draw(float dt) {
 		
     draw_floor();
 
-    cloth->draw(shader);
-
-	particles.draw();
+    // cloth->draw(shader);
+    fluid->draw();
+	particles->draw();
 
     glBindVertexArray(0);
 
@@ -182,6 +183,12 @@ void Scene::cleanup() {
 
     cloth->cleanup();
     delete cloth;
+
+    fluid->cleanup();
+    delete fluid;
+
+    particles->cleanup();
+    delete particles;
 
 	glDeleteVertexArrays(1, &vao);
 }

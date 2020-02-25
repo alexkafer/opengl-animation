@@ -14,8 +14,8 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/normal.hpp>
 
-#include "../tiny_obj_loader.h"
-#include "../stb_image.h"
+#include "../utils/tiny_obj_loader.h"
+#include "../utils/stb_image.h"
 #include "../shader.hpp"
 #include "../utils/GLError.h"
 

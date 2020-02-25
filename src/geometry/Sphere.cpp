@@ -23,7 +23,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
-#include "Sphere.h"
+#include "sphere.h"
 
 
 

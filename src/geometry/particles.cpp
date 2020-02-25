@@ -1,7 +1,7 @@
 #include "particles.h"
 
-#include "common.h"
-#include "stb_image.h"
+#include "../common.h"
+#include "../utils/stb_image.h"
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -25,6 +25,7 @@ Particles::Particles () {
 
     glEnable(GL_PROGRAM_POINT_SIZE); 
     glEnable(GL_BLEND);
+    init();
 }
 
 void Particles::print_stats() {
@@ -169,7 +170,7 @@ void Particles::draw(){
 }
 
 void Particles::cleanup() {
-
+    glDeleteVertexArrays(1, &vao);
 }
 
 glm::vec3 Particles::rand_point_on_disk_up(float radius) {

@@ -3,8 +3,8 @@
 
 #include <vector> 
 
-#include "common.h"
-#include "shader.hpp"
+#include "../common.h"
+#include "../shader.hpp"
 
 enum ParticleType { water, fire, impact };
 
