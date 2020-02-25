@@ -8,22 +8,21 @@
 
 #include "../utils/solver.c"
 
-#define IX(i,j) ((i)+(N+2)*(j))
+#define VERTEX(i,j) ((i)+(_x_dim+2)*(j))
 
 /* external definitions (from solver.c) */
 // extern void dens_step ( int N, float * x, float * x0, float * u, float * v, float diff, float dt );
 // extern void vel_step ( int N, float * u, float * v, float * u0, float * v0, float visc, float dt );
 
-static float diff = 0.0f;
-static float visc = 0.0f;
+static float diff = 0.1f;
+static float visc = 0.5f;
 
 Fluid::Fluid(size_t x_dim, size_t z_dim) {
     _size = (x_dim+2)*(z_dim+2);
     _x_dim = x_dim;
     _z_dim = z_dim;
     // size = (dimension + 2) * (dimension + 2);
-    points = std::vector<glm::vec3>();
-
+    points = new glm::vec3 [_size];
     u = new float [_size];
     v = new float [_size];
     u_prev = new float[_size];
@@ -35,16 +34,14 @@ Fluid::Fluid(size_t x_dim, size_t z_dim) {
 
     indices = std::vector<GLushort>();
 
-    size_t vertex[x_dim][z_dim];
     float h = 1.0f / x_dim;
     float w = 1.0f / z_dim;
     for (size_t i = 0; i < x_dim; i++) {
         float x = h * i;
         for (size_t j = 0; j < z_dim; j++) {
             float z = w * j;
-            vertex[i][j] = points.size();
 
-            points.push_back(glm::vec3(x, 0.5f, z));
+            points[VERTEX(i, j)] = glm::vec3(x, 0.5f, z);
             std::cout << "Placing at " << x << " and " << z << std::endl; 
         }
     }
@@ -55,18 +52,18 @@ Fluid::Fluid(size_t x_dim, size_t z_dim) {
 
             // Left down triangle IX(i,j)
             if (x < x_dim-1 && z < z_dim-1) {
-                indices.push_back(vertex[x][z]);
-                indices.push_back(vertex[x+1][z]);
-                indices.push_back(vertex[x][z+1]);
+                indices.push_back(VERTEX(x,z));
+                indices.push_back(VERTEX(x+1,z));
+                indices.push_back(VERTEX(x,z+1));
 
                 // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x+1][y] << ", " <<vertex[x][y+1] << std::endl;
             }
 
             // Up right triangle
             if (x > 0 && z > 0) {
-                indices.push_back(vertex[x][z]);
-                indices.push_back(vertex[x-1][z]);
-                indices.push_back(vertex[x][z-1]);
+                indices.push_back(VERTEX(x, z));
+                indices.push_back(VERTEX(x-1, z));
+                indices.push_back(VERTEX(x,z-1));
 
                 // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x-1][y] << ", " <<vertex[x][y-1] << std::endl;
             
@@ -93,7 +90,7 @@ void Fluid::init() {
     glGenBuffers(2, vbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(glm::vec3), &points[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _size * sizeof(glm::vec3), points, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, _size * sizeof(float), NULL, GL_DYNAMIC_DRAW);

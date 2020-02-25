@@ -13,7 +13,7 @@ class Fluid {
     GLuint vao;
     GLuint ibo; // Indicies
     GLuint vbo[2]; // Vertexes and Colors
-    std::vector<glm::vec3> points;
+    glm::vec3 * points;
     std::vector<GLushort> indices;
 
     size_t _x_dim;
