@@ -23,7 +23,7 @@ Scene::Scene () {
         // cloth = new Cloth(30, 30);
         cloth = new Cloth(30, 30);
         // cloth = new Cloth(5, 10);
-        fluid = new Fluid(50, 50);
+        fluid = new Fluid(10, 10, 10);
 }
 
 void Scene::print_stats() {

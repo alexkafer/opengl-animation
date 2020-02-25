@@ -16,20 +16,24 @@ class Fluid {
     glm::vec3 * points;
     std::vector<GLushort> indices;
 
+    size_t _total_size;
     size_t _x_dim;
+    size_t _y_dim;
     size_t _z_dim;
-    size_t _size;
 
     int next_source;
     int next_force;
     glm::vec2 next_force_dir;
 
-    float * u, * v, * u_prev, * v_prev;
+    float * x_vel, * x_vel_prev;
+    float * y_vel, * y_vel_prev;
+    float * z_vel, * z_vel_prev;
     float * dens, * dens_prev;
 
     void init_static_uniforms();
+    void update_force_source(float * d, float * u, float * v, float * w );
 public:
-    Fluid(size_t x_dim, size_t y_dim);
+    Fluid(size_t x_dim, size_t y_dim, size_t z_dim);
 
     void clear();
 

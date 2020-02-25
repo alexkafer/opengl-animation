@@ -193,6 +193,8 @@ set(MY_SOURCES
 	${GLEW_SRC} # empty unless USE_GLEW is set to ON
 	src/main.cpp
 	src/utils/GLError.cpp
+	src/utils/cg.cpp
+	src/utils/3d_fluid_solver.cpp
     src/scene.cpp
     src/geometry/particles.cpp
     src/geometry/sphere.cpp
