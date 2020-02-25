@@ -14,9 +14,8 @@ namespace Globals {
 	extern float mouse_y;
 	extern bool reset_mouse;
 
-	extern bool picking_object;
-	extern int selected;
-	extern bool dragging_object;
+	extern bool interacting;
+	extern bool mouse_down;
 
 	extern float yaw;
 	extern float pitch;

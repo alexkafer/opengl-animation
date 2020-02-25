@@ -26,6 +26,8 @@ class Cloth {
     size_t _x_dim;
     size_t _y_dim;
 
+    int selected;
+
     std::vector<glm::vec3> forces;
     std::vector<PointMass> pointMasses;
     std::vector<std::pair<size_t, size_t>> edges;
@@ -34,7 +36,7 @@ class Cloth {
 
     spatial_hash_map spatial_hash;
 
-    std::vector<size_t> selected;
+    // std::vector<size_t> selected;
 
     GLuint vao;
     GLuint ibo; // Indicies
@@ -55,8 +57,8 @@ public:
 
     void update(float dt);
     void draw(mcl::Shader & shader);
-    int find_object(glm::vec3 origin, glm::vec3 direction);
-    void drag_object(int object, glm::vec3 direction);
+    void interaction(glm::vec3 origin, glm::vec3 direction);
+    void drag_selected(glm::vec3 direction);
 
     void cleanup();
 

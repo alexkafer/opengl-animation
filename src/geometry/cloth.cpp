@@ -171,7 +171,7 @@ void Cloth::update_forces(float dt) {
 
         float damp_force = -KV * STEPS * (velocity_one - velocity_two);
 
-        if (edge.first == Globals::selected || edge.second == Globals::selected) {
+        if (edge.first == selected || edge.second == selected) {
             string_force *= 10.f;
         }
 
@@ -208,7 +208,7 @@ void Cloth::update_positions(float dt) {
     // After we've calculated all the velocities and made modifications, apply them;
     for(size_t i = 0; i < pointMasses.size(); i++) {
         
-        if ((i > _x_dim * (_y_dim-1)) ||  (Globals::dragging_object && Globals::selected == i)) {
+        if ((i > _x_dim * (_y_dim-1)) ||  (Globals::mouse_down && selected == i)) {
         // if ((i % _y_dim == (_y_dim / 2)) || (i % _y_dim == (_y_dim / 2) + 1)|| (Globals::dragging_object && Globals::selected == i)) {
         // if ((i % _y_dim == 0) || (Globals::dragging_object && Globals::selected == i)) {
         // if ((Globals::dragging_object && Globals::selected == i)) {
@@ -469,7 +469,11 @@ void Cloth::draw(mcl::Shader & shader) {
     shader.disable();
 }
 
-int Cloth::find_object(glm::vec3 origin, glm::vec3 direction) {
+void Cloth::interaction(glm::vec3 origin, glm::vec3 direction) {
+    if (selected > 0) {
+        drag_selected(direction);
+    }
+
     float radius = REST_LENGTH * REST_LENGTH / 4.0f;
     float closest_distance = std::numeric_limits<float>::max();
     int closest = -1;
@@ -484,12 +488,12 @@ int Cloth::find_object(glm::vec3 origin, glm::vec3 direction) {
         }
     }
 
-    return closest;
+    selected = closest;
 }
 
-void Cloth::drag_object(int object, glm::vec3 direction) {
-    float distance_from_camera = glm::distance(Globals::eye_pos, pointMasses[object].position);
-    pointMasses[object].position = Globals::eye_pos + distance_from_camera * direction; 
+void Cloth::drag_selected(glm::vec3 direction) {
+    float distance_from_camera = glm::distance(Globals::eye_pos, pointMasses[selected].position);
+    pointMasses[selected].position = Globals::eye_pos + distance_from_camera * direction; 
 }
 
 void Cloth::cleanup() {

@@ -41,8 +41,7 @@ class Scene {
         void init();
 
         void draw(float dt);
-        int find_object(glm::vec3 origin, glm::vec3 direction);
-        void drag_object(int object, glm::vec3 direction);
+        void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
 
         void cleanup();
 };

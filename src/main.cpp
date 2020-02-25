@@ -44,9 +44,8 @@ namespace Globals {
 	float mouse_y;
 	bool reset_mouse;
 
-	bool picking_object;
-	int selected;
-	bool dragging_object;
+	bool interacting;
+	bool mouse_down;
 
 	float yaw;
 	float pitch;
@@ -65,6 +64,19 @@ Scene * scene;
 static const float camera_height = 1.f;
 static const float camera_speed = 5.f;
 static const float camera_distance = 1.f;
+
+static void toggle_interaction(GLFWwindow* window) {
+	Globals::interacting = !Globals::interacting; 
+
+	if (Globals::interacting) {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		Globals::mouse_down = false;
+	} else {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		Globals::reset_mouse = true; 
+		Globals::mouse_down = false;
+	}
+}
 
 //
 //	Callbacks
@@ -85,25 +97,22 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
 			case GLFW_KEY_D: Globals::camera_target += 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
-			case GLFW_KEY_P: Globals::picking_object = true; glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); break;
+			case GLFW_KEY_P: toggle_interaction(window);  break;
 		}
 	}
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && Globals::picking_object) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT && Globals::interacting) {
 
 		if (action == GLFW_PRESS) {
-			std::cout << "Picking object" << std::endl;
-			Globals::dragging_object = true;
+			std::cout << "Interacting with the scene" << std::endl;
+			Globals::mouse_down = true;
 		}
 
 		if (action == GLFW_RELEASE) {
-			Globals::picking_object = false;
-			Globals::dragging_object = false;
+			Globals::mouse_down = false;
 			Globals::reset_mouse = true;
-			Globals::selected = -1;
-			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
 			std::cout << "stopped picking object" << std::endl;
 		}
 	}
@@ -119,8 +128,8 @@ void calculate_eye_direction() {
 
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-	
-	if (Globals::picking_object) {
+	// Showing the mouse
+	if (Globals::interacting) {
 		// Need to convert the click into a 3D normalized device coordinates
 		// and then 4d Homogeneous Clip Clip coordinates
 
@@ -139,17 +148,20 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 		glm::vec3 ray_world = glm::normalize(glm::inverse(Globals::view) * ray_view);
 
-		if (Globals::dragging_object) {
-			if (Globals::selected != -1) {
-				scene->drag_object(Globals::selected, ray_world);
-			} else {
-				Globals::selected = scene->find_object(Globals::eye_pos, ray_world);
-			}
-		}
+		// if (Globals::dragging_object) {
+		// 	if (Globals::selected != -1) {
+		// 		scene->drag_object(Globals::selected, ray_world);
+		// 	} else {
+		// 		Globals::selected = scene->find_object(Globals::eye_pos, ray_world);
+		// 	}
+		// }
+
+		scene->interaction(Globals::eye_pos, ray_world, Globals::mouse_down);
 
 		return;
 	};
 
+	// Changing camera direction
 	if(Globals::reset_mouse)
     {
         Globals::mouse_x = xpos;
@@ -222,9 +234,8 @@ int main(int argc, char *argv[]){
 
 	// Create the glfw window
 	Globals::reset_mouse = true;
-	Globals::picking_object = true;
-	Globals::dragging_object = false;
-	Globals::selected = -1;
+	Globals::interacting = true;
+	Globals::mouse_down = false;
 	window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "CSCI5611 - Alex Kafer", NULL, NULL);
 
 	glfwGetFramebufferSize(window, &Globals::screen_width, &Globals::screen_height);
@@ -233,7 +244,6 @@ int main(int argc, char *argv[]){
 
 	// Bind callbacks to the window
 	glfwSetKeyCallback(window, &key_callback);
-	// glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
 	glfwSetMouseButtonCallback(window, &mouse_button_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetFramebufferSizeCallback(window, &framebuffer_size_callback);

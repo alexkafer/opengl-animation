@@ -6,16 +6,20 @@
 #include <glm/gtx/normal.hpp>
 #include <glm/gtx/intersect.hpp>
 
+#define VERTEX(i,j) ((i)+(_x_dim+2)*(j))
+
 #include "../utils/solver.c"
 
-#define VERTEX(i,j) ((i)+(_x_dim+2)*(j))
 
 /* external definitions (from solver.c) */
 // extern void dens_step ( int N, float * x, float * x0, float * u, float * v, float diff, float dt );
 // extern void vel_step ( int N, float * u, float * v, float * u0, float * v0, float visc, float dt );
 
-static float diff = 0.1f;
-static float visc = 0.5f;
+static float diff = 0.001f;
+static float visc = 0.2f;
+static float force = 0.1f; 
+static float source = 500.f; 
+
 
 Fluid::Fluid(size_t x_dim, size_t z_dim) {
     _size = (x_dim+2)*(z_dim+2);
@@ -34,8 +38,8 @@ Fluid::Fluid(size_t x_dim, size_t z_dim) {
 
     indices = std::vector<GLushort>();
 
-    float h = 1.0f / x_dim;
-    float w = 1.0f / z_dim;
+    float h = 10.0f / x_dim;
+    float w = 10.0f / z_dim;
     for (size_t i = 0; i < x_dim; i++) {
         float x = h * i;
         for (size_t j = 0; j < z_dim; j++) {
@@ -147,20 +151,32 @@ void Fluid::update(float dt) {
     
 
     for (int i=0 ; i<_size ; i++ ) {
-		u_prev[i] = v_prev[i] = dens_prev[i] = 0.0f;
+		dens_prev[i] = 0.0f;
+        int x = i % _x_dim;
+        int z = i / _x_dim;
+        // std::cout << "Coord (" << x << "," << z << ") is ";
+        u_prev[i] = force * (z - _z_dim / 2.f);
+		v_prev[i] = -force * (x - _x_dim / 2.f);
+        // std::cout << "(" << u_prev[i] << "," << v_prev[i]  << ")" << std::endl;
 	}
 
-    if (source > 0) {
-        std::cout << "Boosting source: " << (source % _x_dim) << ", " << (source / _x_dim) << std::endl;
-        u_prev[source] = 1.f;
-        v_prev[source] = 1.f;
-
-        dens_prev[source] = 1000.f;
-        source = -1;
+    if (next_source % _x_dim > 0 && next_source % _x_dim < _x_dim && next_source / _x_dim > 0 && next_source / _x_dim < _z_dim) {
+        // std::cout << "Boosting source: " << (next_source % _x_dim) << ", " << (next_source / _x_dim) << std::endl;
+        dens_prev[next_source] = source;
+        // next_source = -1;
     }
 
-    vel_step ( _x_dim, u, v, u_prev, v_prev, visc, dt );
-    dens_step ( _x_dim, dens, dens_prev, u, v, diff, dt );
+    // if (next_force % _x_dim > 0 && next_force % _x_dim < _x_dim && next_force / _x_dim > 0 && next_force / _x_dim < _z_dim) {
+    //     std::cout << "Boosting force: " << (next_force % _x_dim) << ", " << (next_force / _x_dim) << std::endl;
+    //     std::cout << "in direction: " << glm::to_string(next_force_dir) << std::endl;
+    //     u_prev[next_force] = force * next_force_dir.x;
+    //     v_prev[next_force] = force * next_force_dir.y;
+
+    //     next_force = -1;
+    // }
+
+    vel_step (_x_dim, u, v, u_prev, v_prev, visc, dt );
+    dens_step (_x_dim, dens, dens_prev, u, v, diff, dt );
 }
 
 void Fluid::draw() {
@@ -254,7 +270,7 @@ void Fluid::draw() {
 //     }
 // }
 
-int Fluid::find_object(glm::vec3 origin, glm::vec3 direction) {
+void Fluid::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
     float closest_distance = std::numeric_limits<float>::max();
     int closest = -1;
 
@@ -274,13 +290,18 @@ int Fluid::find_object(glm::vec3 origin, glm::vec3 direction) {
         }
     } 
 
-    return closest;
+    if (mouse_down) {
+        next_source = closest;
+    } else {
+        // if (closest > 0) {
+        //     next_force_dir = glm::vec2(closest % _x_dim, closest / _x_dim);
+        // } else {
+        //     next_force_dir = glm::vec2(0.f, 0.f);
+        // }
+        
+        // next_force = closest;
+    }
 }
-
-void Fluid::drag_object(int object, glm::vec3 direction) {
-    source = object;
-}
-
 
 void Fluid::cleanup() {
     glDeleteVertexArrays(1, &vao);

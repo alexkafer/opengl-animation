@@ -23,7 +23,7 @@ Scene::Scene () {
         // cloth = new Cloth(30, 30);
         cloth = new Cloth(30, 30);
         // cloth = new Cloth(5, 10);
-        fluid = new Fluid(30, 30);
+        fluid = new Fluid(50, 50);
 }
 
 void Scene::print_stats() {
@@ -169,22 +169,27 @@ void Scene::draw(float dt) {
     compute_physics(dt);
 }
 
-int Scene::find_object(glm::vec3 origin, glm::vec3 direction) {
-    int object = fluid->find_object(origin, direction);
-    if (object > 0) {
-        return 2 * object + 1;
-    } 
 
-    return 2 * cloth->find_object(origin, direction);
+void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
+    fluid->interaction(origin, direction, mouse_down);
 }
 
-void Scene::drag_object(int object, glm::vec3 direction) {
-    if (object % 2 == 0) {
-        cloth->drag_object(object / 2, direction);
-    } else {
-        fluid->drag_object(object / 2, direction);
-    }
-}
+// int Scene::find_object(glm::vec3 origin, glm::vec3 direction) {
+//     int object = fluid->find_object(origin, direction);
+//     if (object > 0) {
+//         return 2 * object + 1;
+//     } 
+
+//     return 2 * cloth->find_object(origin, direction);
+// }
+
+// void Scene::drag_object(int object, glm::vec3 direction) {
+//     if (object % 2 == 0) {
+//         cloth->drag_object(object / 2, direction);
+//     } else {
+//         fluid->drag_object(object / 2, direction);
+//     }
+// }
 
 void Scene::cleanup() {
     // Disable the shader, we're done using it

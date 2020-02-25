@@ -20,7 +20,9 @@ class Fluid {
     size_t _z_dim;
     size_t _size;
 
-    int source;
+    int next_source;
+    int next_force;
+    glm::vec2 next_force_dir;
 
     float * u, * v, * u_prev, * v_prev;
     float * dens, * dens_prev;
@@ -31,8 +33,7 @@ public:
 
     void clear();
 
-    int find_object(glm::vec3 origin, glm::vec3 direction);
-    void drag_object(int object, glm::vec3 direction);
+    void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
 
     void init();
     void update(float dt);
