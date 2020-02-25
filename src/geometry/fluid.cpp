@@ -4,32 +4,40 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include <glm/gtx/normal.hpp>
+#include <glm/gtx/intersect.hpp>
+
+#include "../utils/solver.c"
 
 #define IX(i,j) ((i)+(N+2)*(j))
-#define SWAP(x0,x) {float * tmp=x0;x0=x;x=tmp;}
-#define FOR_EACH_CELL for ( i=1 ; i<=N ; i++ ) { for ( j=1 ; j<=N ; j++ ) {
-#define END_FOR }}
+
+/* external definitions (from solver.c) */
+// extern void dens_step ( int N, float * x, float * x0, float * u, float * v, float diff, float dt );
+// extern void vel_step ( int N, float * u, float * v, float * u0, float * v0, float visc, float dt );
+
+static float diff = 0.0f;
+static float visc = 0.0f;
 
 Fluid::Fluid(size_t x_dim, size_t z_dim) {
-    int size = (N+2)*(N+2);
-
+    _size = (x_dim+2)*(z_dim+2);
     _x_dim = x_dim;
-    _y_dim = z_dim;
+    _z_dim = z_dim;
     // size = (dimension + 2) * (dimension + 2);
     points = std::vector<glm::vec3>();
 
-    u = new float [size];
-    v = new float [size];
-    u_prev = new float[size];
-    v_prev = new float[size];
-    dens = new float[size];
-    dens_prev = new float[size];
+    u = new float [_size];
+    v = new float [_size];
+    u_prev = new float[_size];
+    v_prev = new float[_size];
+    dens = new float[_size];
+    dens_prev = new float[_size];
+
+    clear();
 
     indices = std::vector<GLushort>();
 
     size_t vertex[x_dim][z_dim];
-    float h = 1.0f / x_dim - 0.5f;
-    float w = 1.0f / z_dim - 0.5f;
+    float h = 1.0f / x_dim;
+    float w = 1.0f / z_dim;
     for (size_t i = 0; i < x_dim; i++) {
         float x = h * i;
         for (size_t j = 0; j < z_dim; j++) {
@@ -45,7 +53,7 @@ Fluid::Fluid(size_t x_dim, size_t z_dim) {
     for (size_t x = 0; x < x_dim; x++) {
         for (size_t z = 0; z < z_dim; z++) {
 
-            // Left down triangle
+            // Left down triangle IX(i,j)
             if (x < x_dim-1 && z < z_dim-1) {
                 indices.push_back(vertex[x][z]);
                 indices.push_back(vertex[x+1][z]);
@@ -70,10 +78,8 @@ Fluid::Fluid(size_t x_dim, size_t z_dim) {
 }
 
 void Fluid::clear() {
-    int size = (N+2)*(N+2);
-
-	for (int i=0; i<size ; i++) {
-		u[i] = v[i] = u_prev[i] = v_prev[i] = dens[i] = dens_prev[i] = 0.0f;
+	for (int i=0; i<_size ; i++) {
+		u[i] = v[i] = u_prev[i] = v_prev[i] = dens[i] = dens_prev[i] = 0.f;
 	}
 }
 
@@ -83,17 +89,14 @@ void Fluid::init() {
 
     glGenVertexArrays(1, &vao); //Create a VAO
 
-    std::cout << "Starting vbos" << std::endl;
-
-    glGenBuffers(2, vbo);
-    std::cout << "genned vbos" << std::endl;
     
+    glGenBuffers(2, vbo);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(glm::vec3), &points[0], GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, dens->size() * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _size * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 
 
     glGenBuffers(1, &ibo);
@@ -103,6 +106,7 @@ void Fluid::init() {
     glBindVertexArray(0);
 
     init_static_uniforms();
+    std::cout << "post init" << std::endl;
 }
 
 
@@ -142,8 +146,24 @@ void Fluid::init_static_uniforms()
 }
 
 void Fluid::update(float dt) {
-   vel_step(dt)
-   dens_step(0.0f, dt)
+    // std::cout << "start update" << std::endl;
+    
+
+    for (int i=0 ; i<_size ; i++ ) {
+		u_prev[i] = v_prev[i] = dens_prev[i] = 0.0f;
+	}
+
+    if (source > 0) {
+        std::cout << "Boosting source: " << (source % _x_dim) << ", " << (source / _x_dim) << std::endl;
+        u_prev[source] = 1.f;
+        v_prev[source] = 1.f;
+
+        dens_prev[source] = 1000.f;
+        source = -1;
+    }
+
+    vel_step ( _x_dim, u, v, u_prev, v_prev, visc, dt );
+    dens_step ( _x_dim, dens, dens_prev, u, v, diff, dt );
 }
 
 void Fluid::draw() {
@@ -187,7 +207,8 @@ void Fluid::draw() {
 
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, dens->size() * sizeof(float), &(dens->data), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _size * sizeof(float), dens, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(attribVertexDensity);
     glVertexAttribPointer(attribVertexDensity, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*) 0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
@@ -236,176 +257,39 @@ void Fluid::draw() {
 //     }
 // }
 
-void set_bnd(float * x )
-{
-    int N = _x_dim;
+int Fluid::find_object(glm::vec3 origin, glm::vec3 direction) {
+    float closest_distance = std::numeric_limits<float>::max();
+    int closest = -1;
 
-	for (int i=1 ; i <= N; i++) {
-		x[IX(0  ,i)] = x[IX(1,i)];
-		x[IX(N+1,i)] = x[IX(N,i)];
-		x[IX(i,0  )] = x[IX(i,1)];
-		x[IX(i,N+1)] = x[IX(i,N)];
-	}
+    glm::vec2 barry; float distance;
+    for (size_t f = 0; f < indices.size() / 3; f++) {
+        // Get the three indexes of the face (all faces are triangular)
+        GLushort idx0 = indices[3 * f + 0];
+        GLushort idx1 = indices[3 * f + 1];
+        GLushort idx2 = indices[3 * f + 2];
 
-	x[IX(0  ,0  )] = 0.5f*(x[IX(1,0  )]+x[IX(0  ,1)]);
-	x[IX(0  ,N+1)] = 0.5f*(x[IX(1,N+1)]+x[IX(0  ,N)]);
-	x[IX(N+1,0  )] = 0.5f*(x[IX(N,0  )]+x[IX(N+1,1)]);
-	x[IX(N+1,N+1)] = 0.5f*(x[IX(N,N+1)]+x[IX(N+1,N)]);
-}
-
-void set_vel_bnd(float * x )
-{
-    int N = _x_dim;
-
-	for (int i=1; i <= N; i++) {
-        x[IX(0  ,i)] = x[IX(1,i)];
-        x[IX(N+1,i)] = x[IX(N,i)];
-
-        x[IX(i,0  )] = x[IX(i,1)];
-        x[IX(i,N+1)] = x[IX(i,N)];
-
-        // X
-        x[IX(0  ,i)].x *= -1;
-        x[IX(N+1,i)].x *= -1;
-
-        // Y
-        x[IX(i,0  )].y *= -1;
-        x[IX(i,N+1)].y *= -1;
-	}
-
-	x[IX(0  ,0  )] = 0.5f*(x[IX(1,0  )]+x[IX(0  ,1)]);
-	x[IX(0  ,N+1)] = 0.5f*(x[IX(1,N+1)]+x[IX(0  ,N)]);
-	x[IX(N+1,0  )] = 0.5f*(x[IX(N,0  )]+x[IX(N+1,1)]);
-	x[IX(N+1,N+1)] = 0.5f*(x[IX(N,N+1)]+x[IX(N+1,N)]);
-}
-
-void lin_solve(float * x, float * x0, float a, float c)
-{
-	for (int k=0 ; k<20 ; k++ ) {
-		for (int i=1 ; i <= _x_dim ; i++ ) { 
-            for (int j=1 ; j <= _z_dim ; j++ ) {
-			    x[IX(i,j)] = (x0[IX(i,j)] + a*(x[IX(i-1,j)]+x[IX(i+1,j)]+x[IX(i,j-1)]+x[IX(i,j+1)]))/c;
-		    }
+        if (glm::intersectRayTriangle(origin, direction,
+            points[idx0], points[idx1], points[idx2],
+            barry, distance)) {
+            if (distance < closest_distance) {
+                closest = idx0;
+            }
         }
+    } 
 
-		set_bnd (x);
-	}
+    return closest;
 }
 
-void lin_solve(glm::vec2  * x, glm::vec2 * x0, float a, float c)
-{
-	for (int k=0 ; k<20 ; k++ ) {
-		for (int i=1 ; i <= _x_dim ; i++ ) { 
-            for (int j=1 ; j <= _z_dim ; j++ ) {
-			    x[IX(i,j)] = (x0[IX(i,j)] + a*(x[IX(i-1,j)]+x[IX(i+1,j)]+x[IX(i,j-1)]+x[IX(i,j+1)]))/c;
-		    }
-        }
-
-		set_vel_bnd(x);
-	}
+void Fluid::drag_object(int object, glm::vec3 direction) {
+    source = object;
 }
-
-void diffuse(float * x, float * x0, float diff, float dt )
-{
-	float a = dt * diff * _x_dim * _z_dim;
-	lin_solve(x, x0, a, 1+4*a);
-}
-
-void diffuse(glm::vec2 * x, glm::vec2 * x0, float diff, float dt )
-{
-	float a = dt * diff * _x_dim * _z_dim;
-	lin_solve(x, x0, a, 1+4*a);
-}
-
-void advect(int b, float * d, float * d0, float * u, float * v, float dt)
-{
-	int i, j, i0, j0, i1, j1;
-	float x, y, s0, t0, s1, t1;
-
-	float dt0 = dt*N;
-    for (int i=1 ; i <= _x_dim ; i++ ) { 
-        for (int j=1 ; j <= _z_dim ; j++ ) {
-            x = i-dt0*u[IX(i,j)]; 
-            y = j-dt0*v[IX(i,j)];
-            
-            if (x<0.5f) x=0.5f; if (x>N+0.5f) x=N+0.5f; i0=(int)x; i1=i0+1;
-            if (y<0.5f) y=0.5f; if (y>N+0.5f) y=N+0.5f; j0=(int)y; j1=j0+1;
-
-            s1 = x-i0; s0 = 1-s1; t1 = y-j0; t0 = 1-t1;
-            d[IX(i,j)] = s0*(t0*d0[IX(i0,j0)]+t1*d0[IX(i0,j1)])+
-                        s1*(t0*d0[IX(i1,j0)]+t1*d0[IX(i1,j1)]);
-        }
-    }
-
-	set_bnd(b, d);
-}
-
-void project(glm::vec2 vel, float * p, float * div)
-{
-    for (int i=1; i <= _x_dim; i++) { 
-        for (int j=1; j <= _z_dim ; j++) {
-            div[IX(i,j)] = -0.5f*(vel[IX(i+1,j)].x-vel[IX(i-1,j)].x+vel[IX(i,j+1)].y-vel[IX(i,j-1)].y)/_x_dim;
-            p[IX(i,j)] = 0;
-        }
-    }	
-
-	set_bnd(div); set_bnd(p);
-
-	lin_solve (0, p, div, 1, 4 );
-
-    for (int i=1 ; i<=_x_dim ; i++ ) { 
-        for (int j=1 ; j<=_z_dim ; j++ ) {
-            vel[IX(i,j)].x -= 0.5f*_x_dim*(p[IX(i+1,j)]-p[IX(i-1,j)]);
-            vel[IX(i,j)].y -= 0.5f*_x_dim*(p[IX(i,j+1)]-p[IX(i,j-1)]);
-        }
-    }
-
-    set_vel_bnd(vel);
-}
-
-
-// dens_step ( N, dens, dens_prev, u, v, diff, dt );
-// void dens_step ( int N, float * x, float * x0, float * u, float * v, float diff, float dt )
-// void Fluid::dens_step(int N, float * x, float * x0, float * u, float * v, float diff, float dt )
-void Fluid::dens_step(float dt)
-{
-    // Update previous
-    int size=(_x_dim+2)*(_z_dim+2);
-	for (int i=0; i < size; i++) {
-        x[i] += dt * x0[i];
-    }
-
-	SWAP ( x0, x ); diffuse(x, x0, diff, dt);
-	SWAP ( x0, x ); advect(x, x0, u, v, dt);
-}
-
-// vel_step ( N, u, v, u_prev, v_prev, visc, dt );
-// void vel_step ( int N, float * u, float * v, float * u0, float * v0, float visc, float dt )
-void Fluid::vel_step (float dt )
-{
-    // Update previous
-    int size=(_x_dim+2)*(_z_dim+2);
-	for (int i=0; i < size; i++) {
-        velocity[i] += dt * velocity_prev[i];
-    }
-
-    SWAP ( velocity_prev, velocity ); diffuse(velocity, velocity_prev, visc, dt);
-
-	project(velocity, velocity_prev);
-	SWAP ( velocity_prev, velocity );
-	advect ( N, 1, u, u0, u0, v0, dt );
-    advect ( N, 2, v, v0, u0, v0, dt );
-	project(velocity, velocity_prev);
-}
-
-
 
 
 void Fluid::cleanup() {
     glDeleteVertexArrays(1, &vao);
 
     delete [] u;
-    delete [] v_prev;
+    delete [] v;
     delete [] u_prev;
     delete [] v_prev;
     delete [] dens;

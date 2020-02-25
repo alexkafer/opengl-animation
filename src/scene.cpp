@@ -170,11 +170,20 @@ void Scene::draw(float dt) {
 }
 
 int Scene::find_object(glm::vec3 origin, glm::vec3 direction) {
-    return cloth->find_object(origin, direction);
+    int object = fluid->find_object(origin, direction);
+    if (object > 0) {
+        return 2 * object + 1;
+    } 
+
+    return 2 * cloth->find_object(origin, direction);
 }
 
 void Scene::drag_object(int object, glm::vec3 direction) {
-    cloth->drag_object(object, direction);
+    if (object % 2 == 0) {
+        cloth->drag_object(object / 2, direction);
+    } else {
+        fluid->drag_object(object / 2, direction);
+    }
 }
 
 void Scene::cleanup() {
