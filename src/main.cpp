@@ -269,7 +269,7 @@ int main(int argc, char *argv[]){
 	// Initialize the scene
 	scene = new Scene();
 	check_gl_error();
-	
+
 	scene->init();
 	check_gl_error();
 
@@ -290,6 +290,7 @@ int main(int argc, char *argv[]){
 	float last_second_time = glfwGetTime();
 	float dt = 0;
 	int frame_count = 0;
+	int fps = 0;
 
 	float camera_t = 0;
 	while( !glfwWindowShouldClose(window)){
@@ -307,12 +308,15 @@ int main(int argc, char *argv[]){
 		{
 			// Display the frame count here any way you want.
 			std::cout << "Framerate: " << frame_count << std::endl;
-
+			fps = frame_count;
 			// scene->print_stats();
+			
 
 			frame_count = 0;
 			last_second_time = current_frame_time;
 		}
+
+
 
 		last_frame_time = current_frame_time;
 
@@ -332,6 +336,9 @@ int main(int argc, char *argv[]){
 		scene->draw(dt);
 		check_gl_error();
 
+		char text[256];
+		sprintf(text,"FPS: %.2d", fps);
+		scene->draw_text(0, 0, text);
 
 		// Finalize
 		glfwSwapBuffers(window);

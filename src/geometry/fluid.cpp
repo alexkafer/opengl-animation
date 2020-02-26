@@ -21,7 +21,7 @@ extern void vel_step ( int M, int N, int O, float * u, float * v,  float * w, fl
 
 static float diff = 0.0001f; // diffuse
 static float visc = 0.001f; // viscosity
-static float force = 0.001f;  // added on keypress on an axis
+static float force = 0.01f;  // added on keypress on an axis
 static float source = 20.0f; // density
 
 
@@ -190,7 +190,7 @@ void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
 
 		d[i] = 0.0f;
         u[i] = -force * (z - _z_dim / 2.f);
-        v[i] = -20.f; // Gravity
+        v[i] = -5.f; // Gravity
         w[i] = -force * (x - _x_dim / 2.f);
 	}
 

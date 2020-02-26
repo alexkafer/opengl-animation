@@ -12,6 +12,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/normal.hpp>
 
+#include "../utils/texture.h"
+
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
 static glm::vec3 air_velocity(-5.f, 0.f, -5.f);
@@ -29,20 +31,6 @@ static const float MASS = 0.5f;
 static const float GRID_VOLUME = 0.5f;
 static const int HASH_TABLE_SIZE = 599;
 static const int PRIMES[3] = {73856093, 19349663, 83492791};
-
-// Created by examining https://github.com/syoyo/tinyobjloader/blob/master/examples/viewer/viewer.cc
-static bool FileExists(const std::string& abs_filename) {
-    bool ret;
-    FILE* fp = fopen(abs_filename.c_str(), "rb");
-    if (fp) {
-        ret = true;
-        fclose(fp);
-    } else {
-        ret = false;
-    }
-
-    return ret;
-}
 
 static size_t spatial_hashing_func(const glm::vec3 & key) {
     return (
@@ -118,7 +106,7 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
     }
 }
 
-void Cloth::init(mcl::Shader & shader) {
+void Cloth::init(Shader & shader) {
     shader.enable();
 
     glGenVertexArrays(1, &vao); //Create a VAO
@@ -134,36 +122,7 @@ void Cloth::init(mcl::Shader & shader) {
 
     
     std::stringstream texture_ss; texture_ss << MY_MODELS_DIR << "/textures/flag.png";
-    if (!FileExists(texture_ss.str())) {
-        // Append base dir.
-        std::cerr << "Unable to find file: " << texture_ss.str() << std::endl;
-        exit(1);
-    }
-
-    int w, h, comp;
-    unsigned char* image = stbi_load(texture_ss.str().c_str(), &w, &h, &comp, STBI_default);
-    if (!image) {
-        std::cerr << "Unable to load texture: " << texture_ss.str() << std::endl;
-        exit(1);
-    }
-    std::cout << "Loaded texture: " << texture_ss.str() << ", w = " << w
-                << ", h = " << h << ", comp = " << comp << std::endl;
-
-    glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    if (comp == 3) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB,
-                    GL_UNSIGNED_BYTE, image);
-    } else if (comp == 4) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
-                    GL_UNSIGNED_BYTE, image);
-    } else {
-        assert(0);  // TODO
-    }
-    glBindTexture(GL_TEXTURE_2D, 0);
-    stbi_image_free(image);
+    texture_id = load_texture(texture_ss.str().c_str());
   
     glBindVertexArray(0);
 
@@ -463,7 +422,7 @@ void Cloth::update(float dt) {
     }
 }
 
-void Cloth::draw(mcl::Shader & shader) {
+void Cloth::draw(Shader & shader) {
     shader.enable();
 
     GLint attribVertexPosition  = shader.attribute("in_position");

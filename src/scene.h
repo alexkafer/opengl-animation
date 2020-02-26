@@ -13,7 +13,7 @@
 static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 class Scene {
-        mcl::Shader shader;
+        Shader shader;
 
         Particles * particles; 
         GLuint vao;
@@ -41,6 +41,7 @@ class Scene {
         void init();
 
         void draw(float dt);
+        void draw_text(float x, float y, const char *string);
         void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
         void clear();
 

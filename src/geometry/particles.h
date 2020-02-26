@@ -4,7 +4,7 @@
 #include <vector> 
 
 #include "../common.h"
-#include "../shader.hpp"
+#include "../utils/shader.h"
 
 enum ParticleType { water, fire, impact };
 
@@ -22,7 +22,7 @@ struct Particle {
 
 
 class Particles {
-        mcl::Shader shader;
+        Shader shader;
         GLuint vao;
         GLuint billboard_vertex_buffer, particles_buffer;
         GLuint texture_id, age_uv_buffer_id;

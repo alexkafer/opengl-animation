@@ -15,6 +15,7 @@ void add_source(int M, int N, int O, float * x, float * s, float dt)
 	}
 }
 
+// x y z
 void  set_bnd ( int M, int N, int O, int b, float * x )
 {
 	// Set the boundary as the cube surrounding the fluid

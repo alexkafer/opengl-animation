@@ -179,6 +179,10 @@ if(OpenMP_CXX_FOUND)
     set(MY_LIBRARIES ${MY_LIBRARIES} OpenMP::OpenMP_CXX)
 endif()
 
+find_package(Freetype REQUIRED)
+set(MY_INCLUDE_DIRS ${MY_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS})
+set(MY_LIBRARIES ${MY_LIBRARIES} ${FREETYPE_LIBRARIES})
+
 
 set(MY_LIBRARIES ${MY_LIBRARIES} ${GLFW_LIBRARY} ${LIBS_ALL})
 
@@ -202,6 +206,9 @@ set(MY_SOURCES
 	src/utils/GLError.cpp
 	src/utils/cg.cpp
 	src/utils/3d_fluid_solver.cpp
+	src/utils/shader.cpp
+	src/utils/text2d.cpp
+	src/utils/texture.cpp
     src/scene.cpp
     src/geometry/particles.cpp
     src/geometry/model.cpp

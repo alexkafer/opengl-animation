@@ -1,3 +1,11 @@
+#include "../common.h"
+#ifdef __APPLE__
+#define GL_SILENCE_DEPRECATION
+#include <OpenGL/gl3.h>
+#else
+#include <GL/gl.h>
+#endif
+
 #include "model.h"
 
 
@@ -18,7 +26,7 @@ static bool FileExists(const std::string& abs_filename) {
 
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
-Model::Model(const std::string &directory, const std::string &obj_file, mcl::Shader & shader)
+Model::Model(const std::string &directory, const std::string &obj_file, Shader & shader)
 {
     textures = std::map<std::string, GLuint>();
     materials = std::vector<tinyobj::material_t>();
@@ -30,7 +38,7 @@ Model::Model(const std::string &directory, const std::string &obj_file, mcl::Sha
 }
 
 // draws the model, and thus all its meshes
-void Model::draw(mcl::Shader & shader)
+void Model::draw(Shader & shader)
 {
     GLuint attribVertexPosition  = shader.attribute("in_position");
     GLuint attribVertexNormal    = shader.attribute("in_normal");
@@ -86,7 +94,7 @@ void Model::draw(mcl::Shader & shader)
 
 
 // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
-void Model::load_model(std::string obj_file, std::string mtl_dir, mcl::Shader & shader) {
+void Model::load_model(std::string obj_file, std::string mtl_dir, Shader & shader) {
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
 
@@ -125,68 +133,42 @@ void Model::load_model(std::string obj_file, std::string mtl_dir, mcl::Shader & 
     // Load diffuse textures
     {
         for (size_t m = 0; m < materials.size(); m++) {
-        tinyobj::material_t* mp = &materials[m];
+            tinyobj::material_t* mp = &materials[m];
 
-        if (mp->diffuse_texname.length() > 0) {
-            // Only load the texture if it is not already loaded
-            if (textures.find(mp->diffuse_texname) == textures.end()) {
-                GLuint texture_id;
-                int w, h;
-                int comp;
-
-                std::string texture_filename = mp->diffuse_texname;
-                if (!FileExists(texture_filename)) {
-                    // Append base dir.
-                    texture_filename = mtl_dir + mp->diffuse_texname;
+            if (mp->diffuse_texname.length() > 0) {
+                // Only load the texture if it is not already loaded
+                if (textures.find(mp->diffuse_texname) == textures.end()) {
+                    GLuint texture_id;
+            
+                    std::string texture_filename = mp->diffuse_texname;
                     if (!FileExists(texture_filename)) {
-                    std::cerr << "Unable to find file: " << mp->diffuse_texname
-                                << std::endl;
-                    exit(1);
+                        // Append base dir.
+                        texture_filename = mtl_dir + mp->diffuse_texname;
+                        if (!FileExists(texture_filename)) {
+                        std::cerr << "Unable to find file: " << mp->diffuse_texname
+                                    << std::endl;
+                        exit(1);
+                        }
                     }
-                }
 
-                unsigned char* image =
-                    stbi_load(texture_filename.c_str(), &w, &h, &comp, STBI_default);
-                if (!image) {
-                    std::cerr << "Unable to load texture: " << texture_filename
-                            << std::endl;
-                    exit(1);
-                }
-                std::cout << "Loaded texture: " << texture_filename << ", w = " << w
-                            << ", h = " << h << ", comp = " << comp << std::endl;
-
-                glGenTextures(1, &texture_id);
-                glBindTexture(GL_TEXTURE_2D, texture_id);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                if (comp == 3) {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB,
-                                GL_UNSIGNED_BYTE, image);
-                } else if (comp == 4) {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
-                                GL_UNSIGNED_BYTE, image);
-                } else {
-                    assert(0);  // TODO
-                }
-                glBindTexture(GL_TEXTURE_2D, 0);
-                stbi_image_free(image);
-                textures.insert(std::make_pair(mp->diffuse_texname, texture_id));
+                    texture_id = load_texture(texture_filename.c_str());
+                    textures.insert(std::make_pair(mp->diffuse_texname, texture_id));
                 }
             }
         }
-    }
 
-    for (size_t i = 0; i < shapes.size(); i ++) {
-        tinyobj::shape_t &shape = shapes[i];
+        for (size_t i = 0; i < shapes.size(); i ++) {
+            tinyobj::shape_t &shape = shapes[i];
 
-        // Check for smoothing group and compute smoothing normals
-        std::map<int, glm::vec3> smoothVertexNormals;
-        if (hasSmoothingGroup(shape) > 0) {
-            std::cout << "Compute smoothingNormal for shape [" << i << "]" << std::endl;
-            computeSmoothingNormals(attributes, shape, smoothVertexNormals);
+            // Check for smoothing group and compute smoothing normals
+            std::map<int, glm::vec3> smoothVertexNormals;
+            if (hasSmoothingGroup(shape) > 0) {
+                std::cout << "Compute smoothingNormal for shape [" << i << "]" << std::endl;
+                computeSmoothingNormals(attributes, shape, smoothVertexNormals);
+            }
+
+            process_mesh(attributes, shape.mesh, smoothVertexNormals, i);
         }
-
-        process_mesh(attributes, shape.mesh, smoothVertexNormals, i);
     }
 }
 

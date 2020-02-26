@@ -9,8 +9,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "utils/tiny_obj_loader.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "utils/stb_image.h"
+#include "utils/text2d.h"
 
 Scene::Scene () {
     	// Initialize the shader (which uses glew, so we need to init that first).
@@ -86,6 +85,8 @@ void Scene::init()
     cloth->init(shader);
 
     shader.disable();
+
+    initText2D( "Arial.ttf" );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -213,6 +214,11 @@ void Scene::clear() {
 //         fluid->drag_object(object / 2, direction);
 //     }
 // }
+
+void Scene::draw_text(float x, float y, const char *string){
+    // printText2D(string, x, y, 0.1f);
+    RenderText(string, 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+}
 
 void Scene::cleanup() {
     // Disable the shader, we're done using it

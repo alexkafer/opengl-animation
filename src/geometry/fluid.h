@@ -5,10 +5,10 @@
 #include <algorithm>
 
 #include "../common.h"
-#include "../shader.hpp"
+#include "../utils/shader.h"
 
 class Fluid {
-    mcl::Shader shader;
+    Shader shader;
 
     GLuint vao;
     GLuint ibo; // Indicies

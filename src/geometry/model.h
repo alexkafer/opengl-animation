@@ -15,8 +15,8 @@
 #include <glm/gtx/normal.hpp>
 
 #include "../utils/tiny_obj_loader.h"
-#include "../utils/stb_image.h"
-#include "../shader.hpp"
+#include "../utils/texture.h"
+#include "../utils/shader.h"
 #include "../utils/GLError.h"
 
 typedef struct {
@@ -24,9 +24,6 @@ typedef struct {
   int numTriangles;
   size_t material_id;
 } DrawObject;
-
-// Created by examining https://github.com/syoyo/tinyobjloader/blob/master/examples/viewer/viewer.cc
-static bool FileExists(const std::string& abs_filename);
 
 class Model 
 {
@@ -40,17 +37,16 @@ public:
 
     /*  Functions   */
     // constructor, expects a filepath to a 3D model.
-    Model(const std::string &directory, const std::string &obj_file, mcl::Shader & shader);
+    Model(const std::string &directory, const std::string &obj_file, Shader & shader);
 
     // draws the model, and thus all its meshes
-    void draw(mcl::Shader & shader);
+    void draw(Shader & shader);
     
 private:
     // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
-    void load_model(std::string obj_file, std::string mtl_dir, mcl::Shader & shader);
+    void load_model(std::string obj_file, std::string mtl_dir, Shader & shader);
 
     void process_mesh(tinyobj::attrib_t &attrib, tinyobj::mesh_t &mesh, std::map<int, glm::vec3> smoothVertexNormals, size_t shape_number);
-
     // Source: https://github.com/syoyo/tinyobjloader/blob/eba1fc037e89a593f50d670621c0dbf9882ec78d/examples/viewer/viewer.cc#L221
     // Check if `mesh_t` contains smoothing group id.
     bool hasSmoothingGroup(const tinyobj::shape_t& shape);

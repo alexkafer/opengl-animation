@@ -19,89 +19,7 @@
 //
 // Adapted from r3dux (http://r3dux.org).
 
-#ifndef SHADER_HPP
-#define SHADER_HPP
-
-#ifdef _WIN32
-#include <windows.h>    // include windows.h to avoid thousands of compile errors even though this class is not depending on Windows
-#endif
-
-#ifdef __APPLE__
-#define GL_SILENCE_DEPRECATION
-#include <OpenGL/gl3.h>
-#else
-#include <GL/gl.h>
-#endif
-
-#include <iostream> 
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <unordered_map> // requires C++11
-
-#include "utils/GLError.h"
-//
-//	Shader utility class for managing vert/frag shaders.
-//	Does not currently handle geometry shaders.
-//
-//	Example use:
-//	Shader myshader;
-//	< OpenGL context creation >
-	// myshader.init_from_files( "myshader.vert", "myshader.frag" );
-	// while( rendering ){
-//		< OpenGL view stuff >
-//		myshader.enable();
-//		glUniform3f( myshader.uniform("color"), 1.f, 0.f, 0.f );
-//		< Draw stuff >
-//		myshader.disable();
-//	}
-//
-
-namespace mcl {
-
-class Shader {
-public:
-	Shader() : program_id(0) {}
-
-	~Shader(){ glDeleteProgram(program_id); }
-
-	// Init the shader from files (must create OpenGL context first!)
-	inline void init_from_files( std::string vertex_file, std::string frag_file );
-
-	// Init the shader from strings (must create OpenGL context first!)
-	inline void init_from_strings( std::string vertex_source, std::string frag_source ){ init(vertex_source, frag_source); }
-
-	// Be sure to initialize the shader before enabling it
-	inline void enable();
-
-	// Not really needed, but nice for readability
-	inline void disable(){ glUseProgram(0); }
-
-	// Returns the bound location of a named attribute
-	inline GLuint attribute( const std::string name );
-
-	// Returns the bound location of a named uniform
-	inline GLuint uniform( const std::string name );
-
-
-	inline void validate( );
- 
-	GLuint program_id;
-private:
-	GLuint vertex_id;
-	GLuint fragment_id;
-
-	std::unordered_map<std::string, GLuint> attributes;
-	std::unordered_map<std::string, GLuint> uniforms;
-
-	// Initialize the shader, called by init_from_*
-	inline void init( std::string vertex_source, std::string frag_source );
-
-	// Compiles the shader, called by init
-	inline GLuint compile( std::string shaderSource, GLenum type );
-
-}; // end of shader
-
+#include "shader.h"
 
 //
 //	Implementation
@@ -284,9 +202,3 @@ GLuint Shader::uniform(const std::string name){
 	}
 	return uniforms[name];
 }
-
-
-} // end namespace mcl
-
-#endif
-

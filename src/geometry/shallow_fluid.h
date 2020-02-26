@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "../common.h"
-#include "../shader.hpp"
+#include "../utils/shader.h"
 
 struct FluidPoint {
     glm::vec3 position;
@@ -14,7 +14,7 @@ struct FluidPoint {
 };
 
 class Fluid {
-    mcl::Shader shader;
+    Shader shader;
 
     GLuint vao;
     GLuint ibo; // Indicies

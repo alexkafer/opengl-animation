@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include "../common.h"
-#include "../shader.hpp"
+#include "../utils/shader.h"
 
 #include "../utils/stb_image.h"
 
@@ -57,10 +57,10 @@ class Cloth {
 public:
     Cloth(size_t x, size_t y);
 
-    void init(mcl::Shader & shader);
+    void init(Shader & shader);
 
     void update(float dt);
-    void draw(mcl::Shader & shader);
+    void draw(Shader & shader);
     void interaction(glm::vec3 origin, glm::vec3 direction);
     void drag_selected(glm::vec3 direction);
 
