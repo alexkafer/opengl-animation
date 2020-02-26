@@ -204,6 +204,7 @@ set(MY_SOURCES
 	src/utils/3d_fluid_solver.cpp
     src/scene.cpp
     src/geometry/particles.cpp
+    src/geometry/model.cpp
     src/geometry/sphere.cpp
     src/geometry/cloth.cpp
     src/geometry/fluid.cpp
