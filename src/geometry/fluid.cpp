@@ -9,7 +9,7 @@
 #include <glm/gtx/intersect.hpp>
 
 // #define VERTEX(i,j,k) ((i)+(_x_dim+2)*(j) + (_x_dim+2)*(_y_dim+2)*(k))
-#define VERTEX(i,j,k) ((i) * _y_dim * _z_dim + (j) * _z_dim + (k))
+#define VERTEX(i,j,k) ((i) * (_y_dim+2) * (_z_dim+2) + (j) * (_z_dim+2) + (k))
 
 // #include "../utils/3d_fluid_solver.cpp"
 
@@ -17,10 +17,10 @@
 extern void dens_step ( int M, int N, int O, float * x, float * x0, float * u, float * v, float * w, float diff, float dt );
 extern void vel_step ( int M, int N, int O, float * u, float * v,  float * w, float * u0, float * v0, float * w0, float visc, float dt );
 
-static float diff = .1f; // diffuse
+static float diff = .001f; // diffuse
 static float visc = 0.2f; // viscosity
-static float force = 10.0f;  // added on keypress on an axis
-static float source = 2000.0f; // density
+static float force = 0.1f;  // added on keypress on an axis
+static float source = 500.0f; // density
 
 
 
@@ -51,24 +51,24 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
     clear();
 
     float cell_unit = 1.f;
-    for (size_t i = 0; i < x_dim; i++) {
+    for (size_t i = 0; i < x_dim + 2; i++) {
         float x = cell_unit * i;
-        for (size_t j = 0; j < y_dim; j++) {
+        for (size_t j = 0; j < y_dim +2; j++) {
             float y = cell_unit * j;
-            for (size_t k = 0; k < z_dim; k++) {
-                points[VERTEX(i, j, k)] = glm::vec3(x, y + 0.1f, cell_unit * k);
+            for (size_t k = 0; k < z_dim + 2; k++) {
+                points[VERTEX(i, j, k)] = glm::vec3(x, y + 0.5f, cell_unit * k);
                 std::cout << i << "," << j << "," << k << " (" << VERTEX(i, j, k) << ") is at " <<glm::to_string(points[ VERTEX(i, j, k)]) << std::endl;
             }
         }
     }
 
-    for (size_t i = 0; i < x_dim; i++) {
-        for (size_t k = 0; k < z_dim; k++) {
+    for (size_t i = 1; i <= x_dim+1; i++) {
+        for (size_t k = 1; k <= z_dim+1; k++) {
             // Left down triangle
-            if (i < x_dim-1 && k < z_dim-1) {
-                indices.push_back(VERTEX(i,   0, k  ));
-                indices.push_back(VERTEX(i+1, 0, k  ));
-                indices.push_back(VERTEX(i,   0, k+1));
+            if (i <= x_dim && k <= z_dim) {
+                indices.push_back(VERTEX(i,   1, k  ));
+                indices.push_back(VERTEX(i+1, 1, k  ));
+                indices.push_back(VERTEX(i,   1, k+1));
 
                 // std::cout << "Made ld triangle " << i << ",_," << k ;
                 // std::cout << " at "<< glm::to_string(points[VERTEX(i,   0, k  )]) << " - " ;
@@ -77,10 +77,10 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
             }
 
             // Up right triangle
-            if (i > 0 && k > 0) {
-                indices.push_back(VERTEX(i,   0, k  ));
-                indices.push_back(VERTEX(i-1, 0, k  ));
-                indices.push_back(VERTEX(i,   0, k-1));
+            if (i > 1 && k > 1) {
+                indices.push_back(VERTEX(i,   1, k  ));
+                indices.push_back(VERTEX(i-1, 1, k  ));
+                indices.push_back(VERTEX(i,   1, k-1));
 
                 //                std::cout << "Made ur triangle " << i << ",_," << k ;
                 // std::cout << " at "<< glm::to_string(points[VERTEX(i,   0, k  )]) << " - " ;
@@ -116,11 +116,21 @@ void Fluid::init() {
     glGenVertexArrays(1, &vao); //Create a VAO
     glGenBuffers(2, vbo);
 
+    glBindVertexArray(vao);
+
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(glm::vec3), points, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+
+    for (int i=0; i<_total_size ; i++) {
+        std::cout << i << ": " << glm::to_string(points[i]) << std::endl;
+    }
+
+    for (int i=0; i<indices.size() ; i++) {
+        std::cout << " index " << i << ": " << indices[i] << std::endl;
+    }
 
 
     glGenBuffers(1, &ibo);
@@ -169,9 +179,9 @@ void Fluid::init_static_uniforms()
 
 void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
     for (int i = 0; i < _total_size; i++) {
-        int x = i / (_y_dim*_z_dim);
-        int y = (i-x*_y_dim*_z_dim)/_z_dim;
-        int z = i - x * _y_dim*_z_dim - y * _z_dim;
+        int x = i / ((_y_dim+2)*(_z_dim+2));
+        int y = (i-x*(_y_dim+2)*(_z_dim+2))/(_z_dim+2);
+        int z = i - x * (_y_dim+2)*(_z_dim+2) - y * (_z_dim+2);
 
 		d[i] = 0.0f;
         u[i] = force * (z - _z_dim / 2.f);
@@ -187,12 +197,9 @@ void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
 }
 
 void Fluid::update(float dt) {
-    
-
     update_force_source(dens_prev, x_vel_prev, y_vel_prev, z_vel_prev);
     vel_step(_x_dim, _y_dim, _z_dim, x_vel, y_vel, z_vel,  x_vel_prev, y_vel_prev, z_vel_prev, visc, dt );
 	dens_step(_x_dim, _y_dim, _z_dim, dens, dens_prev, x_vel, y_vel, z_vel, diff, dt );
-    
 }
 
 void Fluid::draw() {
@@ -201,8 +208,8 @@ void Fluid::draw() {
 	GLint attribVertexNormal    = shader.attribute("in_normal");
 	GLint attribVertexDensity    = shader.attribute("in_density");
 
-	GLint attribUniformModel    = shader.uniform("model");
-	GLint attribUniformNormal    = shader.uniform("normal");
+	// GLint attribUniformModel    = shader.uniform("model");
+	// GLint attribUniformNormal    = shader.uniform("normal");
 
     glBindVertexArray(vao);
 
@@ -210,8 +217,8 @@ void Fluid::draw() {
     glVertexAttrib3f(attribVertexNormal, 0.f, 1.f, 0.f);
 
     // activate attribs
-    // glEnableVertexAttribArray(attribVertexPosition);
-    // glEnableVertexAttribArray(attribVertexNormal);
+    glEnableVertexAttribArray(attribVertexPosition);
+    glEnableVertexAttribArray(attribVertexNormal);
    
     // glm::mat4 fluid_model = glm::translate(  // Scale first
     //     glm::mat4( 1.0f ),              // Translate second
@@ -279,6 +286,7 @@ void Fluid::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) 
 void Fluid::cleanup() {
     glDeleteVertexArrays(1, &vao);
 
+    delete [] points;
     delete [] x_vel;
     delete [] y_vel;
     delete [] z_vel;

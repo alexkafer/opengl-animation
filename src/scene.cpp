@@ -23,7 +23,7 @@ Scene::Scene () {
         // cloth = new Cloth(30, 30);
         cloth = new Cloth(30, 30);
         // cloth = new Cloth(5, 10);
-        fluid = new Fluid(5, 1, 5);
+        fluid = new Fluid(2, 1, 2);
 }
 
 void Scene::print_stats() {
@@ -160,7 +160,7 @@ void Scene::draw(float dt) {
 		
     draw_floor();
 
-    // cloth->draw(shader);
+    cloth->draw(shader);
     fluid->draw();
 	particles->draw();
 
