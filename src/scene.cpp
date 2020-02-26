@@ -29,7 +29,7 @@ Scene::Scene () {
 
         shader.disable();
 
-        fluid = new Fluid(20, 20, 20);
+        fluid = new Fluid(30, 5, 30);
         check_gl_error();
 }
 
@@ -193,6 +193,7 @@ void Scene::draw(float dt) {
 
 void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
     fluid->interaction(origin, direction, mouse_down);
+    cloth->interaction(origin, direction, mouse_down);
 }
 
 void Scene::clear() {

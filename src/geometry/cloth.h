@@ -61,7 +61,7 @@ public:
 
     void update(float dt);
     void draw(Shader & shader);
-    void interaction(glm::vec3 origin, glm::vec3 direction);
+    void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
     void drag_selected(glm::vec3 direction);
 
     void cleanup();

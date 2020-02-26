@@ -484,8 +484,8 @@ void Cloth::draw(Shader & shader) {
     shader.disable();
 }
 
-void Cloth::interaction(glm::vec3 origin, glm::vec3 direction) {
-    if (selected > 0) {
+void Cloth::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
+    if (mouse_down && selected > 0) {
         drag_selected(direction);
     }
 
