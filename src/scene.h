@@ -42,6 +42,7 @@ class Scene {
 
         void draw(float dt);
         void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
+        void clear();
 
         void cleanup();
 };

@@ -23,7 +23,7 @@ Scene::Scene () {
         // cloth = new Cloth(30, 30);
         cloth = new Cloth(30, 30);
         // cloth = new Cloth(5, 10);
-        fluid = new Fluid(10, 10, 10);
+        fluid = new Fluid(20, 20, 20);
 }
 
 void Scene::print_stats() {
@@ -174,6 +174,9 @@ void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) 
     fluid->interaction(origin, direction, mouse_down);
 }
 
+void Scene::clear() {
+    fluid->clear();
+}
 // int Scene::find_object(glm::vec3 origin, glm::vec3 direction) {
 //     int object = fluid->find_object(origin, direction);
 //     if (object > 0) {

@@ -93,6 +93,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_LEFT_SHIFT: Globals::camera_target.y -= camera_distance; break;
 			case GLFW_KEY_SPACE: Globals::camera_target.y += camera_distance; break;
+			case GLFW_KEY_C: scene->clear(); break;
 			case GLFW_KEY_W: Globals::camera_target += camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
