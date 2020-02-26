@@ -35,6 +35,8 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
     // size = (dimension + 2) * (dimension + 2);
     points = new glm::vec3 [_total_size];
 
+    indices = std::vector<GLushort>();
+
     x_vel = new float [_total_size];
     y_vel = new float [_total_size];
     z_vel = new float [_total_size];
@@ -54,6 +56,24 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
             float y = cell_unit * j;
             for (size_t k = 0; k < z_dim; k++) {
                 points[VERTEX(i, j, k)] = glm::vec3(x, y + 2.f, cell_unit * k);
+            }
+
+            // Left down triangle
+            if (i < x_dim-1 && j < y_dim-1) {
+                indices.push_back(VERTEX(x,z));
+                indices.push_back(VERTEX(x+1,z));
+                indices.push_back(VERTEX(x,z+1));
+
+                // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x+1][y] << ", " <<vertex[x][y+1] << std::endl;
+            }
+
+            // Up right triangle
+            if (i > 0 && j > 0) {
+                indices.push_back(VERTEX(i,j,0));
+                indices.push_back(VERTEX(i-1,j,0));
+                indices.push_back(VERTEX(i,j-1,0));
+
+                // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x-1][y] << ", " <<vertex[x][y-1] << std::endl;
             }
         }
     }
@@ -86,11 +106,46 @@ void Fluid::init() {
     glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 
 
-    // glGenBuffers(1, &ibo);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
   
-    // glBindVertexArray(0);
+    glBindVertexArray(0);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// set uniform constants
+///////////////////////////////////////////////////////////////////////////////
+void Fluid::init_static_uniforms()
+{
+    shader.enable();
+    GLint uniformLightPosition             = shader.uniform("lightPosition");
+    // GLint uniformLightAmbient              = shader.uniform("lightAmbient");
+    // GLint uniformLightDiffuse              = shader.uniform("lightDiffuse");
+    GLint uniformLightSpecular             = shader.uniform("lightSpecular");
+    GLint uniformMaterialAmbient           = shader.uniform("materialAmbient");
+    GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
+    GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
+    GLint uniformMaterialShininess         = shader.uniform("materialShininess");
+    
+    // set uniform values
+    float lightPosition[]  = {0.f, 5.0f, -3.f, 1.0f};
+    // float lightAmbient[]  = {0.3f, 0.1f, 0.1f, 1};
+    // float lightDiffuse[]  = {0.7f, 0.2f, 0.2f, 1};
+    float lightSpecular[] = {1.0f, 1.0f, 1.0f, 1};
+    float materialAmbient[]  = {0.4f, 0.4f, 0.4f, 1};
+    float materialDiffuse[]  = {0.5f, 0.5f, 0.5f, 1};
+    float materialSpecular[] = {0.4f, 0.4f, 0.4f, 1};
+    float materialShininess  = 4;
+
+    glUniform4fv(uniformLightPosition, 1, lightPosition);
+    // glUniform4fv(uniformLightAmbient, 1, lightAmbient);
+    // glUniform4fv(uniformLightDiffuse, 1, lightDiffuse);
+    glUniform4fv(uniformLightSpecular, 1, lightSpecular);
+    glUniform4fv(uniformMaterialAmbient, 1, materialAmbient);
+    glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
+    glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
+    glUniform1f(uniformMaterialShininess, materialShininess);
 }
 
 void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
@@ -119,17 +174,25 @@ void Fluid::update(float dt) {
 }
 
 void Fluid::draw() {
-    shader.enable();
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     GLint attribVertexPosition  = shader.attribute("in_position");
-    // GLint attribVertexColor  = shader.attribute("in_color");
-    GLint attribVertexDensity     = shader.attribute("in_density");
+    GLint attribVertexColor     = shader.attribute("in_color");
+	GLint attribVertexNormal    = shader.attribute("in_normal");
+
+	GLint attribUniformModel    = shader.uniform("model");
+	GLint attribUniformNormal    = shader.uniform("normal");
 
     glBindVertexArray(vao);
 
-        // glm::mat4 fluid_model = glm::translate(  // Scale first
+    glVertexAttrib3f(attribVertexColor, 0.1f, 0.3f, 0.8f);
+    glVertexAttrib3f(attribVertexNormal, 0.f, 1.f, 0.f);
+
+    // activate attribs
+    glEnableVertexAttribArray(attribVertexPosition);
+    glEnableVertexAttribArray(attribVertexNormal);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+   
+    // glm::mat4 fluid_model = glm::translate(  // Scale first
     //     glm::mat4( 1.0f ),              // Translate second
     //     glm::vec3( 0.0f, 2.0f, 0.0f )
     // );
@@ -138,31 +201,24 @@ void Fluid::draw() {
     glm::mat4 matrix_fluid_normal = fluid_model;
     matrix_fluid_normal[3] = glm::vec4(0,0,0,1);
 
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(glm::vec3), points, GL_DYNAMIC_DRAW);
+    
+    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*) 0);
+    // glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(FluidPoint), (GLvoid*)offsetof(FluidPoint, normal));
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
     glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
 	glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
     glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(fluid_model)  ); // model transformation
-    // glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_fluid_normal)); // projection matrix
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_fluid_normal)); // projection matrix
 
-    glEnableVertexAttribArray(attribVertexPosition);    
-    // glEnableVertexAttribArray(attribVertexColor);
-
-    // glVertexAttrib3f(attribVertexColor, 0.1, 0.3, 0.8);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);    
-    // glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(glm::vec3), points, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*) 0); 
-    glEnableVertexAttribArray(attribVertexPosition);
-    // glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(FluidPoint), (GLvoid*)offsetof(FluidPoint, normal));
-
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(float), dens, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(attribVertexDensity);
-    glVertexAttribPointer(attribVertexDensity, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*) 0);
-
-    glDrawArrays(GL_POINTS, 
-        0,                   // start
-        _total_size);   // # of particples
+    // draw the cloth
+    glDrawElements(GL_TRIANGLES,                    // primitive type
+                indices.size(),          // # of indices
+                GL_UNSIGNED_SHORT,                 // data type
+                (void*)0);                       // offset to indices
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
