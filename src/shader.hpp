@@ -39,6 +39,7 @@
 #include <vector>
 #include <unordered_map> // requires C++11
 
+#include "utils/GLError.h"
 //
 //	Shader utility class for managing vert/frag shaders.
 //	Does not currently handle geometry shaders.
@@ -150,11 +151,15 @@ GLuint Shader::compile( std::string source, GLenum type ){
 
 
 void Shader::init(std::string vertex_source, std::string frag_source){
-
+	check_gl_error();
 	// Create the resource
 	program_id = glCreateProgram();
 	if( program_id == 0 ){ throw std::runtime_error("\n**glCreateProgram Error"); }
+	check_gl_error();
+	
 	glUseProgram(program_id);
+
+	check_gl_error();
 
 	// Compile the shaders and return their id values
 	vertex_id = compile(vertex_source, GL_VERTEX_SHADER);

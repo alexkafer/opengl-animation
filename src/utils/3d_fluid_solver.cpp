@@ -102,6 +102,7 @@ void advect(int M, int N, int O, int b, float * d, float * d0, float * u, float 
 	
 	dtx = dty = dtz = dt * std::max(std::max(M, N), std::max(N, O));
 
+	// For each cell in the grid
 	for (int i=1 ; i<=M ; i++ ) { for (int j=1 ; j<=N ; j++ ) { for (int k=1 ; k<=O ; k++ ) {
 		x = i-dtx*u[IX(i,j,k)]; y = j-dty*v[IX(i,j,k)]; z = k-dtz*w[IX(i,j,k)];
 		if (x<0.5f) x=0.5f; if (x>M+0.5f) x=M+0.5f; i0=(int)x; i1=i0+1;

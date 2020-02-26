@@ -268,7 +268,10 @@ int main(int argc, char *argv[]){
 
 	// Initialize the scene
 	scene = new Scene();
+	check_gl_error();
+	
 	scene->init();
+	check_gl_error();
 
 	// Initialize OpenGL
 	glEnable(GL_DEPTH_TEST);
@@ -327,10 +330,15 @@ int main(int argc, char *argv[]){
 		Globals::view = glm::lookAt(Globals::eye_pos, Globals::eye_pos + Globals::eye_dir, up);
 
 		scene->draw(dt);
+		check_gl_error();
+
 
 		// Finalize
 		glfwSwapBuffers(window);
+		check_gl_error();
+		
 		glfwPollEvents();
+		check_gl_error();
 
 	} // end loop
 

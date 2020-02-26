@@ -11,6 +11,8 @@
 #include <time.h> 
 #include <algorithm>    // std::sort
 
+#include "../utils/GLError.h"
+
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
 
 static int MaxParticles = 1000000;
@@ -120,7 +122,7 @@ void Particles::draw(){
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    // glBindTexture(GL_TEXTURE_2D, texture_id);
 
 	glBindVertexArray(vao); // Bind the globally created VAO to the current context
 
@@ -130,7 +132,7 @@ void Particles::draw(){
     glUniform3f(shader.uniform("camera_right_worldspace"), Globals::view[0][0], Globals::view[1][0], Globals::view[2][0]);
     glUniform3f(shader.uniform("camera_up_worldspace"), Globals::view[0][1], Globals::view[1][1], Globals::view[2][1]);
     
-    
+    check_gl_error();
     GLint attribVertexBillboard  = shader.attribute("in_billboard");
     GLint attribVertexPosition  = shader.attribute("in_position");
     GLint attribVertexColor     = shader.attribute("in_color");
@@ -143,7 +145,7 @@ void Particles::draw(){
 
     glBindBuffer(GL_ARRAY_BUFFER, billboard_vertex_buffer);
     glVertexAttribPointer(attribVertexBillboard, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0); 
-
+check_gl_error();
     sort(_particles.begin(), _particles.end(), CompareParticles);
     
     glBindBuffer(GL_ARRAY_BUFFER, particles_buffer);
@@ -159,9 +161,9 @@ void Particles::draw(){
     glVertexAttribDivisor(attribVertexSize, 1); //  color : one per quad -> 1
     glVertexAttribDivisor(attribVertexPosition, 1); // positions : one per quad (its center) -> 1
     glVertexAttribDivisor(attribVertexColor, 1); // color : one per quad -> 1
-
+check_gl_error();
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, _particles.size());   // # of particples
-
+check_gl_error();
     glBindVertexArray(0);
 
     shader.disable();

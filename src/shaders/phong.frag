@@ -66,4 +66,5 @@ void main(){
 
 	vec3 result = phong( normal, light_dir, view );
 	outColor = vec4(result, materialDiffuse.a);
+    // outColor = vec4(0,0,1,1);
 } 

@@ -1,5 +1,7 @@
 #include "fluid.h"
 
+#include "../utils/GLError.h"
+
 #include <stdlib.h>     /* srand, rand */
 
 #include <glm/gtc/type_ptr.hpp>
@@ -17,11 +19,10 @@
 extern void dens_step ( int M, int N, int O, float * x, float * x0, float * u, float * v, float * w, float diff, float dt );
 extern void vel_step ( int M, int N, int O, float * u, float * v,  float * w, float * u0, float * v0, float * w0, float visc, float dt );
 
-static float diff = .001f; // diffuse
-static float visc = 0.2f; // viscosity
-static float force = 0.1f;  // added on keypress on an axis
-static float source = 500.0f; // density
-
+static float diff = 0.001f; // diffuse
+static float visc = 0.001f; // viscosity
+static float force = 0.001f;  // added on keypress on an axis
+static float source = 200.0f; // density
 
 
 Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
@@ -50,14 +51,14 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
 
     clear();
 
-    float cell_unit = 1.f;
+    float cell_unit = .5f;
     for (size_t i = 0; i < x_dim + 2; i++) {
         float x = cell_unit * i;
         for (size_t j = 0; j < y_dim +2; j++) {
             float y = cell_unit * j;
             for (size_t k = 0; k < z_dim + 2; k++) {
                 points[VERTEX(i, j, k)] = glm::vec3(x, y + 0.5f, cell_unit * k);
-                std::cout << i << "," << j << "," << k << " (" << VERTEX(i, j, k) << ") is at " <<glm::to_string(points[ VERTEX(i, j, k)]) << std::endl;
+                // std::cout << i << "," << j << "," << k << " (" << VERTEX(i, j, k) << ") is at " <<glm::to_string(points[ VERTEX(i, j, k)]) << std::endl;
             }
         }
     }
@@ -111,7 +112,10 @@ void Fluid::init() {
     std::stringstream ss; ss << MY_SRC_DIR << "shaders/fluid.";
     shader.init_from_files( ss.str()+"vert", ss.str()+"frag" );
 
+    check_gl_error();
+
     shader.enable();
+    check_gl_error();
 
     glGenVertexArrays(1, &vao); //Create a VAO
     glGenBuffers(2, vbo);
@@ -124,15 +128,6 @@ void Fluid::init() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 
-    for (int i=0; i<_total_size ; i++) {
-        std::cout << i << ": " << glm::to_string(points[i]) << std::endl;
-    }
-
-    for (int i=0; i<indices.size() ; i++) {
-        std::cout << " index " << i << ": " << indices[i] << std::endl;
-    }
-
-
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
@@ -141,6 +136,7 @@ void Fluid::init() {
 
     init_static_uniforms();
     shader.disable();
+    check_gl_error();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -156,6 +152,8 @@ void Fluid::init_static_uniforms()
     GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
     GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
     GLint uniformMaterialShininess         = shader.uniform("materialShininess");
+
+    check_gl_error();
     
     // set uniform values
     float lightPosition[]  = {0.f, 5.0f, -3.f, 1.0f};
@@ -175,6 +173,7 @@ void Fluid::init_static_uniforms()
     glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
     glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
     glUniform1f(uniformMaterialShininess, materialShininess);
+    check_gl_error();
 }
 
 void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
@@ -184,8 +183,8 @@ void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
         int z = i - x * (_y_dim+2)*(_z_dim+2) - y * (_z_dim+2);
 
 		d[i] = 0.0f;
-        u[i] = force * (z - _z_dim / 2.f);
-        v[i] = -9.f; // Gravity
+        u[i] = -force * (z - _z_dim / 2.f);
+        v[i] = 0.f; // Gravity
         w[i] = -force * (x - _x_dim / 2.f);
 	}
 
@@ -203,22 +202,25 @@ void Fluid::update(float dt) {
 }
 
 void Fluid::draw() {
+    check_gl_error();
+
+    shader.enable();
+
     GLint attribVertexPosition  = shader.attribute("in_position");
     // GLint attribVertexColor     = shader.attribute("in_color");
 	GLint attribVertexNormal    = shader.attribute("in_normal");
 	GLint attribVertexDensity    = shader.attribute("in_density");
 
-	// GLint attribUniformModel    = shader.uniform("model");
-	// GLint attribUniformNormal    = shader.uniform("normal");
+	GLint attribUniformView    = shader.uniform("view");
+	GLint attribUniformProjection    = shader.uniform("projection");
+	GLint attribUniformModel    = shader.uniform("model");
+	GLint attribUniformNormal    = shader.uniform("normal");
 
     glBindVertexArray(vao);
 
     // glVertexAttrib3f(attribVertexColor, 0.1f, 0.3f, 0.8f);
     glVertexAttrib3f(attribVertexNormal, 0.f, 1.f, 0.f);
 
-    // activate attribs
-    glEnableVertexAttribArray(attribVertexPosition);
-    glEnableVertexAttribArray(attribVertexNormal);
    
     // glm::mat4 fluid_model = glm::translate(  // Scale first
     //     glm::mat4( 1.0f ),              // Translate second
@@ -230,20 +232,20 @@ void Fluid::draw() {
     matrix_fluid_normal[3] = glm::vec4(0,0,0,1);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);    
-    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*) 0); 
+    glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, 0, (void*) 0); 
     glEnableVertexAttribArray(attribVertexPosition);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, _total_size * sizeof(float), dens, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(attribVertexDensity);
-    glVertexAttribPointer(attribVertexDensity, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*) 0);
+    glVertexAttribPointer(attribVertexDensity, 1, GL_FLOAT, GL_FALSE, 0, (void*) 0);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-    glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
-	glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
-    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(fluid_model)  ); // model transformation
-    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(matrix_fluid_normal)); // projection matrix
+    glUniformMatrix4fv( attribUniformView, 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
+	glUniformMatrix4fv( attribUniformProjection, 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
+    glUniformMatrix4fv( attribUniformModel, 1, GL_FALSE, glm::value_ptr(fluid_model)  ); // model transformation
+    glUniformMatrix4fv( attribUniformNormal, 1, GL_FALSE, glm::value_ptr(matrix_fluid_normal)); // projection matrix
 
     // draw the fluid
     glDrawElements(GL_TRIANGLES,                    // primitive type
@@ -251,12 +253,15 @@ void Fluid::draw() {
                 GL_UNSIGNED_SHORT,                 // data type
                 (void*)0);                       // offset to indices
 
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
  
     glBindVertexArray(0);
 
     shader.disable();
+    check_gl_error();
+
 }
 
 void Fluid::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {

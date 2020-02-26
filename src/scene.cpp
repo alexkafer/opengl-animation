@@ -19,11 +19,19 @@ Scene::Scene () {
         std::stringstream shader_ss; shader_ss << MY_SRC_DIR << "shaders/phong.";
         shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
 
+        check_gl_error();
+
         particles = new Particles();
+        check_gl_error();
+
         // cloth = new Cloth(30, 30);
         cloth = new Cloth(30, 30);
-        // cloth = new Cloth(5, 10);
-        fluid = new Fluid(2, 1, 2);
+        check_gl_error();
+
+        shader.disable();
+
+        fluid = new Fluid(100, 1, 100);
+        check_gl_error();
 }
 
 void Scene::print_stats() {
@@ -58,14 +66,20 @@ void Scene::init_floor() {
     glBindBuffer(GL_ARRAY_BUFFER, floor_vbo[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW); //upload normals to vbo
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    check_gl_error();
 }
 
 void Scene::init()
 {
     shader.enable();
 
+    check_gl_error();
+
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
+
+    check_gl_error();
 
     init_floor();
     init_static_uniforms();
@@ -87,7 +101,8 @@ void Scene::init_static_uniforms()
     GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
     GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
     GLint uniformMaterialShininess         = shader.uniform("materialShininess");
-    
+    check_gl_error();
+
     // set uniform values
     float lightPosition[]  = {0.f, 5.0f, -3.f, 1.0f};
     // float lightAmbient[]  = {0.3f, 0.1f, 0.1f, 1};
@@ -106,6 +121,8 @@ void Scene::init_static_uniforms()
     glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
     glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
     glUniform1f(uniformMaterialShininess, materialShininess);
+
+    check_gl_error();
 }
 
 void Scene::draw_floor() {
@@ -161,8 +178,11 @@ void Scene::draw(float dt) {
     draw_floor();
 
     cloth->draw(shader);
+    check_gl_error();
     fluid->draw();
+    check_gl_error();
 	particles->draw();
+    check_gl_error();
 
     glBindVertexArray(0);
 
