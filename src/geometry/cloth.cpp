@@ -30,6 +30,20 @@ static const float GRID_VOLUME = 0.5f;
 static const int HASH_TABLE_SIZE = 599;
 static const int PRIMES[3] = {73856093, 19349663, 83492791};
 
+// Created by examining https://github.com/syoyo/tinyobjloader/blob/master/examples/viewer/viewer.cc
+static bool FileExists(const std::string& abs_filename) {
+    bool ret;
+    FILE* fp = fopen(abs_filename.c_str(), "rb");
+    if (fp) {
+        ret = true;
+        fclose(fp);
+    } else {
+        ret = false;
+    }
+
+    return ret;
+}
+
 static size_t spatial_hashing_func(const glm::vec3 & key) {
     return (
           PRIMES[0] * (int) floor(key.x / GRID_VOLUME) ^ 
@@ -61,11 +75,12 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
         for (size_t y = 0; y < y_dim; y++) {
             vertex[x][y] = pointMasses.size();
             // std::cout << "Generated " << vertex[x][y] << " at (" << x << ", "<< y << ")" << std::endl;
-            pointMasses.push_back(PointMass(glm::vec3(x * REST_LENGTH, REST_LENGTH * y + 2.f, 0.f)));
+            pointMasses.push_back(PointMass(
+                glm::vec3(x * REST_LENGTH, REST_LENGTH * y + 2.f, 0.f), 
+                glm::vec2((-1.f * x) / x_dim, (-1.f * y) / y_dim)));
             forces.push_back(glm::vec3(0.0f));
         }
     }
-
 
     for (size_t x = 0; x < x_dim; x++) {
         for (size_t y = 0; y < y_dim; y++) {
@@ -98,7 +113,6 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
                 indices.push_back(vertex[x][y-1]);
 
                 // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x-1][y] << ", " <<vertex[x][y-1] << std::endl;
-            
             }
         }
     }
@@ -117,6 +131,39 @@ void Cloth::init(mcl::Shader & shader) {
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
+
+    
+    std::stringstream texture_ss; texture_ss << MY_MODELS_DIR << "/textures/flag.png";
+    if (!FileExists(texture_ss.str())) {
+        // Append base dir.
+        std::cerr << "Unable to find file: " << texture_ss.str() << std::endl;
+        exit(1);
+    }
+
+    int w, h, comp;
+    unsigned char* image = stbi_load(texture_ss.str().c_str(), &w, &h, &comp, STBI_default);
+    if (!image) {
+        std::cerr << "Unable to load texture: " << texture_ss.str() << std::endl;
+        exit(1);
+    }
+    std::cout << "Loaded texture: " << texture_ss.str() << ", w = " << w
+                << ", h = " << h << ", comp = " << comp << std::endl;
+
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (comp == 3) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB,
+                    GL_UNSIGNED_BYTE, image);
+    } else if (comp == 4) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+                    GL_UNSIGNED_BYTE, image);
+    } else {
+        assert(0);  // TODO
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(image);
   
     glBindVertexArray(0);
 
@@ -422,20 +469,25 @@ void Cloth::draw(mcl::Shader & shader) {
     GLint attribVertexPosition  = shader.attribute("in_position");
     GLint attribVertexColor     = shader.attribute("in_color");
 	GLint attribVertexNormal    = shader.attribute("in_normal");
+    GLuint attribVertexTextureCoord     = shader.attribute("in_texture_coord");
 
 	GLint attribUniformModel    = shader.uniform("model");
 	GLint attribUniformNormal    = shader.uniform("normal");
+	GLint attribUniformTextureUsed    = shader.uniform("texture_used");
 
     glBindVertexArray(vao);
 
-    glVertexAttrib3f(attribVertexColor, 0.7, 0.2, 0.2);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glUniform1i(attribUniformTextureUsed, 1);
+
+    glVertexAttrib3f(attribVertexColor, 0.8, 0.8, 0.8);
 
     // activate attribs
     glEnableVertexAttribArray(attribVertexPosition);
     glEnableVertexAttribArray(attribVertexNormal);
+    glEnableVertexAttribArray(attribVertexTextureCoord);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-   
 
     glm::mat4 cloth_model = glm::mat4(1.0f);
 
@@ -454,6 +506,7 @@ void Cloth::draw(mcl::Shader & shader) {
 
     glVertexAttribPointer(attribVertexPosition, 3, GL_FLOAT, GL_FALSE, sizeof(PointMass), (void*) 0);
     glVertexAttribPointer(attribVertexNormal, 3, GL_FLOAT, GL_FALSE, sizeof(PointMass), (GLvoid*)offsetof(PointMass, normal));
+    glVertexAttribPointer(attribVertexTextureCoord, 2, GL_FLOAT, GL_FALSE, sizeof(PointMass), (GLvoid*)offsetof(PointMass, texture_coord));
 
     // draw the cloth
     glDrawElements(GL_TRIANGLES,                    // primitive type
@@ -463,6 +516,9 @@ void Cloth::draw(mcl::Shader & shader) {
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUniform1i(attribUniformTextureUsed, 0);
  
     glBindVertexArray(0);
 

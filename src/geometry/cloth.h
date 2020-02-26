@@ -6,13 +6,16 @@
 #include "../common.h"
 #include "../shader.hpp"
 
+#include "../utils/stb_image.h"
+
 struct PointMass {
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 normal;
+    glm::vec2 texture_coord;
 
-    PointMass(const glm::vec3 &_position) 
-        : position(_position), velocity(0.f), normal(0.f) {} 
+    PointMass(const glm::vec3 &_position, const glm::vec2 &_texture_coord) 
+        : position(_position), velocity(0.f), normal(0.f), texture_coord(_texture_coord) {} 
 };
 
 // This spatial map stores a position with a list of points in that region
@@ -41,6 +44,7 @@ class Cloth {
     GLuint vao;
     GLuint ibo; // Indicies
     GLuint vbo; // Vertexes
+    GLuint texture_id;
 
     void update_forces(float dt);
     void check_collisions(float dt);
