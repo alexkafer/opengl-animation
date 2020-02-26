@@ -9,6 +9,7 @@ void add_source(int M, int N, int O, float * x, float * s, float dt)
 {
 	int size=(M+2)*(N+2)*(O+2);
 	
+	#pragma omp parallel for
 	for (int i = 0; i < size; i++) {
 		x[i] += dt*s[i];
 	}

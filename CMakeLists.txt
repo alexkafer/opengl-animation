@@ -1,6 +1,6 @@
 # CMake expects a few commands, like the version required. We'll only require an older one
 # since we aren't doing anything fancy.
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.12)
 
 # We also have to assign a project name and set the language used. In this case, we're
 # calling it "example" and will be using C and C++:
@@ -16,6 +16,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 #		Options
 # ====================================================
 
+option(USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
 
 # If you do not have the core arb headers, you need an extensions library like glew.
 # Run cmake with "-DUSE_GLEW" (or just set this to on).
@@ -37,7 +38,7 @@ option(FORCE_CLONE "Use fresh updated clones of dependencies" ON)
 
 # We can set C++ flags (like optimizations) here. We'll compile with c++11 since it
 # has a lot of classes that will be useful.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # This creates a #define for you to use in your source code. It's handy for
 # file input/output as it provides a full path.
@@ -169,11 +170,17 @@ else()
 	set(MY_LIBRARIES ${MY_LIBRARIES} ${GLFW_LIBRARY} ${LIBS_ALL})
 
 endif()
+# /usr/local/opt/llvm/bin/clang
+# include_directories("/usr/local/include" "/usr/local/opt/llvm/include")
+link_directories("/usr/local/opt/llvm/lib")
 
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(MyTarget PUBLIC OpenMP::OpenMP_CXX)
+    set(MY_LIBRARIES ${MY_LIBRARIES} OpenMP::OpenMP_CXX)
 endif()
+
+
+set(MY_LIBRARIES ${MY_LIBRARIES} ${GLFW_LIBRARY} ${LIBS_ALL})
 
 
 # ====================================================
@@ -204,6 +211,7 @@ set(MY_SOURCES
 
 # Now we can add an executable, link it with our rendering libraries, and we're done!
 add_executable(GLFW_App ${MY_SOURCES})
+
 target_link_libraries(GLFW_App ${MY_LIBRARIES})
 if(FORCE_CLONE)
 	add_dependencies(GLFW_App glfw)
