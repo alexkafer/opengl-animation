@@ -27,8 +27,8 @@ void  set_bnd ( int M, int N, int O, int b, float * x )
 			x[IX(M+1,i, j)] = b==1 ? -x[IX(M,i,j)] : x[IX(M,i,j)];
 		}
 	}
-
-    for (int i=1 ; i<=M ; i++ ) {
+	
+	for (int i=1 ; i<=M ; i++ ) {
         for (int j=1 ; j<=O ; j++ ) {
             x[IX(i,0,j )] = b==2 ? -x[IX(i,1,j)] : x[IX(i,1,j)];
             x[IX(i,N+1,j)] = b==2 ? -x[IX(i,N,j)] : x[IX(i,N,j)];
@@ -93,7 +93,8 @@ void lin_solve ( int M, int N, int O, int b, float * x, float * x0, float a, flo
 void diffuse(int M, int N, int O, int b, float * x, float * x0, float diff, float dt )
 {
 	// May need to be maximized (max of M, N, and O)
-	float a= dt * diff * M * N * O;
+	int max = std::max(std::max(M, N), std::max(N, O));
+	float a= dt * diff * max * max * max;
 	lin_solve ( M, N, O, b, x, x0, a, 1+6*a );
 }
 

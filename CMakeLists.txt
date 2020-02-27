@@ -38,7 +38,7 @@ option(FORCE_CLONE "Use fresh updated clones of dependencies" ON)
 
 # We can set C++ flags (like optimizations) here. We'll compile with c++11 since it
 # has a lot of classes that will be useful.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Ofast")
 
 # This creates a #define for you to use in your source code. It's handy for
 # file input/output as it provides a full path.
@@ -174,10 +174,26 @@ endif()
 # include_directories("/usr/local/include" "/usr/local/opt/llvm/include")
 link_directories("/usr/local/opt/llvm/lib")
 
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    set(MY_LIBRARIES ${MY_LIBRARIES} OpenMP::OpenMP_CXX)
+# Find OpenMP
+if(APPLE)
+    set(CMAKE_C_COMPILER clang)
+    set(CMAKE_CXX_COMPILER clang++)
+
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_C_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY omp)
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY omp)
+    endif()
+
 endif()
+
+find_package(OpenMP REQUIRED)
 
 find_package(Freetype REQUIRED)
 set(MY_INCLUDE_DIRS ${MY_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS})
@@ -220,7 +236,8 @@ set(MY_SOURCES
 # Now we can add an executable, link it with our rendering libraries, and we're done!
 add_executable(GLFW_App ${MY_SOURCES})
 
-target_link_libraries(GLFW_App ${MY_LIBRARIES})
+target_link_libraries(GLFW_App PUBLIC ${MY_LIBRARIES})
+target_link_libraries(GLFW_App PRIVATE OpenMP::OpenMP_CXX)
 if(FORCE_CLONE)
 	add_dependencies(GLFW_App glfw)
 endif()

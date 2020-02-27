@@ -43,6 +43,7 @@ class Scene {
         void draw(float dt);
         void draw_text(float x, float y, const char *string);
         void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
+        void key_down(int key);
         void clear();
 
         void cleanup();

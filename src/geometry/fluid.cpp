@@ -10,6 +10,8 @@
 #include <glm/gtx/normal.hpp>
 #include <glm/gtx/intersect.hpp>
 
+#include <GLFW/glfw3.h>
+
 // #define VERTEX(i,j,k) ((i)+(_x_dim+2)*(j) + (_x_dim+2)*(_y_dim+2)*(k))
 #define VERTEX(i,j,k) ((i) * (_y_dim+2) * (_z_dim+2) + (j) * (_z_dim+2) + (k))
 
@@ -19,9 +21,10 @@
 extern void dens_step ( int M, int N, int O, float * x, float * x0, float * u, float * v, float * w, float diff, float dt );
 extern void vel_step ( int M, int N, int O, float * u, float * v,  float * w, float * u0, float * v0, float * w0, float visc, float dt );
 
-static float diff = 0.0f; // diffuse
-static float visc = 0.01f; // viscosity
-static float source = 20.0f; // density
+static float diff = 0.0001f; // diffuse
+static float visc = 0.1f; // viscosity
+static float force = 50000.0f;
+static float source = 10000.0f; // density
 
 
 Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
@@ -31,7 +34,8 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
     _y_dim = y_dim;
     _z_dim = z_dim;
 
-    next_source = -1;
+    addforce[0] = addforce[1] = addforce[2] = 0;
+    addsource = 0;
 
     // size = (dimension + 2) * (dimension + 2);
     points = new glm::vec3 [_total_size];
@@ -56,71 +60,75 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
         for (size_t j = 0; j < y_dim +2; j++) {
             float y = cell_unit * j;
             for (size_t k = 0; k < z_dim + 2; k++) {
-                points[VERTEX(i, j, k)] = glm::vec3(x, y + 0.5f, cell_unit * k);
-
-                if (j < 0 || j >= y_dim) continue;
-
-                // top Left down triangle
-                if (i> 0 && i <= x_dim && k > 0 && k <= z_dim) {
-                    indices.push_back(VERTEX(i,   j, k  ));
-                    indices.push_back(VERTEX(i+1, j, k  ));
-                    indices.push_back(VERTEX(i,   j, k+1));
-
-                    // std::cout << "Made ld triangle " << i << ",_," << k ;
-                    // std::cout << " at "<< glm::to_string(points[VERTEX(i,   0, k  )]) << " - " ;
-                    // std::cout <<  glm::to_string(points[VERTEX(i+1,   0, k  )]) << " - " ;
-                    // std::cout <<  glm::to_string(points[VERTEX(i,   0, k+1  )]) << std::endl;
-                }
-
-                // top Up right triangle
-                if (i > 1 && k > 1) {
-                    indices.push_back(VERTEX(i,   j, k  ));
-                    indices.push_back(VERTEX(i-1, j, k  ));
-                    indices.push_back(VERTEX(i,   j, k-1));
-
-                    //                std::cout << "Made ur triangle " << i << ",_," << k ;
-                    // std::cout << " at "<< glm::to_string(points[VERTEX(i,   0, k  )]) << " - " ;
-                    // std::cout <<  glm::to_string(points[VERTEX(i-1,   0, k  )]) << " - " ;
-                    // std::cout <<  glm::to_string(points[VERTEX(i,   0, k-1  )]) << std::endl;
-                }
-
-                // z facing Left down triangle
-                if (i> 0 && i <= x_dim && j > 0 && j <= y_dim) {
-                    indices.push_back(VERTEX(i,   j, k  ));
-                    indices.push_back(VERTEX(i+1, j, k  ));
-                    indices.push_back(VERTEX(i,   j+1, k));
-                }
-
-                // z facing Up right triangle
-                if (i > 1 && j > 1) {
-                    indices.push_back(VERTEX(i,   j, k  ));
-                    indices.push_back(VERTEX(i-1, j, k  ));
-                    indices.push_back(VERTEX(i,   j-1, k));
-                }
-
-                // x facing Left down triangle
-                if (i> 0 && i <= x_dim && j > 0 && j <= y_dim) {
-                    indices.push_back(VERTEX(i,   j, k  ));
-                    indices.push_back(VERTEX(i, j, k+1  ));
-                    indices.push_back(VERTEX(i,   j+1, k));
-                }
-
-                // x facing Up right triangle
-                if (i > 1 && j > 1) {
-                    indices.push_back(VERTEX(i,   j, k  ));
-                    indices.push_back(VERTEX(i, j, k-1  ));
-                    indices.push_back(VERTEX(i,   j-1, k));
-                }
-                    // std::cout << i << "," << j << "," << k << " (" << VERTEX(i, j, k) << ") is at " <<glm::to_string(points[ VERTEX(i, j, k)]) << std::endl;
+                points[VERTEX(i, j, k)] = glm::vec3(x, y + 1.f, cell_unit * k);
             }
         }
     }
 
-    // for (int i = 0; i < indices.size(); i++) {
-    //     if (i % 3 == 0) std::cout << i << " (";
-	// 	std::cout << indices.at(i) << ", " ;
-    //     if (i % 3 == 2)  std::cout << ")"<< std::endl;
-	// }
+    // drawing as a cube of quads 
+    for (size_t i = 1; i <= x_dim; i++) {
+        for (size_t j = 1; j <= y_dim; j++) {
+            for (size_t k = 1; k <= z_dim; k++) {
+                indices.push_back(VERTEX(i+1, j+1, k+1));
+                indices.push_back(VERTEX(i  , j+1, k+1));
+                indices.push_back(VERTEX(i  , j  , k+1));
+
+                indices.push_back(VERTEX(i+1, j+1, k+1));
+                indices.push_back(VERTEX(i  , j  , k+1));
+                indices.push_back(VERTEX(i+1, j  , k+1));
+
+                //--
+                
+                indices.push_back(VERTEX(i+1, j+1, k  ));
+                indices.push_back(VERTEX(i+1, j+1, k+1));
+                indices.push_back(VERTEX(i+1, j  , k+1));
+
+                indices.push_back(VERTEX(i+1, j+1, k  ));
+                indices.push_back(VERTEX(i+1, j  , k+1));
+                indices.push_back(VERTEX(i+1, j  , k  ));
+
+                //--
+                
+                indices.push_back(VERTEX(i  , j+1, k  ));
+                indices.push_back(VERTEX(i+1, j+1, k  ));
+                indices.push_back(VERTEX(i+1, j  , k  ));
+                
+                indices.push_back(VERTEX(i  , j+1, k  ));
+                indices.push_back(VERTEX(i+1, j  , k  ));
+                indices.push_back(VERTEX(i  , j  , k  ));
+
+                //-- 
+                indices.push_back(VERTEX(i  , j+1, k+1));
+                indices.push_back(VERTEX(i  , j+1, k  ));
+                indices.push_back(VERTEX(i  , j  , k  ));
+
+                indices.push_back(VERTEX(i  , j+1, k+1));
+                indices.push_back(VERTEX(i  , j  , k  ));
+                indices.push_back(VERTEX(i  , j  , k+1));
+                
+                //-- 
+                
+                indices.push_back(VERTEX(i+1, j  , k  ));
+                indices.push_back(VERTEX(i  , j  , k  ));
+                indices.push_back(VERTEX(i  , j  , k+1));
+
+                indices.push_back(VERTEX(i+1, j  , k  ));
+                indices.push_back(VERTEX(i  , j  , k+1));
+                indices.push_back(VERTEX(i+1, j  , k+1));
+                
+                //-- 
+                
+                indices.push_back(VERTEX(i+1, j+1, k  ));
+                indices.push_back(VERTEX(i  , j+1, k  ));
+                indices.push_back(VERTEX(i  , j+1, k+1));
+
+                indices.push_back(VERTEX(i+1, j+1, k  ));
+                indices.push_back(VERTEX(i  , j+1, k+1));
+                indices.push_back(VERTEX(i+1, j+1, k+1));
+            }
+        }
+    }
+
 
     srand(time(0));
 
@@ -131,6 +139,8 @@ void Fluid::clear() {
 	for (int i=0; i<_total_size ; i++) {
 		x_vel[i] = x_vel_prev[i] = y_vel[i] = y_vel_prev[i] = z_vel[i] = z_vel_prev[i] = dens[i] = dens_prev[i] = 0.f;
 	}
+
+    addforce[0] = addforce[1] = addforce[2] = 0;
 }
 
 void Fluid::init() {
@@ -203,42 +213,75 @@ void Fluid::init_static_uniforms()
 
 void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
 
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < _total_size; i++) {
 		d[i] = u[i] = v[i] = w[i] = 0.0f;
 	}
 
-     for (size_t i = 2; i < _x_dim; i++) {
-        for (size_t j = 2; j < _y_dim; j++) {
-            for (size_t k = 2; k < _z_dim; k++) {
-                size_t index = VERTEX(i, j, k);
-                // u[index] = 1.0f;
-                v[index] = -5.f; // Gravity
-                // w[index] = 1.0f; //; -force * (x - _x_dim / 2.f);
-            }
-        }
-    }
 
-    if (next_source >= 0 && next_source < indices.size() / 3) {
-		
-        GLushort idx0 = indices[3 * next_source + 0];
-        GLushort idx1 = indices[3 * next_source + 1];
-        GLushort idx2 = indices[3 * next_source + 2];
+    int i, j, k;
+    if(addforce[0]!=0) // x
+	{
+		i=2,
+		j=_y_dim/2;
+		k=_z_dim/2;
 
-        d[idx0] = source;
-        d[idx1] = source;
-        d[idx2] = source;
+		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
+		u[VERTEX(i,j,k)] = force*addforce[0];
+		addforce[0] = 0;
+	}	
 
-        next_source = -1;
-	} else {
-        d[VERTEX(_x_dim/2, 0, _z_dim/2)] = source;
-    }
+	if(addforce[1]!=0)
+	{
+		i=_x_dim/2,
+		j=2;
+		k=_z_dim/2;
+
+		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
+		v[VERTEX(i,j,k)] = force*addforce[1];
+		addforce[1] = 0;
+	}	
+
+    // v[VERTEX(i,j,k)] += 10.f;
+
+	if(addforce[2]!=0) // y
+	{
+		i=_x_dim/2,
+		j=_y_dim/2;
+		k=2;
+
+		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
+		w[VERTEX(i,j,k)] = force*addforce[2]; 	
+		addforce[2] = 0;
+	}	
+
+	if(addsource==1)
+	{
+		i=_x_dim/2,
+		j=_y_dim/2;
+		k=_z_dim/2;
+		d[VERTEX(i,j,k)] = source;
+		addsource = 0;
+	}
 }
 
 void Fluid::update(float dt) {
     update_force_source(dens_prev, x_vel_prev, y_vel_prev, z_vel_prev);
     vel_step(_x_dim, _y_dim, _z_dim, x_vel, y_vel, z_vel,  x_vel_prev, y_vel_prev, z_vel_prev, visc, dt );
 	dens_step(_x_dim, _y_dim, _z_dim, dens, dens_prev, x_vel, y_vel, z_vel, diff, dt );
+}
+
+void Fluid::key_down(int key) {
+    switch ( key ) {
+        case GLFW_KEY_UP: addforce[0] = 1; break;
+        case GLFW_KEY_DOWN: addforce[0] = -1; break;
+        case GLFW_KEY_G: addforce[1] = -1; break;
+        case GLFW_KEY_LEFT: addforce[2] = 1; break;
+        case GLFW_KEY_RIGHT: addforce[2] = -1; break;
+        case GLFW_KEY_E: addsource = 1; break;
+    }
+
+    // std::cout << key << " " << addforce[0] << " " << addforce[1] << " " << addforce[2] << std::endl;
 }
 
 void Fluid::draw() {
@@ -289,7 +332,7 @@ void Fluid::draw() {
 
     // draw the fluid
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     glDrawElements(GL_TRIANGLES,                    // primitive type
                 indices.size(),          // # of indices
@@ -326,9 +369,9 @@ void Fluid::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) 
         }
     } 
 
-    if (mouse_down) {
-        next_source = closest;
-    }
+    // if (mouse_down) {
+    //     next_source = closest;
+    // }
 }
 
 void Fluid::cleanup() {

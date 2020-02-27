@@ -22,9 +22,8 @@ class Fluid {
     size_t _y_dim;
     size_t _z_dim;
 
-    int next_source;
-    int next_force;
-    glm::vec2 next_force_dir;
+    int addforce[3];
+    int addsource;
 
     float * x_vel, * x_vel_prev;
     float * y_vel, * y_vel_prev;
@@ -39,7 +38,7 @@ public:
     void clear();
 
     void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
-
+    void key_down(int key);
     void init();
     void update(float dt);
     void draw();

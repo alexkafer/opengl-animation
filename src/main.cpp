@@ -85,7 +85,7 @@ static void error_callback(int error, const char* description){ fprintf(stderr, 
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 	// Close on escape or Q
-	
+
 
 	if( action == GLFW_PRESS || action == GLFW_REPEAT){
 		switch ( key ) {
@@ -100,6 +100,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_D: Globals::camera_target += 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
 			case GLFW_KEY_P: toggle_interaction(window);  break;
 		}
+		scene->key_down(key);
 	}
 }
 
