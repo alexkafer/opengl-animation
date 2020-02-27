@@ -14,6 +14,8 @@ struct PointMass {
     glm::vec3 normal;
     glm::vec2 texture_coord;
 
+    PointMass(): position(0.f), velocity(0.f), normal(0.f), texture_coord(0.f) {}
+
     PointMass(const glm::vec3 &_position, const glm::vec2 &_texture_coord) 
         : position(_position), velocity(0.f), normal(0.f), texture_coord(_texture_coord) {} 
 };
@@ -28,11 +30,12 @@ typedef std::unordered_multimap<
 class Cloth {
     size_t _x_dim;
     size_t _y_dim;
+    size_t _total;
 
     int selected;
 
-    std::vector<glm::vec3> forces;
-    std::vector<PointMass> pointMasses;
+    glm::vec3 * forces;
+    PointMass * pointMasses;
     std::vector<std::pair<size_t, size_t>> edges;
 
     std::vector<GLushort> indices;
@@ -53,6 +56,7 @@ class Cloth {
     void test_triangle_intersection(PointMass * triangle_points [3]);
 
     void compute_normals();
+    bool is_selected(int i);
 
 public:
     Cloth(size_t x, size_t y);

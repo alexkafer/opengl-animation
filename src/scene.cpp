@@ -24,7 +24,7 @@ Scene::Scene () {
         check_gl_error();
 
         // cloth = new Cloth(30, 30);
-        cloth = new Cloth(30, 30);
+        cloth = new Cloth(60, 60);
         check_gl_error();
 
         shader.disable();

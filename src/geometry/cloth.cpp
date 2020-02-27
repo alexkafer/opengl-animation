@@ -4,6 +4,7 @@
 #include <iostream>
 #include <utility>
 #include <limits>
+#include <algorithm>
 
 #include <glm/gtx/intersect.hpp>
 #include <glm/gtx/projection.hpp>
@@ -14,9 +15,11 @@
 
 #include "../utils/texture.h"
 
+#define IX(i,j) ((i)+(_x_dim)*(j))
+
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
-static glm::vec3 air_velocity(-5.f, 0.f, -5.f);
+static glm::vec3 air_velocity(-10.f, 0.f, -5.f);
 // static glm::vec3 gravity(0.f, -1.f, 0.f);
 
 static const float STEPS = 10;
@@ -43,12 +46,9 @@ static size_t spatial_hashing_func(const glm::vec3 & key) {
 Cloth::Cloth(size_t x_dim, size_t y_dim) {
     _x_dim = x_dim;
     _y_dim = y_dim;
-
-    pointMasses = std::vector<PointMass>();
-    pointMasses.reserve(x_dim * y_dim);
-
-    forces = std::vector<glm::vec3>();
-    forces.reserve(x_dim*y_dim);
+    _total = x_dim * y_dim;
+    pointMasses = new PointMass[_total];
+    forces = new glm::vec3[_total];
 
     edges = std::vector<std::pair<size_t, size_t>>();
     size_t edge_count = (x_dim-1)*y_dim + (y_dim-1)*x_dim;
@@ -57,16 +57,17 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
     // spatial_hash = spatial_hash_map(HASH_TABLE_SIZE); //, spatial_hashing_func);
 
     // pointMasses.push_back(PointMass(glm::vec3(2.f * (float) rand() / RAND_MAX - 1.f, (points + 15.f) / 5.f, 2.f * (float) rand() / RAND_MAX - 1.f), 0));
-    size_t vertex[x_dim][y_dim];
+    // size_t vertex[x_dim][y_dim];
 
     for (size_t x = 0; x < x_dim; x++) {
         for (size_t y = 0; y < y_dim; y++) {
-            vertex[x][y] = pointMasses.size();
-            // std::cout << "Generated " << vertex[x][y] << " at (" << x << ", "<< y << ")" << std::endl;
-            pointMasses.push_back(PointMass(
-                glm::vec3(x * REST_LENGTH, REST_LENGTH * y + 2.f, 0.f), 
-                glm::vec2((-1.f * x) / x_dim, (-1.f * y) / y_dim)));
-            forces.push_back(glm::vec3(0.0f));
+            // IX(x,y) = pointMasses.size();
+            // std::cout << "Generated " << IX(x,y) << " at (" << x << ", "<< y << ")" << std::endl;
+            pointMasses[IX(x,y)] = PointMass(
+                glm::vec3(x * REST_LENGTH, REST_LENGTH * y + 20.f, 0.f), 
+                glm::vec2((-1.f * x) / x_dim, (-1.f * y) / y_dim));
+            // pointMasses.push_back();
+            forces[IX(x,y)] = glm::vec3(0.0f);
         }
     }
 
@@ -75,32 +76,32 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
             
             // If not on the x edge
             if (x < x_dim-1) {
-                // std::cout << "Paired " << vertex[x][y] << " with " <<vertex[x+1][y] << std::endl;
-                edges.push_back(std::make_pair(vertex[x][y], vertex[x+1][y]));
+                // std::cout << "Paired " << IX(x,y) << " with " <<IX(x+1,y) << std::endl;
+                edges.push_back(std::make_pair(IX(x,y), IX(x+1,y)));
             }
             
             // If not on the bottom row
             if (y < y_dim-1) {
-                // std::cout << "Paired " << vertex[x][y] << " with " <<vertex[x][y+1] << std::endl;
-                edges.push_back(std::make_pair(vertex[x][y], vertex[x][y+1]));
+                // std::cout << "Paired " << IX(x,y) << " with " <<IX(x,y+1) << std::endl;
+                edges.push_back(std::make_pair(IX(x,y), IX(x,y+1)));
             }
 
             // Left down triangle
             if (x < x_dim-1 && y < y_dim-1) {
-                indices.push_back(vertex[x][y]);
-                indices.push_back(vertex[x+1][y]);
-                indices.push_back(vertex[x][y+1]);
+                indices.push_back(IX(x,y));
+                indices.push_back(IX(x+1,y));
+                indices.push_back(IX(x,y+1));
 
-                // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x+1][y] << ", " <<vertex[x][y+1] << std::endl;
+                // std::cout << "Made triangle " << IX(x,y) << ", " <<IX(x+1,y) << ", " <<IX(x,y+1) << std::endl;
             }
 
             // Up right triangle
             if (x > 0 && y > 0) {
-                indices.push_back(vertex[x][y]);
-                indices.push_back(vertex[x-1][y]);
-                indices.push_back(vertex[x][y-1]);
+                indices.push_back(IX(x,y));
+                indices.push_back(IX(x-1,y));
+                indices.push_back(IX(x,y-1));
 
-                // std::cout << "Made triangle " << vertex[x][y] << ", " <<vertex[x-1][y] << ", " <<vertex[x][y-1] << std::endl;
+                // std::cout << "Made triangle " << IX(x,y) << ", " <<vertex[x-1][y] << ", " <<vertex[x][y-1] << std::endl;
             }
         }
     }
@@ -114,7 +115,7 @@ void Cloth::init(Shader & shader) {
 
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, pointMasses.size() * sizeof(PointMass), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _total * sizeof(PointMass), NULL, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
@@ -131,7 +132,7 @@ void Cloth::init(Shader & shader) {
 
 // Algorithm adapted from TinyObj loader
 void Cloth::compute_normals() {
-    for(size_t i = 0; i < pointMasses.size(); i++) {
+    for(size_t i = 0; i < _total; i++) {
         pointMasses[i].normal = glm::vec3(0.f);
     }
 
@@ -149,17 +150,15 @@ void Cloth::compute_normals() {
 
     } 
 
-    for(size_t i = 0; i < pointMasses.size(); i++) {
+    for(size_t i = 0; i < _total; i++) {
         pointMasses[i].normal = glm::normalize(pointMasses[i].normal);
     }
 }
 
 
 void Cloth::update_forces(float dt) {
-    size_t total_points = pointMasses.size();
-    
     // Clear forces before we get started this round
-    for(size_t i = 0; i < total_points; i++) forces[i] = gravity;
+    for(size_t i = 0; i < _total; i++) forces[i] = gravity;
 
     for ( const std::pair<size_t, size_t> &edge : edges )
     {
@@ -177,7 +176,7 @@ void Cloth::update_forces(float dt) {
 
         float damp_force = -KV * STEPS * (velocity_one - velocity_two);
 
-        if (edge.first == selected || edge.second == selected) {
+        if (Globals::mouse_down && (is_selected(edge.first) || is_selected(edge.second))) {
             string_force *= 10.f;
         }
 
@@ -212,9 +211,9 @@ void Cloth::update_positions(float dt) {
     spatial_hash.clear(); // Clear the hash since we're calculating new positions
 
     // After we've calculated all the velocities and made modifications, apply them;
-    for(size_t i = 0; i < pointMasses.size(); i++) {
+    for(size_t i = 0; i < _total; i++) {
         
-        if ((i > _x_dim * (_y_dim-1)) ||  (Globals::mouse_down && selected == i)) {
+        if ((i % _x_dim  == _y_dim-1) ||  (Globals::mouse_down && is_selected(i))) {
         // if ((i % _y_dim == (_y_dim / 2)) || (i % _y_dim == (_y_dim / 2) + 1)|| (Globals::dragging_object && Globals::selected == i)) {
         // if ((i % _y_dim == 0) || (Globals::dragging_object && Globals::selected == i)) {
         // if ((Globals::dragging_object && Globals::selected == i)) {
@@ -274,7 +273,7 @@ void Cloth::update_positions(float dt) {
 // }
 static const float collision_radius = .59f;
 void Cloth::check_collisions(float dt) {
-    for(size_t i = 0; i < pointMasses.size(); i++) {
+    for(size_t i = 0; i < _total; i++) {
 
         if (pointMasses[i].position.y < 0) {
             pointMasses[i].position.y = 0.01f; 
@@ -456,7 +455,7 @@ void Cloth::draw(Shader & shader) {
     compute_normals();
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, pointMasses.size() * sizeof(PointMass), &pointMasses[0], GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _total * sizeof(PointMass), pointMasses, GL_DYNAMIC_DRAW);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
@@ -484,16 +483,29 @@ void Cloth::draw(Shader & shader) {
     shader.disable();
 }
 
+bool Cloth::is_selected(int i) {
+    int y_sel = selected / _x_dim;
+    int x_sel = selected % _x_dim;
+
+    int y = i / _x_dim - y_sel;
+    int x = i % _x_dim - x_sel;
+
+    float radius = 5.f;
+
+    return (x*x + y*y) < (radius*radius); 
+}
+
 void Cloth::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
     if (mouse_down && selected > 0) {
         drag_selected(direction);
+        return;
     }
 
     float radius = REST_LENGTH * REST_LENGTH / 4.0f;
     float closest_distance = std::numeric_limits<float>::max();
     int closest = -1;
 
-    for(int i = 0; i < pointMasses.size(); i++) {
+    for(int i = 0; i < _total; i++) {
         float distance; 
         if (glm::intersectRaySphere(origin, direction, pointMasses[i].position, radius, distance)) {
             std::cout << "Found point: " << i << std::endl;
@@ -507,8 +519,26 @@ void Cloth::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) 
 }
 
 void Cloth::drag_selected(glm::vec3 direction) {
+
     float distance_from_camera = glm::distance(Globals::eye_pos, pointMasses[selected].position);
-    pointMasses[selected].position = Globals::eye_pos + distance_from_camera * direction; 
+    glm::vec3 new_position = Globals::eye_pos + distance_from_camera * direction;
+    glm::vec3 relative_direction = new_position - pointMasses[selected].position;
+    // pointMasses[selected].position = new_position; 
+
+    int y_sel = selected / _x_dim;
+    int x_sel = selected % _x_dim;
+
+    for (int x = fmax(0, x_sel - 5); x < fmin(_x_dim, x_sel + 5); x++) {
+        for (int y = fmax(0, y_sel - 5); y < fmin(_y_dim, y_sel + 5); y++) {
+            float x_diff = x - x_sel;
+            float y_diff = y - y_sel;
+            float smoothing = fmax(0, 1.f - (x_diff * x_diff + y_diff*y_diff) / 25.f);
+            std::cout << "Smoothing: " << smoothing << " " << sqrt((x*x + y*y)) << std::endl;
+            pointMasses[IX(x, y)].position += smoothing * relative_direction;
+        }
+    }
+
+    
 }
 
 void Cloth::cleanup() {
