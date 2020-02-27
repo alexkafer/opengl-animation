@@ -21,9 +21,9 @@
 extern void dens_step ( int M, int N, int O, float * x, float * x0, float * u, float * v, float * w, float diff, float dt );
 extern void vel_step ( int M, int N, int O, float * u, float * v,  float * w, float * u0, float * v0, float * w0, float visc, float dt );
 
-static float diff = 0.0001f; // diffuse
-static float visc = 2000.f; // viscosity
-static float force = 100000.0f;
+static float diff = 0.0002f; // diffuse
+static float visc = 20.f; // viscosity
+static float force = 2000.0f;
 static float source = 1000.0f; // density
 
 
@@ -218,15 +218,15 @@ void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
 		d[i] = u[i] = v[i] = w[i] = 0.0f;
 	}
 
-    for (size_t i = 1; i <= _x_dim; i++) {
-        for (size_t j = 1; j <= _y_dim; j++) {
-            for (size_t k = 1; k <= _z_dim; k++) {
-                // if (j > _y_dim-5) {
-                    v[VERTEX(i,j,k)] = -1.f;
-                // }
-            }
-        }
-    }
+    // for (size_t i = 1; i <= _x_dim; i++) {
+    //     for (size_t j = 1; j <= _y_dim; j++) {
+    //         for (size_t k = 1; k <= _z_dim; k++) {
+    //             if (j > _y_dim-5) {
+    //                 v[VERTEX(i,j,k)] = -1.f;
+    //             }
+    //         }
+    //     }
+    // }
 
     int i, j, k;
     if(addforce[0]!=0) // x
@@ -237,23 +237,23 @@ void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
 
 		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
 		u[VERTEX(i,j,k)] = force*addforce[0];
-		u[VERTEX(i,j+1,k)] = force*addforce[0];
-		u[VERTEX(i,j,k+1)] = force*addforce[0];
-		u[VERTEX(i,j+1,k+1)] = force*addforce[0];
+		// u[VERTEX(i,j+1,k)] = force*addforce[0];
+		// u[VERTEX(i,j,k+1)] = force*addforce[0];
+		// u[VERTEX(i,j+1,k+1)] = force*addforce[0];
 		addforce[0] = 0;
 	}	
 
-	if(addforce[1]!=0)
+	// if(addforce[1]!=0)
 	{
 		i=_x_dim/2,
 		j=2;
 		k=_z_dim/2;
 
 		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
-		v[VERTEX(i,j,k)] = force*addforce[1];
-		v[VERTEX(i+1,j,k)] = force*addforce[1];
-		v[VERTEX(i,j,k+1)] = force*addforce[1];
-		v[VERTEX(i+1,j,k+1)] = force*addforce[1];
+		v[VERTEX(i,j,k)] = -0.5f * force; //*addforce[1];
+		// v[VERTEX(i+1,j,k)] = force*addforce[1];
+		// v[VERTEX(i,j,k+1)] = force*addforce[1];
+		// v[VERTEX(i+1,j,k+1)] = force*addforce[1];
 		addforce[1] = 0;
 	}	
 

@@ -25,7 +25,7 @@ Scene::Scene () {
 
         shader.disable();
 
-        fluid = new Fluid(30, 30, 30);
+        fluid = new Fluid(10, 10, 10);
         check_gl_error();
 }
 
