@@ -38,7 +38,7 @@ void Scene::print_stats() {
 }
 
 void Scene::compute_physics(float dt){
-    cloth->update(dt);
+    cloth->update(fmin(dt, 0.02f));
     fluid->update(dt);
     particles->update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
 }

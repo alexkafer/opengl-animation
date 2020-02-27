@@ -16,7 +16,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 #		Options
 # ====================================================
 
-option(USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
+option(USE_OpenMP "Use OpenMP to enamble <omp.h>" OFF)
 
 # If you do not have the core arb headers, you need an extensions library like glew.
 # Run cmake with "-DUSE_GLEW" (or just set this to on).

@@ -132,6 +132,7 @@ void Cloth::init(Shader & shader) {
 
 // Algorithm adapted from TinyObj loader
 void Cloth::compute_normals() {
+    #pragma omp parallel for
     for(size_t i = 0; i < _total; i++) {
         pointMasses[i].normal = glm::vec3(0.f);
     }
@@ -150,6 +151,7 @@ void Cloth::compute_normals() {
 
     } 
 
+    #pragma omp parallel for
     for(size_t i = 0; i < _total; i++) {
         pointMasses[i].normal = glm::normalize(pointMasses[i].normal);
     }
@@ -158,10 +160,12 @@ void Cloth::compute_normals() {
 
 void Cloth::update_forces(float dt) {
     // Clear forces before we get started this round
+    #pragma omp parallel for
     for(size_t i = 0; i < _total; i++) forces[i] = gravity;
 
-    for ( const std::pair<size_t, size_t> &edge : edges )
+    for(size_t i = 0; i < edges.size(); i++) 
     {
+        std::pair<size_t, size_t> edge = edges.at(i);
         glm::vec3 edge_vector = pointMasses[edge.first].position - pointMasses[edge.second].position;
 
         float string_length = glm::length(edge_vector); 
@@ -183,12 +187,26 @@ void Cloth::update_forces(float dt) {
         glm::vec3 force_added = ((string_force + damp_force) * glm::normalize(edge_vector)) / 2.f;
 
         // If the cloth is not being held on to, apply the force
+        // #pragma omp atomic update
+        // forces[edge.first].x += force_added.x;
+        // #pragma omp atomic update
+        // forces[edge.first].y += force_added.y;
+        // #pragma omp atomic update
+        // forces[edge.first].z += force_added.z;
+
+        // // Equal and opposite force
+        // #pragma omp atomic update
+        // forces[edge.second].x -= force_added.x;
+        // #pragma omp atomic update
+        // forces[edge.second].y -= force_added.y;
+        // #pragma omp atomic update
+        // forces[edge.second].z -= force_added.z;
+
         forces[edge.first] += force_added;
-        
-        // Equal and opposite force
         forces[edge.second] -= force_added;
     }
 
+    #pragma omp parallel for
     for (size_t f = 0; f < indices.size() / 3; f++) {
         size_t point_a = indices[3 * f + 0];
         size_t point_b = indices[3 * f + 1];
@@ -201,9 +219,26 @@ void Cloth::update_forces(float dt) {
 
         glm::vec3 aero_force = (glm::length(velocity) * glm::dot(velocity, normal) * normal) / (2.f * glm::length(normal));
 
-        forces[point_a] -= aero_force;
-        forces[point_b] -= aero_force;
-        forces[point_c] -= aero_force;
+        #pragma omp atomic update
+        forces[point_a].x -= aero_force.x;
+        #pragma omp atomic update
+        forces[point_a].y -= aero_force.y;
+        #pragma omp atomic update
+        forces[point_a].z -= aero_force.z;
+
+        #pragma omp atomic update
+        forces[point_b].x -= aero_force.x;
+        #pragma omp atomic update
+        forces[point_b].y -= aero_force.y;
+        #pragma omp atomic update
+        forces[point_b].z -= aero_force.z;
+
+        #pragma omp atomic update
+        forces[point_c].x -= aero_force.x;
+        #pragma omp atomic update
+        forces[point_c].y -= aero_force.y;
+        #pragma omp atomic update
+        forces[point_c].z -= aero_force.z;
     }
 }
 
@@ -211,6 +246,7 @@ void Cloth::update_positions(float dt) {
     spatial_hash.clear(); // Clear the hash since we're calculating new positions
 
     // After we've calculated all the velocities and made modifications, apply them;
+    #pragma omp parallel for
     for(size_t i = 0; i < _total; i++) {
         
         if ((i % _x_dim  == _y_dim-1) ||  (Globals::mouse_down && is_selected(i))) {
@@ -227,7 +263,7 @@ void Cloth::update_positions(float dt) {
             //  std::cout << "post position: " << glm::to_string(pointMasses[i].position) << std::endl;
         }
 
-        spatial_hash.insert(std::make_pair<size_t, size_t>(spatial_hashing_func(pointMasses[i].position), (size_t) i));
+        // spatial_hash.insert(std::make_pair<size_t, size_t>(spatial_hashing_func(pointMasses[i].position), (size_t) i));
     }
 }
 
