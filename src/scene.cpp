@@ -23,13 +23,9 @@ Scene::Scene () {
         particles = new Particles();
         check_gl_error();
 
-        // cloth = new Cloth(30, 30);
-        cloth = new Cloth(30, 30);
-        check_gl_error();
-
         shader.disable();
 
-        fluid = new Fluid(25, 25, 25);
+        fluid = new Fluid(30, 30, 30);
         check_gl_error();
 }
 
@@ -38,7 +34,6 @@ void Scene::print_stats() {
 }
 
 void Scene::compute_physics(float dt){
-    cloth->update(dt);
     fluid->update(dt);
     particles->update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
 }
@@ -82,7 +77,6 @@ void Scene::init()
 
     init_floor();
     init_static_uniforms();
-    cloth->init(shader);
 
     shader.disable();
 
@@ -178,7 +172,6 @@ void Scene::draw(float dt) {
 		
     draw_floor();
 
-    cloth->draw(shader);
     check_gl_error();
     fluid->draw();
     check_gl_error();
@@ -193,7 +186,6 @@ void Scene::draw(float dt) {
 
 void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
     fluid->interaction(origin, direction, mouse_down);
-    cloth->interaction(origin, direction, mouse_down);
 }
 
 void Scene::key_down(int key) {
@@ -203,22 +195,7 @@ void Scene::key_down(int key) {
 void Scene::clear() {
     fluid->clear();
 }
-// int Scene::find_object(glm::vec3 origin, glm::vec3 direction) {
-//     int object = fluid->find_object(origin, direction);
-//     if (object > 0) {
-//         return 2 * object + 1;
-//     } 
 
-//     return 2 * cloth->find_object(origin, direction);
-// }
-
-// void Scene::drag_object(int object, glm::vec3 direction) {
-//     if (object % 2 == 0) {
-//         cloth->drag_object(object / 2, direction);
-//     } else {
-//         fluid->drag_object(object / 2, direction);
-//     }
-// }
 
 void Scene::draw_text(float x, float y, const char *string){
     // printText2D(string, x, y, 0.1f);
@@ -229,8 +206,6 @@ void Scene::cleanup() {
     // Disable the shader, we're done using it
 	shader.disable();
 
-    cloth->cleanup();
-    delete cloth;
 
     fluid->cleanup();
     delete fluid;

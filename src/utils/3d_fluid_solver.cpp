@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #define IX(i,j,k) ((i)+(M+2)*(j) + (M+2)*(N+2)*(k))
-#define SWAP(x0,x) {float * tmp=x0;x0=x;x=tmp;}
 
 void add_source(int M, int N, int O, float * x, float * s, float dt)
 {
@@ -131,11 +130,15 @@ void project ( int M, int N, int O, float * u, float * v, float * w, float * p, 
 
 	lin_solve ( M, N, O, 0, p, div, 1, 6 );
 
-	for (int i=1 ; i<=M ; i++ ) { for (int j=1 ; j<=N ; j++ ) { for (int k=1 ; k<=O ; k++ ) {
-		u[IX(i,j,k)] -= 0.5f*M*(p[IX(i+1,j,k)]-p[IX(i-1,j,k)]);
-		v[IX(i,j,k)] -= 0.5f*M*(p[IX(i,j+1,k)]-p[IX(i,j-1,k)]);
-		w[IX(i,j,k)] -= 0.5f*M*(p[IX(i,j,k+1)]-p[IX(i,j,k-1)]);
-	}}}
+	for (int i=1 ; i<=M ; i++ ) { 
+		for (int j=1 ; j<=N ; j++ ) { 
+			for (int k=1 ; k<=O ; k++ ) {
+				u[IX(i,j,k)] -= 0.5f*M*(p[IX(i+1,j,k)]-p[IX(i-1,j,k)]);
+				v[IX(i,j,k)] -= 0.5f*M*(p[IX(i,j+1,k)]-p[IX(i,j-1,k)]);
+				w[IX(i,j,k)] -= 0.5f*M*(p[IX(i,j,k+1)]-p[IX(i,j,k-1)]);
+			}
+		}
+	}
 	
 	set_bnd (  M, N, O, 1, u ); set_bnd (  M, N, O, 2, v ); set_bnd (  M, N, O, 3, w);
 }
@@ -143,18 +146,22 @@ void project ( int M, int N, int O, float * u, float * v, float * w, float * p, 
 void dens_step ( int M, int N, int O, float * x, float * x0, float * u, float * v, float * w, float diff, float dt )
 {
 	add_source ( M, N, O, x, x0, dt );
-	SWAP ( x0, x ); diffuse ( M, N, O, 0, x, x0, diff, dt );
-	SWAP ( x0, x ); advect ( M, N, O, 0, x, x0, u, v, w, dt );
+	
+	std::swap ( x0, x ); diffuse ( M, N, O, 0, x, x0, diff, dt );
+	std::swap ( x0, x ); advect ( M, N, O, 0, x, x0, u, v, w, dt );
 }
 
 void vel_step ( int M, int N, int O, float * u, float * v,  float * w, float * u0, float * v0, float * w0, float visc, float dt )
 {
 	add_source ( M, N, O, u, u0, dt ); add_source ( M, N, O, v, v0, dt );add_source ( M, N, O, w, w0, dt );
-	SWAP ( u0, u ); diffuse ( M, N, O, 1, u, u0, visc, dt );
-	SWAP ( v0, v ); diffuse ( M, N, O, 2, v, v0, visc, dt );
-	SWAP ( w0, w ); diffuse ( M, N, O, 3, w, w0, visc, dt );
+	
+	std::swap ( u0, u ); diffuse ( M, N, O, 1, u, u0, visc, dt );
+	std::swap ( v0, v ); diffuse ( M, N, O, 2, v, v0, visc, dt );
+	std::swap ( w0, w ); diffuse ( M, N, O, 3, w, w0, visc, dt );
+
 	project ( M, N, O, u, v, w, u0, v0 );
-	SWAP ( u0, u ); SWAP ( v0, v );SWAP ( w0, w );
+
+	std::swap ( u0, u ); std::swap ( v0, v ); std::swap ( w0, w );
 	advect ( M, N, O, 1, u, u0, u0, v0, w0, dt ); advect ( M, N, O, 2, v, v0, u0, v0, w0, dt );advect ( M, N, O, 3, w, w0, u0, v0, w0, dt );
 	project ( M, N, O, u, v, w, u0, v0 );
 }

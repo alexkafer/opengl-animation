@@ -18,8 +18,6 @@ class Scene {
         Particles * particles; 
         GLuint vao;
 
-        Model * camp_fire;
-        Cloth * cloth; 
         Fluid * fluid;
         
 
