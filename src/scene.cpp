@@ -39,7 +39,7 @@ void Scene::print_stats() {
 
 void Scene::compute_physics(float dt){
     cloth->update(fmin(dt, 0.02f));
-    fluid->update(dt);
+    // fluid->update(dt);
     particles->update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
 }
 
@@ -180,7 +180,7 @@ void Scene::draw(float dt) {
 
     cloth->draw(shader);
     check_gl_error();
-    fluid->draw();
+    //fluid->draw();
     check_gl_error();
 	particles->draw();
     check_gl_error();
@@ -192,16 +192,16 @@ void Scene::draw(float dt) {
 
 
 void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
-    fluid->interaction(origin, direction, mouse_down);
+    //fluid->interaction(origin, direction, mouse_down);
     cloth->interaction(origin, direction, mouse_down);
 }
 
 void Scene::key_down(int key) {
-    fluid->key_down(key);
+    //fluid->key_down(key);
 }
 
 void Scene::clear() {
-    fluid->clear();
+    //fluid->clear();
 }
 // int Scene::find_object(glm::vec3 origin, glm::vec3 direction) {
 //     int object = fluid->find_object(origin, direction);

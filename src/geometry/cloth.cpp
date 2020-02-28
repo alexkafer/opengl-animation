@@ -526,7 +526,7 @@ bool Cloth::is_selected(int i) {
     int y = i / _x_dim - y_sel;
     int x = i % _x_dim - x_sel;
 
-    float radius = 5.f;
+    float radius = 10.f;
 
     return (x*x + y*y) < (radius*radius); 
 }
@@ -564,12 +564,12 @@ void Cloth::drag_selected(glm::vec3 direction) {
     int y_sel = selected / _x_dim;
     int x_sel = selected % _x_dim;
 
-    for (int x = fmax(0, x_sel - 5); x < fmin(_x_dim, x_sel + 5); x++) {
-        for (int y = fmax(0, y_sel - 5); y < fmin(_y_dim, y_sel + 5); y++) {
+    for (int x = fmax(0, x_sel - 10); x < fmin(_x_dim, x_sel + 10); x++) {
+        for (int y = fmax(0, y_sel - 10); y < fmin(_y_dim, y_sel + 10); y++) {
             float x_diff = x - x_sel;
             float y_diff = y - y_sel;
-            float smoothing = fmax(0, 1.f - (x_diff * x_diff + y_diff*y_diff) / 25.f);
-            std::cout << "Smoothing: " << smoothing << " " << sqrt((x*x + y*y)) << std::endl;
+            float smoothing = fmax(0, 1.f - (x_diff * x_diff + y_diff*y_diff) / 100.f);
+            // std::cout << "Smoothing: " << smoothing << " " << sqrt((x*x + y*y)) << std::endl;
             pointMasses[IX(x, y)].position += smoothing * relative_direction;
         }
     }
