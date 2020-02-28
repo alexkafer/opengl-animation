@@ -279,9 +279,9 @@ int main(int argc, char *argv[]){
 	glClearColor(0.529f, 0.808f, .922f, 1.0f);
 
 	// Initialize camera
-	Globals::camera_target = Globals::eye_pos = glm::vec3(15.f, 2.5f, 15.f);
+	Globals::camera_target = Globals::eye_pos = glm::vec3(25.f, 15.f, 25.f);
 	
-	lookAt(glm::vec3(0.f, 0.f, 0.f));
+	lookAt(glm::vec3(0.f, 0.f, -10.f));
 
 	check_gl_error();
 
@@ -333,8 +333,8 @@ int main(int argc, char *argv[]){
 
 		// Calculate new view
 		Globals::view = glm::lookAt(Globals::eye_pos, Globals::eye_pos + Globals::eye_dir, up);
-
-		scene->draw(dt);
+		if (!Globals::reset_mouse)
+			scene->draw(dt);
 		check_gl_error();
 
 		char text[256];

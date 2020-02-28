@@ -23,8 +23,11 @@ Scene::Scene () {
         particles = new Particles();
         check_gl_error();
 
+        table = new Model("table/", "table.obj", shader);
+        check_gl_error();
+
         // cloth = new Cloth(30, 30);
-        cloth = new Cloth(60, 60);
+        cloth = new Cloth(30, 30);
         check_gl_error();
 
         shader.disable();
@@ -172,18 +175,41 @@ void Scene::draw(float dt) {
 
     shader.enable();
     glBindVertexArray(vao); // Bind the globally created VAO to the current context
+    init_static_uniforms();
 
     glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
 	glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
 		
     draw_floor();
 
+    glm::mat4 table_translate = glm::translate(
+        glm::mat4( 1.0f ),
+        glm::vec3( 5.f, 0.f, 15.f )
+    );
+
+    glm::mat4 table_model = glm::scale(  // Scale first
+        table_translate,              // Translate second
+        glm::vec3( 0.05f, 0.1f, 0.05f )
+    );
+
+    glm::mat4 table_normal = table_model;
+    table_normal[3] = glm::vec4(0,0,0,1);
+    
+
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(table_model)  );
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(table_normal)); // projection matrix
+    table->draw(shader);
+init_static_uniforms();
     cloth->draw(shader);
     check_gl_error();
     //fluid->draw();
+
+    check_gl_error();
+
+
+
     check_gl_error();
 	particles->draw();
-    check_gl_error();
 
     glBindVertexArray(0);
 
@@ -198,6 +224,7 @@ void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) 
 
 void Scene::key_down(int key) {
     //fluid->key_down(key);
+    std::cout << glm::to_string(Globals::eye_pos) << std::endl;
 }
 
 void Scene::clear() {

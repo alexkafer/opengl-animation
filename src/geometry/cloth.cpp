@@ -19,7 +19,7 @@
 
 
 static glm::vec3 gravity(0.f, -9.8f, 0.f);
-static glm::vec3 air_velocity(-10.f, 0.f, -5.f);
+static glm::vec3 air_velocity(-1.f, 0.f, -1.f);
 // static glm::vec3 gravity(0.f, -1.f, 0.f);
 
 static const float STEPS = 10;
@@ -64,7 +64,7 @@ Cloth::Cloth(size_t x_dim, size_t y_dim) {
             // IX(x,y) = pointMasses.size();
             // std::cout << "Generated " << IX(x,y) << " at (" << x << ", "<< y << ")" << std::endl;
             pointMasses[IX(x,y)] = PointMass(
-                glm::vec3(x * REST_LENGTH, REST_LENGTH * y + 20.f, 0.f), 
+                glm::vec3(x * REST_LENGTH, 10.f, REST_LENGTH * y), 
                 glm::vec2((-1.f * x) / x_dim, (-1.f * y) / y_dim));
             // pointMasses.push_back();
             forces[IX(x,y)] = glm::vec3(0.0f);
@@ -122,7 +122,7 @@ void Cloth::init(Shader & shader) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
 
     
-    std::stringstream texture_ss; texture_ss << MY_MODELS_DIR << "/textures/flag.png";
+    std::stringstream texture_ss; texture_ss << MY_MODELS_DIR << "/textures/cloth.png";
     texture_id = load_texture(texture_ss.str().c_str());
   
     glBindVertexArray(0);
@@ -249,8 +249,8 @@ void Cloth::update_positions(float dt) {
     #pragma omp parallel for
     for(size_t i = 0; i < _total; i++) {
         
-        if ((i % _x_dim  == _y_dim-1) ||  (Globals::mouse_down && is_selected(i))) {
-        // if ((i % _y_dim == (_y_dim / 2)) || (i % _y_dim == (_y_dim / 2) + 1)|| (Globals::dragging_object && Globals::selected == i)) {
+        // if ((i % _x_dim  == _y_dim-1) ||  (Globals::mouse_down && is_selected(i))) {
+        if ((i / _x_dim == (_y_dim / 2)) || (i / _x_dim == (_y_dim / 2) + 1)|| (Globals::mouse_down && is_selected(i))) {
         // if ((i % _y_dim == 0) || (Globals::dragging_object && Globals::selected == i)) {
         // if ((Globals::dragging_object && Globals::selected == i)) {
             // Kill all forces for an object being held
@@ -316,6 +316,13 @@ void Cloth::check_collisions(float dt) {
             pointMasses[i].velocity.y *= -0.5; //bounce factor
             pointMasses[i].velocity.x *= 0.95; //bounce factor
             pointMasses[i].velocity.z *= 0.95; //bounce factor
+        }
+
+        if (pointMasses[i].position.y < 5.3f && pointMasses[i].position.x > 1.2f && pointMasses[i].position.x < 9.1f && pointMasses[i].position.z > 9.1f) {
+            pointMasses[i].position.y = 5.3f; 
+            pointMasses[i].velocity.y *= -0.5; //bounce factor
+            pointMasses[i].velocity.x *= 0.97; //bounce factor
+            pointMasses[i].velocity.z *= 0.97; //bounce factor
         }
 
         // std::cout << "p1.position: " << glm::to_string(pointMasses[i].position) << std::endl;
@@ -526,7 +533,7 @@ bool Cloth::is_selected(int i) {
     int y = i / _x_dim - y_sel;
     int x = i % _x_dim - x_sel;
 
-    float radius = 10.f;
+    float radius = 5.f;
 
     return (x*x + y*y) < (radius*radius); 
 }
@@ -564,8 +571,8 @@ void Cloth::drag_selected(glm::vec3 direction) {
     int y_sel = selected / _x_dim;
     int x_sel = selected % _x_dim;
 
-    for (int x = fmax(0, x_sel - 10); x < fmin(_x_dim, x_sel + 10); x++) {
-        for (int y = fmax(0, y_sel - 10); y < fmin(_y_dim, y_sel + 10); y++) {
+    for (int x = fmax(0, x_sel - 5); x < fmin(_x_dim, x_sel + 5); x++) {
+        for (int y = fmax(0, y_sel - 5); y < fmin(_y_dim, y_sel + 5); y++) {
             float x_diff = x - x_sel;
             float y_diff = y - y_sel;
             float smoothing = fmax(0, 1.f - (x_diff * x_diff + y_diff*y_diff) / 100.f);

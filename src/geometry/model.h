@@ -54,6 +54,8 @@ private:
     // Modified from https://github.com/syoyo/tinyobjloader/blob/eba1fc037e89a593f50d670621c0dbf9882ec78d/examples/viewer/viewer.cc#L231
     void computeSmoothingNormals(const tinyobj::attrib_t& attrib, const tinyobj::shape_t& shape,
                                 std::map<int, glm::vec3>& smoothVertexNormals);
+
+    void load_material(tinyobj::material_t material, Shader & shader);
 };
 
 
