@@ -1,4 +1,4 @@
-# CSCI5611 Assignment 1
+# CSCI5611 Assignment 2
 
 ## Note
 The code structure for this project was based on a homework assignment for CSCI5607 in Fall 2019 taught by Dr. Victoria Interrante and TA'd by Liam Tyler. The code was modified with guidance from Dr. Stephen J. Guy's "An OpenGL Crash Course" 
@@ -10,8 +10,7 @@ GLFW comes from a git sub-module. Install it with this:
 
 Building this program:
 ```
-cd assignment1
-mkdir build
-cd build
-cmake ..
+cd opengl-animation
+cmake . && make
+./GLFW_App
 ```
