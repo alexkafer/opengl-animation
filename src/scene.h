@@ -19,6 +19,7 @@ class Scene {
         GLuint vao;
 
         Fluid * fluid;
+        Model * train;
         
 
         GLuint floor_vbo[2];
@@ -26,7 +27,7 @@ class Scene {
         void compute_physics(float dt);
 
         void init_floor();
-        void init_static_uniforms();
+        void set_default_material();
 
         void draw_floor();
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);

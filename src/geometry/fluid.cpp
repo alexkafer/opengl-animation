@@ -21,10 +21,10 @@
 extern void dens_step ( int M, int N, int O, float * x, float * x0, float * u, float * v, float * w, float diff, float dt );
 extern void vel_step ( int M, int N, int O, float * u, float * v,  float * w, float * u0, float * v0, float * w0, float visc, float dt );
 
-static float diff = 0.0002f; // diffuse
+static float diff = 0.00005f; // diffuse
 static float visc = 20.f; // viscosity
-static float force = 2000.0f;
-static float source = 1000.0f; // density
+static float force = 100.0f;
+static float source = 250.0f; // density
 
 
 Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
@@ -60,7 +60,7 @@ Fluid::Fluid(size_t x_dim, size_t y_dim, size_t z_dim) {
         for (size_t j = 0; j < y_dim +2; j++) {
             float y = cell_unit * j;
             for (size_t k = 0; k < z_dim + 2; k++) {
-                points[VERTEX(i, j, k)] = glm::vec3(x, y + 1.f, cell_unit * k);
+                points[VERTEX(i, j, k)] = glm::vec3(x, y + 9.5f, cell_unit * k);
             }
         }
     }
@@ -166,7 +166,7 @@ void Fluid::init() {
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
-  
+    
     glBindVertexArray(0);
 
     init_static_uniforms();
@@ -218,65 +218,64 @@ void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
 		d[i] = u[i] = v[i] = w[i] = 0.0f;
 	}
 
-    // for (size_t i = 1; i <= _x_dim; i++) {
-    //     for (size_t j = 1; j <= _y_dim; j++) {
-    //         for (size_t k = 1; k <= _z_dim; k++) {
-    //             if (j > _y_dim-5) {
-    //                 v[VERTEX(i,j,k)] = -1.f;
-    //             }
-    //         }
-    //     }
-    // }
-
-    int i, j, k;
-    if(addforce[0]!=0) // x
-	{
-		i=2,
-		j=_y_dim/2;
-		k=_z_dim/2;
+    if(addforce[0]!=0) {
+		int i = _x_dim/2;
+		int j = _y_dim/4;
+		int k = _z_dim/2;
 
 		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
+
 		u[VERTEX(i,j,k)] = force*addforce[0];
-		// u[VERTEX(i,j+1,k)] = force*addforce[0];
-		// u[VERTEX(i,j,k+1)] = force*addforce[0];
-		// u[VERTEX(i,j+1,k+1)] = force*addforce[0];
-		addforce[0] = 0;
+		u[VERTEX(i,j+1,k)] = force*addforce[0];
+		u[VERTEX(i,j,k+1)] = force*addforce[0];
+		u[VERTEX(i,j+1,k+1)] = force*addforce[0];
+		// addforce[0] = 0;
+	}
+
+    if(addforce[1] != 0) {
+		int i = _x_dim/2;
+		int j = _y_dim/4;
+		int k = _z_dim/2;
+
+		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
+		
+        w[VERTEX(i,j,k)] = force*addforce[0];
+		w[VERTEX(i,j+1,k)] = force*addforce[0];
+		w[VERTEX(i,j,k+1)] = force*addforce[0];
+		w[VERTEX(i,j+1,k+1)] = force*addforce[0];
+		// addforce[0] = 0;
+	}
+    	
+
+
+	if(addforce[2]!=0) {
+		int i = _x_dim/2;
+		int j = _y_dim/4;
+		int k = _z_dim/2;
+
+		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
+
+		w[VERTEX(i,j,k)] = force*addforce[2]; 	
+        w[VERTEX(i+1,j,k)] = force*addforce[2];
+		w[VERTEX(i,j,k+1)] = force*addforce[2];
+		w[VERTEX(i+1,j,k+1)] = force*addforce[2];
+		// addforce[2] = 0;
 	}	
 
-	// if(addforce[1]!=0)
-	{
+    int i=_x_dim/2;
+    int j=5;
+    int k=_z_dim/2;
+
+    if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
+
+    v[VERTEX(i,j,k)] = 10.0f * force; 
+
+	if(addsource == 1) {
 		i=_x_dim/2,
 		j=2;
 		k=_z_dim/2;
-
-		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
-		v[VERTEX(i,j,k)] = -0.5f * force; //*addforce[1];
-		// v[VERTEX(i+1,j,k)] = force*addforce[1];
-		// v[VERTEX(i,j,k+1)] = force*addforce[1];
-		// v[VERTEX(i+1,j,k+1)] = force*addforce[1];
-		addforce[1] = 0;
-	}	
-
-    // v[VERTEX(i,j,k)] += 10.f;
-
-	if(addforce[2]!=0) // y
-	{
-		i=_x_dim/2,
-		j=_y_dim/2;
-		k=2;
-
-		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
-		w[VERTEX(i,j,k)] = force*addforce[2]; 	
-		addforce[2] = 0;
-	}	
-
-	if(addsource==1)
-	{
-		i=_x_dim/2,
-		j=_y_dim-1;
-		k=_z_dim/2;
 		d[VERTEX(i,j,k)] = source;
-		addsource = 0;
+		// addsource = 0;
 	}
 }
 
@@ -288,12 +287,12 @@ void Fluid::update(float dt) {
 
 void Fluid::key_down(int key) {
     switch ( key ) {
-        case GLFW_KEY_UP: addforce[0] = 1; break;
-        case GLFW_KEY_DOWN: addforce[0] = -1; break;
-        case GLFW_KEY_G: addforce[1] = -1; break;
-        case GLFW_KEY_LEFT: addforce[2] = 1; break;
-        case GLFW_KEY_RIGHT: addforce[2] = -1; break;
-        case GLFW_KEY_E: addsource = 1; break;
+        case GLFW_KEY_UP: addforce[0] += 1; break;
+        case GLFW_KEY_DOWN: addforce[0] += -1; break;
+        case GLFW_KEY_G: addforce[1] += -1; break;
+        case GLFW_KEY_LEFT: addforce[2] += 1; break;
+        case GLFW_KEY_RIGHT: addforce[2] += -1; break;
+        case GLFW_KEY_E: addsource = !addsource; break;
     }
 
     // std::cout << key << " " << addforce[0] << " " << addforce[1] << " " << addforce[2] << std::endl;
@@ -354,6 +353,7 @@ void Fluid::draw() {
                 GL_UNSIGNED_SHORT,                 // data type
                 (void*)0);                       // offset to indices
 
+    glDisable(GL_CULL_FACE);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

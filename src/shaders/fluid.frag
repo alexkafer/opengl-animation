@@ -50,9 +50,9 @@ void main(){
 
     vec3 view = normalize(eye-vposition);
 
-    if (dot(normal, light_dir) < 0) {
-        normal *= -1;
-    }
+    // if (dot(normal, light_dir) < 0) {
+    //     normal *= -1;
+    // }
 
 	vec3 result = phong( normal, light_dir, view );
 	outColor = vec4(result, vcolor.a);

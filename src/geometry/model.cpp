@@ -62,11 +62,7 @@ void Model::draw(Shader & shader)
 
         glBindTexture(GL_TEXTURE_2D, 0);
         if ((o.material_id < materials.size())) {
-            std::string diffuse_texname = materials[o.material_id].diffuse_texname;
-            if (textures.find(diffuse_texname) != textures.end()) {
-                glBindTexture(GL_TEXTURE_2D, textures[diffuse_texname]);
-                glUniform1i(shader.uniform("texture_used"), 1);
-            } 
+            load_material(materials[o.material_id], shader);
         }
         
         // set the vertex attribute pointers
@@ -90,6 +86,34 @@ void Model::draw(Shader & shader)
 
         glUniform1i(shader.uniform("texture_used"), 0);
     }
+}
+
+void Model::load_material(tinyobj::material_t material, Shader & shader)
+{
+    GLint uniformMaterialAmbient           = shader.uniform("materialAmbient");
+    GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
+    GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
+    GLint uniformMaterialShininess         = shader.uniform("materialShininess");
+    check_gl_error();
+
+    std::string diffuse_texname = material.diffuse_texname;
+    if (textures.find(diffuse_texname) != textures.end()) {
+        glBindTexture(GL_TEXTURE_2D, textures[diffuse_texname]);
+        glUniform1i(shader.uniform("texture_used"), 1);
+    } 
+
+
+    float materialAmbient[]  = {material.ambient[0], material.ambient[1], material.ambient[2], 1};
+    float materialDiffuse[]  = {material.diffuse[0], material.diffuse[1], material.diffuse[2], 1};
+    float materialSpecular[] = {material.specular[0], material.specular[1], material.specular[2], 1};
+    float materialShininess  = material.shininess;
+
+    glUniform4fv(uniformMaterialAmbient, 1, materialAmbient);
+    glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
+    glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
+    glUniform1f(uniformMaterialShininess, materialShininess);
+
+    check_gl_error();
 }
 
 

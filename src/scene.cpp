@@ -21,11 +21,13 @@ Scene::Scene () {
         check_gl_error();
 
         particles = new Particles();
+
+        train = new Model("train/", "steam-train.obj", shader);
         check_gl_error();
 
         shader.disable();
 
-        fluid = new Fluid(10, 10, 10);
+        fluid = new Fluid(30, 30, 30);
         check_gl_error();
 }
 
@@ -76,7 +78,7 @@ void Scene::init()
     check_gl_error();
 
     init_floor();
-    init_static_uniforms();
+    set_default_material();
 
     shader.disable();
 
@@ -86,7 +88,7 @@ void Scene::init()
 ///////////////////////////////////////////////////////////////////////////////
 // set uniform constants
 ///////////////////////////////////////////////////////////////////////////////
-void Scene::init_static_uniforms()
+void Scene::set_default_material()
 {
     GLint uniformLightPosition             = shader.uniform("lightPosition");
     // GLint uniformLightAmbient              = shader.uniform("lightAmbient");
@@ -169,8 +171,26 @@ void Scene::draw(float dt) {
 
     glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
 	glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
-		
+
+    set_default_material();
     draw_floor();
+
+    glm::mat4 train_translate = glm::translate(
+        glm::mat4( 1.0f ),
+        glm::vec3( 26.f, -1.f, 13.5f )
+    );
+
+    glm::mat4 train_model = glm::scale(  // Scale first
+        train_translate,              // Translate second
+        glm::vec3( 5.f, 5.f, 5.f )
+    );
+
+    glm::mat4 train_normal = train_model;
+    train_normal[3] = glm::vec4(0,0,0,1);
+
+    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(train_model)  );
+    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(train_normal)); // projection matrix
+    train->draw(shader);
 
     check_gl_error();
     fluid->draw();
