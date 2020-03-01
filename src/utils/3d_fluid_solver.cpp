@@ -1,5 +1,8 @@
 //  Real Time Fluid Solver in 3D
 //	Reference: Jos Stam, "Real-Time Fluid Dynamics for Games". Proceedings of the Game Developer Conference, March 2003.
+// 	The structure of the code closely mimics Jos Stam's demo implementation. I closely followed Blain Maguire's 3D implementation found here:
+// 	https://github.com/BlainMaguire/3dfluid. This version is extended to be threaded and utilize C++ algorithms. 
+
 #include <algorithm>
 
 #define IX(i,j,k) ((i)+(M+2)*(j) + (M+2)*(N+2)*(k))

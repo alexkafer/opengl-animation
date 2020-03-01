@@ -239,10 +239,10 @@ void Fluid::update_force_source(float * d, float * u, float * v, float * w ) {
 
 		if ( i<1 || i>_x_dim || j<1 || j>_y_dim || k <1 || k>_z_dim) return;
 		
-        w[VERTEX(i,j,k)] = force*addforce[0];
-		w[VERTEX(i,j+1,k)] = force*addforce[0];
-		w[VERTEX(i,j,k+1)] = force*addforce[0];
-		w[VERTEX(i,j+1,k+1)] = force*addforce[0];
+        v[VERTEX(i,j,k)] = force*addforce[0];
+		v[VERTEX(i,j+1,k)] = force*addforce[0];
+		v[VERTEX(i,j,k+1)] = force*addforce[0];
+		v[VERTEX(i,j+1,k+1)] = force*addforce[0];
 		// addforce[0] = 0;
 	}
     	
