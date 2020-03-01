@@ -33,7 +33,12 @@
 #include <GL/gl.h>
 #endif
 
+#ifdef USE_GLEW
+#include <GL/glew.h>
+#endif
+
 #include <iostream> 
+#include <iterator> 
 #include <fstream>
 #include <sstream>
 #include <vector>
