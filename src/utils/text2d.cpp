@@ -25,14 +25,14 @@ static FT_Face face;
 
 std::map<GLchar, Character> Characters;
 
-static Shader shader;
+Shader text_shader;
 
 void initText2D(const char * font){
     std::stringstream shader_ss; shader_ss << MY_SRC_DIR << "shaders/text.";
-    shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
-    shader.enable();
+    text_shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
+    text_shader.enable();
 
-    GLuint uniformTextProjection = shader.uniform("projection");
+    GLuint uniformTextProjection = text_shader.uniform("projection");
 
     glm::mat4 projection = glm::ortho(0.0f, static_cast<GLfloat>(Globals::screen_width), 0.0f, static_cast<GLfloat>(Globals::screen_height));
     glUniformMatrix4fv(uniformTextProjection, 1, GL_FALSE, glm::value_ptr(projection));
@@ -106,7 +106,7 @@ void initText2D(const char * font){
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
 
-    GLuint attribVertex = shader.attribute("in_vertex");
+    GLuint attribVertex = text_shader.attribute("in_vertex");
     glEnableVertexAttribArray(attribVertex);
     glVertexAttribPointer(attribVertex, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -116,9 +116,9 @@ void initText2D(const char * font){
 void RenderText(std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
 {
     // Activate corresponding render state	
-    shader.enable();
+    text_shader.enable();
 
-    GLuint uniformTextColor = shader.uniform("textColor");
+    GLuint uniformTextColor = text_shader.uniform("textColor");
     glUniform3f(uniformTextColor, color.x, color.y, color.z);
 
     glActiveTexture(GL_TEXTURE0);
@@ -201,8 +201,8 @@ void RenderText(std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3
 // 	}
 //     check_gl_error();
 
-//     // Bind shader
-// 	shader.enable();
+//     // Bind text_shader
+// 	text_shader.enable();
 
 //     glBindVertexArray(vao);
 
@@ -216,9 +216,9 @@ void RenderText(std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3
 // 	glActiveTexture(GL_TEXTURE0);
 // 	glBindTexture(GL_TEXTURE_2D, texture_id);
 // 	// Set our "myTextureSampler" sampler to user Texture Unit 0
-//     GLuint uniformTexture = shader.uniform("myTextureSampler");
-//     GLuint attribVertexPosition = shader.attribute("in_position");
-//     GLuint attribVertexUV = shader.attribute("in_uv");
+//     GLuint uniformTexture = text_shader.uniform("myTextureSampler");
+//     GLuint attribVertexPosition = text_shader.attribute("in_position");
+//     GLuint attribVertexUV = text_shader.attribute("in_uv");
 // 	glUniform1i(uniformTexture, 0);
 
 //     check_gl_error();

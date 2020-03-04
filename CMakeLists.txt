@@ -226,11 +226,13 @@ set(MY_SOURCES
 	src/utils/text2d.cpp
 	src/utils/texture.cpp
     src/scene.cpp
+    src/renderers/phong.cpp
     src/geometry/particles.cpp
     src/geometry/model.cpp
     src/geometry/sphere.cpp
     src/geometry/cloth.cpp
     src/geometry/fluid.cpp
+    src/geometry/floor.cpp
 )
 
 # Now we can add an executable, link it with our rendering libraries, and we're done!

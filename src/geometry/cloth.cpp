@@ -43,6 +43,8 @@ static size_t spatial_hashing_func(const glm::vec3 & key) {
     ) % HASH_TABLE_SIZE;
 }
 
+void Cloth::reset() {};
+
 Cloth::Cloth(size_t x_dim, size_t y_dim) {
     _x_dim = x_dim;
     _y_dim = y_dim;

@@ -1,39 +1,39 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 
+#include <vector>
+
 #include "common.h"
+
+#include "renderers/phong.h"
+#include "entities/entity.h"
 
 #include "geometry/particles.h"
 
-#include "geometry/model.h"
 #include "geometry/sphere.h"
+#include "geometry/model.h"
 #include "geometry/cloth.h"
+#include "geometry/floor.h"
 #include "geometry/fluid.h"
 
 static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 class Scene {
-        Shader shader;
-
         Particles * particles; 
         GLuint vao;
 
-        Model * table;
-        Cloth * cloth; 
-        Fluid * fluid;
-        
+        Phong * renderer;
+        std::vector<Entity*> entities;
 
-        GLuint floor_vbo[2];
+        Model * table;
+        Cloth * cloth;
 
         void compute_physics(float dt);
-
-        void init_floor();
         void init_static_uniforms();
-
-        void draw_floor();
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);
-        
 
+        size_t add_entity(Entity * entity);
+        size_t add_renderable(Renderable * renderable);
     public:
         Scene();
         void print_stats();

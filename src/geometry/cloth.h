@@ -7,6 +7,7 @@
 #include "../utils/shader.h"
 
 #include "../utils/stb_image.h"
+#include "../entities/entity.h"
 
 struct PointMass {
     glm::vec3 position;
@@ -27,7 +28,7 @@ typedef std::unordered_multimap<
         // std::function<size_t(glm::vec3)> // The hasher
     > spatial_hash_map;
 
-class Cloth {
+class Cloth: public Entity {
     size_t _x_dim;
     size_t _y_dim;
     size_t _total;
@@ -63,6 +64,7 @@ public:
 
     void init(Shader & shader);
 
+    void reset();
     void update(float dt);
     void draw(Shader & shader);
     void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);

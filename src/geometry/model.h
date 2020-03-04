@@ -19,13 +19,15 @@
 #include "../utils/shader.h"
 #include "../utils/GLError.h"
 
+#include "../entities/entity.h"
+
 typedef struct {
   GLuint vb_id;  // vertex buffer id
   int numTriangles;
   size_t material_id;
 } DrawObject;
 
-class Model 
+class Model : public Renderable
 {
 public:
     /*  Model Data */
@@ -34,13 +36,17 @@ public:
     std::vector<DrawObject> drawObjects;
 
     std::string mtl_dir;
+    std::string obj_file;
 
     /*  Functions   */
     // constructor, expects a filepath to a 3D model.
-    Model(const std::string &directory, const std::string &obj_file, Shader & shader);
+    Model(const std::string &directory, const std::string &object_file, const glm::vec3 & scale);
 
     // draws the model, and thus all its meshes
+    void init(Shader & shader); 
+    void update(float dt);
     void draw(Shader & shader);
+    void cleanup();
     
 private:
     // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html

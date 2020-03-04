@@ -29,8 +29,8 @@
 // https://github.com/syoyo/tinyobjloader
 
 // Constants
-#define WIN_WIDTH 500
-#define WIN_HEIGHT 500
+#define WIN_WIDTH 1920
+#define WIN_HEIGHT 1080
 
 //
 //	Global state variables
@@ -333,8 +333,8 @@ int main(int argc, char *argv[]){
 
 		// Calculate new view
 		Globals::view = glm::lookAt(Globals::eye_pos, Globals::eye_pos + Globals::eye_dir, up);
-		if (!Globals::reset_mouse)
-			scene->draw(dt);
+		
+		scene->draw(dt);
 		check_gl_error();
 
 		char text[256];

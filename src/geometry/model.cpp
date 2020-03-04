@@ -26,16 +26,20 @@ static bool FileExists(const std::string& abs_filename) {
 
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
-Model::Model(const std::string &directory, const std::string &obj_file, Shader & shader)
+Model::Model(const std::string &directory, const std::string &object_file, const glm::vec3 & scale): Renderable(scale)
 {
     textures = std::map<std::string, GLuint>();
     materials = std::vector<tinyobj::material_t>();
     mtl_dir = directory;
+    obj_file = object_file;
+}
 
-    std::stringstream model_ss; model_ss << MY_MODELS_DIR << directory;
-
+void Model::init(Shader & shader) {
+    std::stringstream model_ss; model_ss << MY_MODELS_DIR << mtl_dir;
     load_model(model_ss.str() + obj_file, model_ss.str(), shader);
 }
+
+void Model::update(float dt) {};
 
 // draws the model, and thus all its meshes
 void Model::draw(Shader & shader)
@@ -449,3 +453,8 @@ void Model::computeSmoothingNormals(const tinyobj::attrib_t& attrib, const tinyo
     }
 
 }  // computeSmoothingNormals
+
+// TODO for better memory management
+void Model::cleanup() {
+
+}
