@@ -24,6 +24,12 @@ void Ball::animate_position(glm::vec3 pos) {
     std::cout << "Starting animation from " << glm::to_string(start) << " to " << glm::to_string(target) << " for " << total_time << " seconds covering " << distance << std::endl;
 }
 
+bool Ball::check_collision(glm::vec3 position) {
+    float x = (position.x - _origin.x);
+    float y = (position.y - _origin.y);
+    return (x*x + y*y) < (_radius*_radius);
+}
+
 void Ball::init(Shader & shader) {
     glGenVertexArrays(1, &vao); //Create a VAO
 	glBindVertexArray(vao); // Bind the globally created VAO to the current context

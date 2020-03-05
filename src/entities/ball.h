@@ -1,6 +1,7 @@
 #ifndef BALL_H
 #define BALL_H
 
+#include <vector>
 #include "../common.h"
 #include "../utils/shader.h"
 
@@ -24,6 +25,7 @@ class Ball: public Entity {
 public:
     Ball(float radius);
     void animate_position(glm::vec3 pos); 
+    bool check_collision(glm::vec3 position);
 
     void init(Shader & shader);
     void reset();

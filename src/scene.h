@@ -24,6 +24,7 @@ class Scene {
 
         Phong * renderer;
         std::vector<Entity*> entities;
+        std::vector<glm::vec3> milestones;
 
         Model * table;
         Ball * ball;
@@ -35,6 +36,7 @@ class Scene {
 
         size_t add_entity(Entity * entity);
         size_t add_renderable(Renderable * renderable);
+        void generate_roadmap();
     public:
         Scene();
         void print_stats();
