@@ -16,7 +16,7 @@ public:
     virtual void cleanup() = 0;
 
     virtual void set_position(glm::vec3 pos) { _origin = pos; }
-    virtual glm::vec3 get_position() { return _origin; }
+    virtual glm::vec3& get_position() { return _origin; }
     virtual glm::vec3 get_scale() { return _scale; }
 };
 

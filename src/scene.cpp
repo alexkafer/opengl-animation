@@ -9,8 +9,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "utils/tiny_obj_loader.h"
 
-#include "utils/text2d.h"
-
 Scene::Scene () {
         entities = std::vector<Entity*>();
     	// Initialize the shader (which uses glew, so we need to init that first).
@@ -24,11 +22,10 @@ Scene::Scene () {
 
         add_renderable(new Floor());
         
-        table = new Model("table/", "table.obj", glm::vec3( 0.05f, 0.1f, 0.05f ));
-        add_renderable(table);
-        
-        cloth = new Cloth(30, 30);
-        add_entity(cloth);
+        ball = new Ball(0.5f);
+        ball->set_position(glm::vec3(9.f, 0.5f, 9.f));
+
+        add_entity(ball);
 
         // fluid = new Fluid(25, 25, 25);
         
@@ -48,38 +45,19 @@ void Scene::print_stats() {
     particles->print_stats();
 }
 
-void Scene::compute_physics(float dt){
-     for(auto t=entities.begin(); t!=entities.end(); ++t) {
-        (*t)->update(fmin(dt, 0.02f));
-     }
-    // cloth->update(fmin(dt, 0.02f));
-    // fluid->update(dt);
-    particles->update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
-}
-
-void Scene::init()
-{
-    initText2D( "Arial.ttf" );
-}
+void Scene::init() {}
 
 void Scene::draw(float dt) {
-
-    // // glm::mat4 table_translate = glm::translate(
-    // //     glm::mat4( 1.0f ),
-    // //     glm::vec3( 5.f, 0.f, 15.f )
-    // // );
-
-    // glm::mat4 table_model = glm::scale(  // Scale first
-    //     table_translate,              // Translate second
-    //     glm::vec3( 0.05f, 0.1f, 0.05f )
-    // );
-
-    table->set_position(glm::vec3( 5.f, 0.f, 15.f ));
-
     renderer->draw();
-    compute_physics(dt);
 }
 
+void Scene::update(float dt) {
+    for(auto t=entities.begin(); t!=entities.end(); ++t) {
+        (*t)->update(fmin(dt, 0.02f));
+    }
+
+    particles->update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
+}
 
 void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
     //fluid->interaction(origin, direction, mouse_down);
@@ -88,10 +66,10 @@ void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) 
 
 void Scene::key_down(int key) {}
 
-void Scene::clear() {}
-
-void Scene::draw_text(float x, float y, const char *string){
-    RenderText(string, 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+void Scene::reset() {
+    for(auto t=entities.begin(); t!=entities.end(); ++t) {
+        (*t)->reset();
+    }
 }
 
 void Scene::cleanup() {

@@ -15,6 +15,7 @@
 
 #include "common.h"
 #include "scene.h"
+#include "utils/text2d.h"
 #include "utils/GLError.h"
 
 #include <glm/gtx/string_cast.hpp>
@@ -60,6 +61,7 @@ namespace Globals {
 }
 
 Scene * scene; 
+Text2D * gui;
 
 static const float camera_height = 1.f;
 static const float camera_speed = 5.f;
@@ -93,7 +95,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_LEFT_SHIFT: Globals::camera_target.y -= camera_distance; break;
 			case GLFW_KEY_SPACE: Globals::camera_target.y += camera_distance; break;
-			case GLFW_KEY_C: scene->clear(); break;
+			case GLFW_KEY_R: scene->reset(); break;
 			case GLFW_KEY_W: Globals::camera_target += camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
@@ -274,6 +276,12 @@ int main(int argc, char *argv[]){
 	scene->init();
 	check_gl_error();
 
+	gui = new Text2D();
+	check_gl_error();
+	
+	gui->init("Arial.ttf");
+	check_gl_error();
+
 	// Initialize OpenGL
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.529f, 0.808f, .922f, 1.0f);
@@ -337,9 +345,10 @@ int main(int argc, char *argv[]){
 		scene->draw(dt);
 		check_gl_error();
 
+		scene->update(dt);
 		char text[256];
 		sprintf(text,"FPS: %.2d", fps);
-		scene->draw_text(0, 0, text);
+		gui->draw(text, 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
 
 		// Finalize
 		glfwSwapBuffers(window);

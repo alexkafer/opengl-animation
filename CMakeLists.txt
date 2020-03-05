@@ -233,6 +233,7 @@ set(MY_SOURCES
     src/geometry/cloth.cpp
     src/geometry/fluid.cpp
     src/geometry/floor.cpp
+    src/entities/ball.cpp
 )
 
 # Now we can add an executable, link it with our rendering libraries, and we're done!

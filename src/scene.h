@@ -12,7 +12,7 @@
 
 #include "geometry/sphere.h"
 #include "geometry/model.h"
-#include "geometry/cloth.h"
+#include "entities/ball.h"
 #include "geometry/floor.h"
 #include "geometry/fluid.h"
 
@@ -26,9 +26,9 @@ class Scene {
         std::vector<Entity*> entities;
 
         Model * table;
-        Cloth * cloth;
+        Ball * ball;
 
-        void compute_physics(float dt);
+        
         void init_static_uniforms();
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);
 
@@ -41,10 +41,10 @@ class Scene {
         void init();
 
         void draw(float dt);
-        void draw_text(float x, float y, const char *string);
+        void update(float dt);
         void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
         void key_down(int key);
-        void clear();
+        void reset();
 
         void cleanup();
 };

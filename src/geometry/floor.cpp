@@ -4,7 +4,8 @@
 
 #include "../utils/GLError.h"
 
-Floor::Floor() {}
+// Make it 20x20
+Floor::Floor(): Renderable(glm::vec3(10.f)) {}
 
 void Floor::init(Shader & shader) {
 
@@ -13,12 +14,12 @@ void Floor::init(Shader & shader) {
 
     float vertices[] = {
         // X      Y     Z     R     G      B      U      V
-        -5.f, 0.f, -5.f, 0.376f, 0.502f, 0.22f, 0.0f, 1.0f,
-        5.f, 0.f, -5.f, 0.376f, 0.502f, 0.22f, 1.0f, 1.0f,
-        5.f, 0.f,  5.f, 0.376f, 0.502f, 0.22f, 1.0f, 0.0f,
-        5.f, 0.f,  5.f, 0.376f, 0.502f, 0.22f, 1.0f, 0.0f,
-        -5.f, 0.f,  5.f, 0.376f, 0.502f, 0.22f, 0.0f, 0.0f,
-        -5.f, 0.f, -5.f, 0.376f, 0.502f, 0.22f, 0.0f, 1.0f,
+        -1.f, 0.f, -1.f, 0.376f, 0.502f, 0.22f, 0.0f, 1.0f,
+        1.f, 0.f, -1.f, 0.376f, 0.502f, 0.22f, 1.0f, 1.0f,
+        1.f, 0.f,  1.f, 0.376f, 0.502f, 0.22f, 1.0f, 0.0f,
+        1.f, 0.f,  1.f, 0.376f, 0.502f, 0.22f, 1.0f, 0.0f,
+        -1.f, 0.f,  1.f, 0.376f, 0.502f, 0.22f, 0.0f, 0.0f,
+        -1.f, 0.f, -1.f, 0.376f, 0.502f, 0.22f, 0.0f, 1.0f,
     };
 
     float normals[] = {
@@ -48,17 +49,6 @@ void Floor::draw(Shader & shader) {
     glEnableVertexAttribArray(attribVertexColor);
     glEnableVertexAttribArray(attribVertexNormal);
 
-    glm::mat4 scale_model = glm::scale(  // Scale first
-        glm::mat4( 1.0f ),              // Translate second
-        glm::vec3( 10.0f, 10.0f, 10.0f )
-    );
-
-    // glm::mat4 matrix_normal = glm::mat4(1.0f);
-    // matrix_normal[3] = glm::vec4(0,0,0,1);
-
-    glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(scale_model)  ); // model transformation
-    glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(scale_model)); // projection matrix
-		
     // set attrib arrays using glVertexAttribPointer()
     // bind vbo for floor
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
