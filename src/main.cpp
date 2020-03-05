@@ -123,6 +123,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 }
 
 void calculate_eye_direction() {
+	std::cout  << "Yaw: "<< Globals::yaw << " Pitch: " << Globals::pitch << std::endl;
 	glm::vec3 direction;
 	direction.x = cos(Globals::yaw)* cos(Globals::pitch);
 	direction.y = sin(Globals::pitch);
@@ -186,10 +187,12 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	Globals::yaw   += xoffset;
 	Globals::pitch += yoffset;  
 
-	if(Globals::pitch > 89.0f)
-		Globals::pitch =  89.0f;
-	if(Globals::pitch < -89.0f)
-		Globals::pitch = -89.0f;	
+	float limit = (M_PI / 2.0f) - 0.01f;
+
+	if(Globals::pitch > limit)
+		Globals::pitch =  limit;
+	if(Globals::pitch < -limit)
+		Globals::pitch = -limit;	
 
 	calculate_eye_direction();
 }
@@ -211,7 +214,7 @@ void lookAt(glm::vec3 center)
 {
 	glm::vec3 direction = glm::normalize(center - Globals::eye_pos);
 	Globals::pitch = asin(direction.y);
-	Globals::yaw = atan2(direction.x, direction.z);
+	Globals::yaw = atan2(direction.z, direction.x);
 
 	calculate_eye_direction();
 }
@@ -287,9 +290,9 @@ int main(int argc, char *argv[]){
 	glClearColor(0.529f, 0.808f, .922f, 1.0f);
 
 	// Initialize camera
-	Globals::camera_target = Globals::eye_pos = glm::vec3(25.f, 15.f, 25.f);
+	Globals::camera_target = Globals::eye_pos = glm::vec3(0.f, 15.f, -20.f);
 	
-	lookAt(glm::vec3(0.f, 0.f, -10.f));
+	lookAt(glm::vec3(0.f, 0.f, 0.f));
 
 	check_gl_error();
 

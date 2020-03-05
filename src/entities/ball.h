@@ -23,7 +23,7 @@ class Ball: public Entity {
 
 public:
     Ball(float radius);
-    void set_position(glm::vec3 pos); 
+    void animate_position(glm::vec3 pos); 
 
     void init(Shader & shader);
     void reset();

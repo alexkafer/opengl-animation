@@ -27,6 +27,7 @@ class Scene {
 
         Model * table;
         Ball * ball;
+        Ball * obstacle;
 
         
         void init_static_uniforms();

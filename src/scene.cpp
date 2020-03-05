@@ -23,9 +23,13 @@ Scene::Scene () {
         add_renderable(new Floor());
         
         ball = new Ball(0.5f);
-        ball->set_position(glm::vec3(9.f, 0.5f, 9.f));
-
+        ball->set_position(glm::vec3(-9.f, 0.5f, -9.f));
+        ball->animate_position(glm::vec3(9.f, 0.5f, 9.f));
         add_entity(ball);
+
+        obstacle = new Ball(2.f);
+        obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));
+        add_entity(obstacle);
 
         // fluid = new Fluid(25, 25, 25);
         

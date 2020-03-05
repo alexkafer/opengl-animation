@@ -9,11 +9,12 @@ Ball::Ball(float radius) {
     _radius = radius;
 
     _sphere = Sphere(radius, 36, 18);
-    _origin = glm::vec3(-9.f, 0.5f, -9.f);
+    t = 0.f;
+    total_time = 0.f;
 }
 
 // Animated position
-void Ball::set_position(glm::vec3 pos) {
+void Ball::animate_position(glm::vec3 pos) {
     start = _origin;
     target = pos;
     t = 0;
@@ -46,8 +47,7 @@ void Ball::init(Shader & shader) {
 }
 
 void Ball::reset() {
-    _origin = glm::vec3(-9.f, 1.f, -9.f);
-    set_position(glm::vec3(9.f, 1.f, 9.f));
+    t = 0;
 }
 
 void Ball::update(float dt) {
