@@ -38,7 +38,7 @@ option(FORCE_CLONE "Use fresh updated clones of dependencies" ON)
 
 # We can set C++ flags (like optimizations) here. We'll compile with c++11 since it
 # has a lot of classes that will be useful.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Ofast")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 
 # This creates a #define for you to use in your source code. It's handy for
 # file input/output as it provides a full path.
@@ -225,8 +225,10 @@ set(MY_SOURCES
 	src/utils/shader.cpp
 	src/utils/text2d.cpp
 	src/utils/texture.cpp
+	src/utils/roadmap.cpp
     src/scene.cpp
     src/renderers/phong.cpp
+    src/renderers/lines.cpp
     src/geometry/particles.cpp
     src/geometry/model.cpp
     src/geometry/sphere.cpp

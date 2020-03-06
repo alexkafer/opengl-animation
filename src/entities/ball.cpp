@@ -2,6 +2,10 @@
 
 #include <iostream>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/intersect.hpp>
+
+#include "../utils/roadmap.h"
+#include "../scene.h"
 
 static const float SPEED = 10.f; // 2 meters (units) per second
 
@@ -10,24 +14,34 @@ Ball::Ball(float radius) {
 
     _sphere = Sphere(radius, 36, 18);
     t = 0.f;
-    total_time = 0.f;
+    step_time = 0.f;
+
+    current_path = std::list<glm::vec3>();
 }
 
 // Animated position
 void Ball::animate_position(glm::vec3 pos) {
-    start = _origin;
-    target = pos;
+    prev_step = _origin;
+    next_step = pos;
     t = 0;
-    float distance = glm::distance(_origin, target);
-    total_time = distance / SPEED;
-
-    std::cout << "Starting animation from " << glm::to_string(start) << " to " << glm::to_string(target) << " for " << total_time << " seconds covering " << distance << std::endl;
+    float distance = glm::distance(prev_step, next_step);
+    step_time = distance / SPEED;
 }
 
-bool Ball::check_collision(glm::vec3 position) {
-    float x = (position.x - _origin.x);
-    float y = (position.y - _origin.y);
-    return (x*x + y*y) < (_radius*_radius);
+void Ball::navigate_to(glm::vec3 pos) {
+    target = pos;
+    current_path = Globals::scene->get_roadmap()->find_path(_origin, pos);
+}
+
+bool Ball::check_collision(glm::vec3 a, glm::vec3 b) {
+    if (a == b) {
+        float x = (a.x - _origin.x);
+        float z = (b.z - _origin.z);
+        return (x*x + z*z) < (_radius*_radius);
+    } else {
+        glm::vec3 pos1, normal1, pos2, normal2;
+        return glm::intersectLineSphere(a, b, _origin, _radius, pos1, normal1, pos2, normal2);
+    }
 }
 
 void Ball::init(Shader & shader) {
@@ -54,12 +68,22 @@ void Ball::init(Shader & shader) {
 
 void Ball::reset() {
     t = 0;
+    step_time = 0;
+    current_path.clear();
 }
 
 void Ball::update(float dt) {
-    if (t < total_time ) {
+    if (t < step_time ) {
         t += dt;
-        _origin = glm::mix(start, target, t / total_time);
+        _origin = glm::mix(prev_step, next_step, t / step_time);
+    } else if (current_path.size() > 0) {
+        std::cout << " Current Path: ";
+        for (auto it = current_path.begin(); it != current_path.end(); ++it) 
+            std::cout << ' ' << glm::to_string(*it); 
+        std::cout << std::endl;
+
+        animate_position(current_path.back());
+        current_path.pop_back();
     }
 }
 

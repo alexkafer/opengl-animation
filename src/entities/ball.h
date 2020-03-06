@@ -2,6 +2,7 @@
 #define BALL_H
 
 #include <vector>
+#include <list>
 #include "../common.h"
 #include "../utils/shader.h"
 
@@ -16,16 +17,21 @@ class Ball: public Entity {
     GLuint vbo;
     GLuint ibo;
 
-    // Animation
-    glm::vec3 start;
+    // Path Finding
     glm::vec3 target;
-    float t, total_time;
+    std::list<glm::vec3> current_path;
+    
+    // Animation
+    glm::vec3 prev_step;
+    glm::vec3 next_step;
+    float t, step_time;
     
 
 public:
     Ball(float radius);
-    void animate_position(glm::vec3 pos); 
-    bool check_collision(glm::vec3 position);
+    void animate_position(glm::vec3 pos);
+    void navigate_to(glm::vec3 target); 
+    bool check_collision(glm::vec3 a, glm::vec3 b);
 
     void init(Shader & shader);
     void reset();

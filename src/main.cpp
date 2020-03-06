@@ -13,10 +13,13 @@
 
 #define GLM_FORCE_RADIANS //ensure we are using radians
 
-#include "common.h"
 #include "scene.h"
+#include "common.h"
 #include "utils/text2d.h"
 #include "utils/GLError.h"
+
+#include "entities/ball.h"
+#include "geometry/floor.h"
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
@@ -58,9 +61,12 @@ namespace Globals {
 
 	glm::mat4 view;
 	glm::mat4 projection;
+
+	Scene * scene;
 }
 
-Scene * scene; 
+Ball * ball;
+Ball * obstacle;
 Text2D * gui;
 
 static const float camera_height = 1.f;
@@ -95,14 +101,15 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_LEFT_SHIFT: Globals::camera_target.y -= camera_distance; break;
 			case GLFW_KEY_SPACE: Globals::camera_target.y += camera_distance; break;
-			case GLFW_KEY_R: scene->reset(); break;
+			case GLFW_KEY_R: Globals::scene->reset(); ball->navigate_to(glm::vec3(-9.f, 0.5f, -9.f)); break;
+			case GLFW_KEY_N: ball->navigate_to(glm::vec3(9.f, 0.5f, 9.f)); break;
 			case GLFW_KEY_W: Globals::camera_target += camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
 			case GLFW_KEY_D: Globals::camera_target += 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
 			case GLFW_KEY_P: toggle_interaction(window);  break;
 		}
-		scene->key_down(key);
+		Globals::scene->key_down(key);
 	}
 }
 
@@ -161,7 +168,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 		// 	}
 		// }
 
-		scene->interaction(Globals::eye_pos, ray_world, Globals::mouse_down);
+		Globals::scene->interaction(Globals::eye_pos, ray_world, Globals::mouse_down);
 
 		return;
 	};
@@ -219,7 +226,19 @@ void lookAt(glm::vec3 center)
 	calculate_eye_direction();
 }
 
+void setup_scene() {
+	Globals::scene->init();
 
+	Globals::scene->add_renderable(new Floor());
+        
+	ball = new Ball(0.5f);
+	ball->set_position(glm::vec3(-9.f, 0.5f, -9.f));
+	Globals::scene->add_entity(ball);
+
+	obstacle = new Ball(2.f);
+	obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));
+	Globals::scene->add_entity(obstacle);
+}
 
 //
 //	Main
@@ -273,10 +292,10 @@ int main(int argc, char *argv[]){
 	check_gl_error();
 
 	// Initialize the scene
-	scene = new Scene();
+	Globals::scene = new Scene();
 	check_gl_error();
 
-	scene->init();
+	setup_scene();
 	check_gl_error();
 
 	gui = new Text2D();
@@ -345,10 +364,10 @@ int main(int argc, char *argv[]){
 		// Calculate new view
 		Globals::view = glm::lookAt(Globals::eye_pos, Globals::eye_pos + Globals::eye_dir, up);
 		
-		scene->draw(dt);
+		Globals::scene->draw(dt);
 		check_gl_error();
 
-		scene->update(dt);
+		Globals::scene->update(dt);
 		char text[256];
 		sprintf(text,"FPS: %.2d", fps);
 		gui->draw(text, 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
@@ -362,9 +381,9 @@ int main(int argc, char *argv[]){
 
 	} // end loop
 
-	scene->cleanup();
+	Globals::scene->cleanup();
 
-	delete scene;
+	delete Globals::scene;
 
     
 	return EXIT_SUCCESS;
