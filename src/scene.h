@@ -16,7 +16,7 @@ class Scene {
         GLuint vao;
 
         Phong * renderer;
-        LineRenderer * path_renderer;
+        PathRenderer * path_renderer;
         std::vector<Entity*> entities;
 
         Roadmap * roadmap;
@@ -24,12 +24,13 @@ class Scene {
         void init_static_uniforms();
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);
 
-        bool check_collision(glm::vec3 a, glm::vec3 b);
-        void update_roadmap();
+        bool check_collisions(const glm::vec3 & a, const glm::vec3 & b, Entity * entity);
+        void populate_roadmap(Entity * entity);
     public:
         Scene();
 
-        Roadmap * get_roadmap();
+        std::vector<glm::vec3> find_path(glm::vec3 start, glm::vec3 destination, Entity * entity);
+
         size_t add_entity(Entity * entity);
         size_t add_renderable(Renderable * renderable);
 

@@ -3,6 +3,8 @@
 
 #include <glm/vec3.hpp> 
 
+#include "../utils/shader.h"
+
 class Renderable {
 protected:
     glm::vec3 _scale;

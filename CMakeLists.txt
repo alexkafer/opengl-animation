@@ -235,6 +235,7 @@ set(MY_SOURCES
     src/geometry/cloth.cpp
     src/geometry/fluid.cpp
     src/geometry/floor.cpp
+    src/entities/entity.cpp
     src/entities/ball.cpp
 )
 

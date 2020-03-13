@@ -23,6 +23,22 @@ Roadmap::~Roadmap() {
 const std::vector<glm::vec3> & Roadmap::get_milestones() {
     return _milestones;
 }
+
+std::vector<glm::vec3> Roadmap::get_edges() {
+    std::vector<glm::vec3> edges; 
+
+    for (int u = 0; u < _milestones_count; u++) 
+    {
+        for (auto it = _adj[u].begin(); it!= _adj[u].end(); it++) 
+        { 
+            edges.push_back(_milestones.at(u));
+            edges.push_back(_milestones.at(it->first));
+        }
+    } 
+
+    return edges;
+}
+
 void Roadmap::clear() {
     _milestones.clear();
 
@@ -32,54 +48,18 @@ void Roadmap::clear() {
     }
 }
 
-void Roadmap::add_milestone(glm::vec3 point) {
+int Roadmap::add_milestone(glm::vec3 point) {
     _milestones.push_back(point);
+
+    return _milestones.size() - 1;
 }
 
 void Roadmap::add_edge(int u, int v, float distance) {
     _adj[u].push_back(std::make_pair(v, distance)); 
-    _adj[v].push_back(std::make_pair(v, distance)); 
+    _adj[v].push_back(std::make_pair(u, distance)); 
 }
 
-std::list<glm::vec3> Roadmap::find_path(glm::vec3 start, glm::vec3 destination) {
-    // Find the milestone closest to start
-    int closest_start = -1;
-    int closest_dest = -1;
-    float dist_from_start = std::numeric_limits<float>::max();
-    float dist_from_dest = std::numeric_limits<float>::max();
-
-    for (int i = 0; i < _milestones.size(); i++) 
-    { 
-        float start_distance = glm::distance(start, _milestones.at(i));
-        if (start_distance < dist_from_start) {
-            closest_start = i;
-            dist_from_start = start_distance;
-        }
-
-        float dest_distance = glm::distance(destination, _milestones.at(i));
-        if (dest_distance < dist_from_dest) {
-            closest_dest = i;
-            dist_from_dest = dest_distance;
-        }
-    }
-
-    std::cout << "Navigating from " << glm::to_string(start) <<  closest_start << " to " << glm::to_string(destination) << closest_dest << std::endl;
-    
-    if (closest_start == -1 || closest_dest == -1) {
-        return std::list<glm::vec3>();
-    } else {
-        if (closest_start == closest_dest) {
-            return std::list<glm::vec3>(1, destination);
-        } else  {
-            std::list<glm::vec3> path = dijkstra_path(closest_start, closest_dest);
-            path.push_front(destination);
-            return path;
-        }
-    }
-}
-
-
-std::list<glm::vec3> Roadmap::dijkstra_path(int src, int dest) {
+std::vector<glm::vec3> Roadmap::dijkstra_path(int src, int dest) {
     std::priority_queue<std::pair<int, int>, std::vector <std::pair<int, int>>, std::greater<std::pair<int, int>>> pq;
 
     std::vector<int> dist(_milestones_count, std::numeric_limits<int>::max()); 
@@ -109,9 +89,9 @@ std::list<glm::vec3> Roadmap::dijkstra_path(int src, int dest) {
         } 
     }
 
-    std::list<glm::vec3> path;
+    std::vector<glm::vec3> path;
    
-    int i = parent[dest];
+    int i = dest;
     while(i != -1) {
         path.push_back(_milestones.at(i));
         i = parent[i];

@@ -101,8 +101,9 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_Q: glfwSetWindowShouldClose(window, GL_TRUE); break;
 			case GLFW_KEY_LEFT_SHIFT: Globals::camera_target.y -= camera_distance; break;
 			case GLFW_KEY_SPACE: Globals::camera_target.y += camera_distance; break;
-			case GLFW_KEY_R: Globals::scene->reset(); ball->navigate_to(glm::vec3(-9.f, 0.5f, -9.f)); break;
+			case GLFW_KEY_R: Globals::scene->reset(); break;
 			case GLFW_KEY_N: ball->navigate_to(glm::vec3(9.f, 0.5f, 9.f)); break;
+			case GLFW_KEY_M: ball->navigate_to(glm::vec3(-9.f, 0.5f, -9.f)); break;
 			case GLFW_KEY_W: Globals::camera_target += camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
@@ -130,7 +131,6 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 }
 
 void calculate_eye_direction() {
-	std::cout  << "Yaw: "<< Globals::yaw << " Pitch: " << Globals::pitch << std::endl;
 	glm::vec3 direction;
 	direction.x = cos(Globals::yaw)* cos(Globals::pitch);
 	direction.y = sin(Globals::pitch);
@@ -235,7 +235,7 @@ void setup_scene() {
 	ball->set_position(glm::vec3(-9.f, 0.5f, -9.f));
 	Globals::scene->add_entity(ball);
 
-	obstacle = new Ball(2.f);
+	obstacle = new Ball(5.f);
 	obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));
 	Globals::scene->add_entity(obstacle);
 }
@@ -338,7 +338,7 @@ int main(int argc, char *argv[]){
 		if ( current_frame_time - last_second_time >= 1.0 )
 		{
 			// Display the frame count here any way you want.
-			std::cout << "Framerate: " << frame_count << std::endl;
+			// std::cout << "Framerate: " << frame_count << std::endl;
 			fps = frame_count;
 			// scene->print_stats();
 			

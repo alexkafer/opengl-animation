@@ -2,21 +2,24 @@
 #define LINE_RENDERER_H
 
 #include <vector>
+#include <array>
 #include <glm/mat4x4.hpp>
 
 #include "../utils/shader.h"
 
 
-class LineRenderer
+class PathRenderer
 {
     Shader shader;
     GLuint vao;
-    GLuint vbo;
+    GLuint vbo_milestones;
+    GLuint vbo_edges;
 
     public:
-        LineRenderer();
+        PathRenderer();
 
-        void draw(const std::vector<glm::vec3> milestones);
+        void draw_edges(const std::vector<glm::vec3> edges);
+        void draw_milestones(const std::vector<glm::vec3> milestones);
         void cleanup();
 };
 #endif // LINE_RENDERER_H

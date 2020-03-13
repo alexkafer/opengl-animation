@@ -23,20 +23,16 @@ Scene::Scene () {
         renderer = new Phong();
         check_gl_error();
 
-        path_renderer = new LineRenderer();
+        path_renderer = new PathRenderer();
         check_gl_error();
 
         particles = new Particles();
         check_gl_error();
 }
 
-Roadmap * Scene::get_roadmap() {
-    return roadmap;
-}
-
 size_t Scene::add_entity(Entity * entity) {
+    std::cout << "Added entity" << std::endl;
     entities.push_back(entity);
-    update_roadmap();
     return renderer->add_object(entity);
 }
 
@@ -47,19 +43,33 @@ size_t Scene::add_renderable(Renderable * renderable) {
 void Scene::print_stats() {
     particles->print_stats();
 }
-
+ 
 void Scene::init() {
     srand (time(NULL));
 }
 
 void Scene::draw(float dt) {
     renderer->draw();
-    path_renderer->draw(roadmap->get_milestones());
+    
+    // for(auto t=entities.begin(); t!=entities.end(); ++t) {
+    //     std::vector<glm::vec3> path = (*t)->get_current_path();
+    //     // path_renderer->draw_edges(path);
+    // }
+
+    path_renderer->draw_milestones(roadmap->get_milestones());
+    path_renderer->draw_edges(roadmap->get_edges());
 }
 
-bool Scene::check_collision(glm::vec3 a, glm::vec3 b) {
+// -2.543759, 0.500000, 7.050190   0
+// -7.433999, 0.500000, -3.219673   1
+// 6.968929, 0.500000, 6.793032  2
+
+bool Scene::check_collisions(const glm::vec3 & a, const glm::vec3 & b, Entity * entity) {
+    float body_radius = entity->get_radius();
     for(auto t=entities.begin(); t!=entities.end(); ++t) {
-        if ((*t)->check_collision(a, b)) {
+        if ((*t) == entity) continue;
+
+        if ((*t)->check_collision(a, b, body_radius)) {
             return true;
         }
     }
@@ -67,27 +77,26 @@ bool Scene::check_collision(glm::vec3 a, glm::vec3 b) {
     return false;
 }
 
-void Scene::update_roadmap() {
+void Scene::populate_roadmap(Entity * entity) {
     // Update milestones
-    roadmap->clear();
-
     float HI = 10.f;
     float LO = -10.f;
 
     int count = 0;
 
-    while (count < NUM_MILESTONES) {
+    while (count < NUM_MILESTONES-2) {
         glm::vec3 milestone (
             LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO))),
             0.5f,
             LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)))
         );
 
-        if (!check_collision(milestone,milestone)) {
+        if (!check_collisions(milestone, milestone, entity)) {
             roadmap->add_milestone(milestone);
             count++;
         }
     }
+
     std::cout << "Generated milestones" << std::endl;;
     const std::vector<glm::vec3> milestones = roadmap->get_milestones();
 
@@ -95,11 +104,27 @@ void Scene::update_roadmap() {
         for (size_t j = 0; j < milestones.size(); j++) {
             if (i == j) continue;
 
-            if (!check_collision(milestones.at(i), milestones.at(j))) {
+            if (!check_collisions(milestones.at(i), milestones.at(j), entity)) {
                 roadmap->add_edge(i, j, glm::distance(milestones.at(i), milestones.at(j)));
             }
         }
     }
+}
+
+std::vector<glm::vec3> Scene::find_path(glm::vec3 start, glm::vec3 destination, Entity * entity) {
+    // Find the milestone closest to start
+    roadmap->clear();
+
+    if (!check_collisions(start, destination, entity)) {
+        return std::vector<glm::vec3>(1, destination);
+    }
+    
+    int start_id = roadmap->add_milestone(start);
+    int finish_id = roadmap->add_milestone(destination);
+
+    populate_roadmap(entity);
+    
+    return roadmap->dijkstra_path(start_id, finish_id);
 }
 
 void Scene::update(float dt) {
@@ -123,7 +148,7 @@ void Scene::reset() {
         entities.at(i)->reset();
     }
 
-    update_roadmap();
+    roadmap->clear();
 }
 
 void Scene::cleanup() {
