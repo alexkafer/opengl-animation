@@ -124,8 +124,12 @@ std::vector<glm::vec3> Scene::find_path(glm::vec3 start, glm::vec3 destination, 
     // Find the milestone closest to start
     roadmap->clear();
 
+    std::vector<glm::vec3> path;
+
     if (!check_collisions(start, destination, entity)) {
-        return std::vector<glm::vec3>(1, destination);
+        path.push_back(destination);
+        path.push_back(start);
+        return path;
     }
     
     int start_id = roadmap->add_milestone(start);
@@ -144,7 +148,23 @@ void Scene::update(float dt) {
     particles->update(dt, glm::vec3(-1.37f, 1.15f, -8.f), .6f);
 }
 
+glm::vec3 Scene::find_collision(glm::vec3 origin, glm::vec3 direction) {
+    // assuming vectors are all normalized
+    // Dot floor normal (up) and ray direction
+    float denom = glm::dot(glm::vec3(0.f, 1.f, 0.f), direction); 
+
+    if (abs(denom) > 1e-6) { 
+        float t = glm::dot(-origin, glm::vec3(0.f, 1.f, 0.f)) / denom; 
+        if (t >= 0) {
+            return origin + t * direction;
+        }
+    } 
+ 
+    throw 1;
+}
+
 void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
+    // std::cout << "Test" << std::endl;
     //fluid->interaction(origin, direction, mouse_down);
     // cloth->interaction(origin, direction, mouse_down);
 }

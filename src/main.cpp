@@ -114,12 +114,55 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 }
 
+void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
+	// Need to convert the click into a 3D normalized device coordinates
+	// and then 4d Homogeneous Clip Clip coordinates
+
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+
+	float x = (2.0f * xpos) / width - 1.0f;
+	float y = 1.0f - (2.0f * ypos) / height;
+	glm::vec4 ray_clip = glm::vec4(x, y, -1.f, 1.f);
+
+	// Transform from the clip space to view space using the projection matrix
+	glm::vec4 ray_view = glm::inverse(Globals::projection) * ray_clip;
+
+	// We only need x and y, so z should be set to forward (in view space), and homogeneous vector
+	ray_view = glm::vec4(ray_view.x, ray_view.y, -1.0, 0.0);
+
+	glm::vec3 ray_world = glm::normalize(glm::inverse(Globals::view) * ray_view);
+
+	// if (Globals::dragging_object) {
+	// 	if (Globals::selected != -1) {
+	// 		scene->drag_object(Globals::selected, ray_world);
+	// 	} else {
+	// 		Globals::selected = scene->find_object(Globals::eye_pos, ray_world);
+	// 	}
+	// }
+
+	Globals::scene->interaction(Globals::eye_pos, ray_world, Globals::mouse_down);
+
+	if (Globals::mouse_down) {
+		try
+		{
+			glm::vec3 target = Globals::scene->find_collision(Globals::eye_pos, ray_world);
+			target.y = 0.5f;
+
+			std::cout << "New target: " << glm::to_string(target) << std::endl;
+			ball->navigate_to(target);
+		} catch (...){}
+	}
+}
+
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && Globals::interacting) {
 
 		if (action == GLFW_PRESS) {
 			std::cout << "Interacting with the scene" << std::endl;
 			Globals::mouse_down = true;
+
+			mouse_interaction(window, Globals::mouse_x, Globals::mouse_y);
 		}
 
 		if (action == GLFW_RELEASE) {
@@ -140,39 +183,6 @@ void calculate_eye_direction() {
 
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-	// Showing the mouse
-	if (Globals::interacting) {
-		// Need to convert the click into a 3D normalized device coordinates
-		// and then 4d Homogeneous Clip Clip coordinates
-
-		int width, height;
-		glfwGetWindowSize(window, &width, &height);
-
-		float x = (2.0f * xpos) / width - 1.0f;
-		float y = 1.0f - (2.0f * ypos) / height;
-		glm::vec4 ray_clip = glm::vec4(x, y, -1.f, 1.f);
-
-		// Transform from the clip space to view space using the projection matrix
-		glm::vec4 ray_view = glm::inverse(Globals::projection) * ray_clip;
-
-		// We only need x and y, so z should be set to forward (in view space), and homogeneous vector
-		ray_view = glm::vec4(ray_view.x, ray_view.y, -1.0, 0.0);
-
-		glm::vec3 ray_world = glm::normalize(glm::inverse(Globals::view) * ray_view);
-
-		// if (Globals::dragging_object) {
-		// 	if (Globals::selected != -1) {
-		// 		scene->drag_object(Globals::selected, ray_world);
-		// 	} else {
-		// 		Globals::selected = scene->find_object(Globals::eye_pos, ray_world);
-		// 	}
-		// }
-
-		Globals::scene->interaction(Globals::eye_pos, ray_world, Globals::mouse_down);
-
-		return;
-	};
-
 	// Changing camera direction
 	if(Globals::reset_mouse)
     {
@@ -186,6 +196,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 	
 	Globals::mouse_x = xpos;
 	Globals::mouse_y = ypos;
+
+	// Showing the mouse
+	if (Globals::interacting && !Globals::reset_mouse) {
+		mouse_interaction(window, xpos, ypos);
+		return;
+	};
+
 
 	const float sensitivity = 0.001f;
 	xoffset *= sensitivity;

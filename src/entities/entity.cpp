@@ -1,6 +1,7 @@
 #include "entity.h"
 
 #include <iostream>
+#include <glm/gtx/string_cast.hpp>
 
 #include "../common.h"
 #include "../scene.h"
@@ -66,6 +67,7 @@ void Entity::reset() {
 }
 
 void Entity::navigate_to(glm::vec3 pos) {
+    std::cout << "Navigating to " << glm::to_string(pos) << std::endl;
     _current_path = Globals::scene->find_path(_origin, pos, this);
     calculate_animation();
 }

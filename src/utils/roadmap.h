@@ -20,7 +20,6 @@ public:
     int add_milestone(glm::vec3 point);
     void add_edge(int u, int v, float distance);
 
-    std::vector<glm::vec3> find_path(int start, int destination);
     std::vector<glm::vec3> dijkstra_path(int src, int dest);
 };
 

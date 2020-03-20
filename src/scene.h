@@ -28,6 +28,7 @@ class Scene {
     public:
         Scene();
 
+        glm::vec3 find_collision(glm::vec3 origin, glm::vec3 direction);
         bool check_collisions(const glm::vec3 & a, const glm::vec3 & b, Entity * entity);
         std::vector<glm::vec3> find_path(glm::vec3 start, glm::vec3 destination, Entity * entity);
 
