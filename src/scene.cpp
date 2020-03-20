@@ -12,7 +12,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "utils/tiny_obj_loader.h"
 
-const int NUM_MILESTONES = 100;
+const int NUM_MILESTONES = 50;
 
 Scene::Scene () {
         entities = std::vector<Entity*>();
@@ -51,13 +51,22 @@ void Scene::init() {
 void Scene::draw(float dt) {
     renderer->draw();
     
-    // for(auto t=entities.begin(); t!=entities.end(); ++t) {
-    //     std::vector<glm::vec3> path = (*t)->get_current_path();
-    //     // path_renderer->draw_edges(path);
-    // }
+    path_renderer->draw_milestones(roadmap->get_milestones(), glm::vec4(0.f, 0.f, 0.f, 0.5f));
+    // path_renderer->draw_edges(roadmap->get_edges(), glm::vec4(0.f, 0.f, 0.f, 0.1f));
 
-    path_renderer->draw_milestones(roadmap->get_milestones());
-    path_renderer->draw_edges(roadmap->get_edges());
+    for(auto t=entities.begin(); t!=entities.end(); ++t) {
+        std::vector<glm::vec3> path = (*t)->get_current_path();
+
+        std::vector<glm::vec3> edges; 
+
+        for (int i = 1; i < path.size(); i++) 
+        {
+            edges.push_back(path.at(i-1));
+            edges.push_back(path.at(i));
+        } 
+
+        path_renderer->draw_edges(edges, glm::vec4(1.f, 0.f, 0.f, 0.5f));
+    }
 }
 
 // -2.543759, 0.500000, 7.050190   0

@@ -18,8 +18,8 @@ class PathRenderer
     public:
         PathRenderer();
 
-        void draw_edges(const std::vector<glm::vec3> edges);
-        void draw_milestones(const std::vector<glm::vec3> milestones);
+        void draw_edges(const std::vector<glm::vec3> edges, const glm::vec4 color);
+        void draw_milestones(const std::vector<glm::vec3> milestones, const glm::vec4 color);
         void cleanup();
 };
 #endif // LINE_RENDERER_H

@@ -8,29 +8,16 @@
 
 Ball::Ball(float radius) {
     _radius = radius;
-
     _sphere = Sphere(radius, 36, 18);
-    t = 0.f;
-    step_time = 0.f;
-
-    _current_path = std::vector<glm::vec3>();
 }
 
 bool Ball::check_collision(const glm::vec3 & a, const glm::vec3 & b, float radius_offset) {
-    // std::cout << "Collision Type: " << (a == b);
     if (a == b) {
-        // std::cout << " point" << std::endl;
         float x = (a.x - _origin.x);
         float z = (b.z - _origin.z);
         return (x*x + z*z) < ((_radius + radius_offset) * (_radius + radius_offset));
     } else {
-        //  std::cout << " ray" << std::endl;
         float d = glm::length(glm::cross(_origin - a, _origin - b)) / glm::length(b - a);
-
-        // std::cout << "d: " << d << std::endl;
-        // std::cout << "_radius: " << _radius << std::endl;
-        // std::cout << "radius_offset: " << radius_offset << std::endl;
-
         return d <= (_radius + radius_offset);
     }
 }
@@ -58,24 +45,11 @@ void Ball::init(Shader & shader) {
 }
 
 void Ball::reset() {
-    t = 0;
-    step_time = 0;
-    _current_path.clear();
+    Entity::reset();
 }
 
 void Ball::update(float dt) {
-    if (t < step_time ) {
-        t += dt;
-        _origin = glm::mix(prev_step, next_step, t / step_time);
-    } else if (_current_path.size() > 0) {
-        // std::cout << " Current Path: ";
-        // for (auto it = _current_path.begin(); it != _current_path.end(); ++it) 
-        //     std::cout << ' ' << glm::to_string(*it); 
-        // std::cout << std::endl;
-
-        animate_position(_current_path.back());
-        _current_path.pop_back();
-    }
+    Entity::update(dt);
 }
 
 void Ball::draw(Shader & shader) {

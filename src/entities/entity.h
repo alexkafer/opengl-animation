@@ -11,20 +11,18 @@ protected:
     float _radius;
 
     // Path Finding
-    glm::vec3 _target;
     std::vector<glm::vec3> _current_path;
 
     // Animation
-    glm::vec3 prev_step;
-    glm::vec3 next_step;
     float t, step_time;
 
 public:
-    void animate_position(glm::vec3 pos);
+    Entity();
+    void calculate_animation();
     void navigate_to(glm::vec3 target); 
 
-    virtual void reset() = 0; 
-    virtual void update(float dt) = 0; 
+    virtual void reset(); 
+    virtual void update(float dt); 
     virtual bool check_collision(const glm::vec3 & a, const glm::vec3 & b, float radius_offset) = 0; 
 
     std::vector<glm::vec3> get_current_path();

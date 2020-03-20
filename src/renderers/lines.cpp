@@ -16,7 +16,7 @@ PathRenderer::PathRenderer() {
     glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
-void PathRenderer::draw_milestones(const std::vector<glm::vec3> milestones) {
+void PathRenderer::draw_milestones(const std::vector<glm::vec3> milestones, const glm::vec4 color) {
     if (milestones.size() == 0) return;
 
     shader.enable();
@@ -30,6 +30,9 @@ void PathRenderer::draw_milestones(const std::vector<glm::vec3> milestones) {
     glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(model)); // model matrix
 
     GLint attribVertexPosition  = shader.attribute("in_position");
+    GLint attribVertexColor  = shader.attribute("in_color");
+
+    glVertexAttrib4fv(attribVertexColor, glm::value_ptr(color));
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_milestones);
     glBufferData(GL_ARRAY_BUFFER, milestones.size() * sizeof(glm::vec3), milestones.data(), GL_DYNAMIC_DRAW);
@@ -44,7 +47,7 @@ void PathRenderer::draw_milestones(const std::vector<glm::vec3> milestones) {
     shader.disable();
 }
 
-void PathRenderer::draw_edges(const std::vector<glm::vec3> edges) {
+void PathRenderer::draw_edges(const std::vector<glm::vec3> edges, const glm::vec4 color) {
     if (edges.size() == 0) return;
 
     shader.enable();
@@ -58,6 +61,9 @@ void PathRenderer::draw_edges(const std::vector<glm::vec3> edges) {
     glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(model)); // model matrix
 
     GLint attribVertexPosition  = shader.attribute("in_position");
+    GLint attribVertexColor  = shader.attribute("in_color");
+
+    glVertexAttrib4fv(attribVertexColor, glm::value_ptr(color));
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_edges);
     glBufferData(GL_ARRAY_BUFFER, edges.size() * sizeof(glm::vec3), edges.data(), GL_DYNAMIC_DRAW);
