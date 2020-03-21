@@ -9,9 +9,12 @@
 #include "entities/entity.h"
 #include "geometry/particles.h"
 
+#include "world/world.h"
+
 static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 class Scene {
+        World * world;
         Particles * particles; 
         GLuint vao;
 

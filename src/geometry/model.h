@@ -8,60 +8,54 @@
 #include <map>
 #include <vector>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/normal.hpp>
 
-#include "../utils/tiny_obj_loader.h"
+#include "mesh.h"
+
 #include "../utils/texture.h"
 #include "../utils/shader.h"
 #include "../utils/GLError.h"
 
 #include "../entities/entity.h"
 
-typedef struct {
-  GLuint vb_id;  // vertex buffer id
-  int numTriangles;
-  size_t material_id;
-} DrawObject;
+unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
 
 class Model : public Renderable
 {
 public:
-    /*  Model Data */
-    std::map<std::string, GLuint> textures;
-    std::vector<tinyobj::material_t> materials;
-    std::vector<DrawObject> drawObjects;
+ /*  Model Data */
+    std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    std::vector<Mesh> meshes;
+    std::string directory;
+    bool gamma_correction;
 
     std::string mtl_dir;
     std::string obj_file;
 
     /*  Functions   */
     // constructor, expects a filepath to a 3D model.
-    Model(const std::string &directory, const std::string &object_file, const glm::vec3 & scale);
+    Model(string const &path, bool gamma);
 
     // draws the model, and thus all its meshes
-    void init(Shader & shader); 
-    void update(float dt);
+    void init(Shader & shader);
     void draw(Shader & shader);
     void cleanup();
     
 private:
+    const aiScene* scene;
     // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
-    void load_model(std::string obj_file, std::string mtl_dir, Shader & shader);
-
-    void process_mesh(tinyobj::attrib_t &attrib, tinyobj::mesh_t &mesh, std::map<int, glm::vec3> smoothVertexNormals, size_t shape_number);
-    // Source: https://github.com/syoyo/tinyobjloader/blob/eba1fc037e89a593f50d670621c0dbf9882ec78d/examples/viewer/viewer.cc#L221
-    // Check if `mesh_t` contains smoothing group id.
-    bool hasSmoothingGroup(const tinyobj::shape_t& shape);
-
-    // Modified from https://github.com/syoyo/tinyobjloader/blob/eba1fc037e89a593f50d670621c0dbf9882ec78d/examples/viewer/viewer.cc#L231
-    void computeSmoothingNormals(const tinyobj::attrib_t& attrib, const tinyobj::shape_t& shape,
-                                std::map<int, glm::vec3>& smoothVertexNormals);
-
-    void load_material(tinyobj::material_t material, Shader & shader);
+    void load_model(string const &path);
+    void processNode(aiNode *node);
+    Mesh processMesh(aiMesh *mesh);
+    // void material_uniforms(Shader & shader, const aiMaterial material);
+    vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
 };
 
 

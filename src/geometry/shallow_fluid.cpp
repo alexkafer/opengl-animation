@@ -86,40 +86,40 @@ void Fluid::init() {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// set uniform constants
-///////////////////////////////////////////////////////////////////////////////
-void Fluid::init_static_uniforms()
-{
-    shader.enable();
-    GLint uniformLightPosition             = shader.uniform("lightPosition");
-    // GLint uniformLightAmbient              = shader.uniform("lightAmbient");
-    // GLint uniformLightDiffuse              = shader.uniform("lightDiffuse");
-    GLint uniformLightSpecular             = shader.uniform("lightSpecular");
-    GLint uniformMaterialAmbient           = shader.uniform("materialAmbient");
-    GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
-    GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
-    GLint uniformMaterialShininess         = shader.uniform("materialShininess");
+// ///////////////////////////////////////////////////////////////////////////////
+// // set uniform constants
+// ///////////////////////////////////////////////////////////////////////////////
+// void Fluid::init_static_uniforms()
+// {
+//     shader.enable();
+//     GLint uniformLightPosition             = shader.uniform("lightPosition");
+//     // GLint uniformLightAmbient              = shader.uniform("lightAmbient");
+//     // GLint uniformLightDiffuse              = shader.uniform("lightDiffuse");
+//     GLint uniformLightSpecular             = shader.uniform("lightSpecular");
+//     GLint uniformMaterialAmbient           = shader.uniform("materialAmbient");
+//     GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
+//     GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
+//     GLint uniformMaterialShininess         = shader.uniform("materialShininess");
     
-    // set uniform values
-    float lightPosition[]  = {0.f, 5.0f, -3.f, 1.0f};
-    // float lightAmbient[]  = {0.3f, 0.1f, 0.1f, 1};
-    // float lightDiffuse[]  = {0.7f, 0.2f, 0.2f, 1};
-    float lightSpecular[] = {1.0f, 1.0f, 1.0f, 1};
-    float materialAmbient[]  = {0.4f, 0.4f, 0.4f, 1};
-    float materialDiffuse[]  = {0.5f, 0.5f, 0.5f, 1};
-    float materialSpecular[] = {0.4f, 0.4f, 0.4f, 1};
-    float materialShininess  = 4;
+//     // set uniform values
+//     float lightPosition[]  = {0.f, 5.0f, -3.f, 1.0f};
+//     // float lightAmbient[]  = {0.3f, 0.1f, 0.1f, 1};
+//     // float lightDiffuse[]  = {0.7f, 0.2f, 0.2f, 1};
+//     float lightSpecular[] = {1.0f, 1.0f, 1.0f, 1};
+//     float materialAmbient[]  = {0.4f, 0.4f, 0.4f, 1};
+//     float materialDiffuse[]  = {0.5f, 0.5f, 0.5f, 1};
+//     float materialSpecular[] = {0.4f, 0.4f, 0.4f, 1};
+//     float materialShininess  = 4;
 
-    glUniform4fv(uniformLightPosition, 1, lightPosition);
-    // glUniform4fv(uniformLightAmbient, 1, lightAmbient);
-    // glUniform4fv(uniformLightDiffuse, 1, lightDiffuse);
-    glUniform4fv(uniformLightSpecular, 1, lightSpecular);
-    glUniform4fv(uniformMaterialAmbient, 1, materialAmbient);
-    glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
-    glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
-    glUniform1f(uniformMaterialShininess, materialShininess);
-}
+//     glUniform4fv(uniformLightPosition, 1, lightPosition);
+//     // glUniform4fv(uniformLightAmbient, 1, lightAmbient);
+//     // glUniform4fv(uniformLightDiffuse, 1, lightDiffuse);
+//     glUniform4fv(uniformLightSpecular, 1, lightSpecular);
+//     glUniform4fv(uniformMaterialAmbient, 1, materialAmbient);
+//     glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
+//     glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
+//     glUniform1f(uniformMaterialShininess, materialShininess);
+// }
 
 void Fluid::update(float dt) {
     t += dt;

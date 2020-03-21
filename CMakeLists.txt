@@ -199,8 +199,21 @@ find_package(Freetype REQUIRED)
 set(MY_INCLUDE_DIRS ${MY_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS})
 set(MY_LIBRARIES ${MY_LIBRARIES} ${FREETYPE_LIBRARIES})
 
+# Assimp
+set(ASSIMP_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/assimp )
+IF(NOT EXISTS ${ASSIMP_ROOT_DIR})
+    execute_process(COMMAND git clone https://github.com/assimp/assimp -b master ${ASSIMP_ROOT_DIR})
+endif()
 
-set(MY_LIBRARIES ${MY_LIBRARIES} ${GLFW_LIBRARY} ${LIBS_ALL})
+find_package(ASSIMP REQUIRED)
+set(MY_INCLUDE_DIRS ${MY_INCLUDE_DIRS} ${assimp_INCLUDE_DIRS})
+set(MY_LIBRARIES ${MY_LIBRARIES} ${assimp_LIBRARIES})
+
+if(NOT assimp_FOUND)
+        message(Error "assimp not found")
+endif(NOT assimp_FOUND)
+
+set(MY_LIBRARIES ${MY_LIBRARIES} ${assimp_LIBRARIES})
 
 
 # ====================================================
@@ -230,6 +243,7 @@ set(MY_SOURCES
     src/renderers/phong.cpp
     src/renderers/lines.cpp
     src/geometry/particles.cpp
+    src/geometry/mesh.cpp
     src/geometry/model.cpp
     src/geometry/sphere.cpp
     src/geometry/cloth.cpp
@@ -237,6 +251,9 @@ set(MY_SOURCES
     src/geometry/floor.cpp
     src/entities/entity.cpp
     src/entities/ball.cpp
+    src/entities/player.cpp
+    src/world/world.cpp
+    src/world/tile.cpp
 )
 
 # Now we can add an executable, link it with our rendering libraries, and we're done!

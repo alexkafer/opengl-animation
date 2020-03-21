@@ -9,9 +9,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "utils/tiny_obj_loader.h"
-
 const int NUM_MILESTONES = 50;
 
 Scene::Scene () {
@@ -28,6 +25,10 @@ Scene::Scene () {
 
         particles = new Particles();
         check_gl_error();
+
+        world = new World();
+
+        renderer->add_object(&(world->tile));
 }
 
 size_t Scene::add_entity(Entity * entity) {

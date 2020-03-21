@@ -7,12 +7,19 @@
 #include "../utils/shader.h"
 #include "renderable.h"
 
+struct Light {
+    glm::vec4 position;
+    glm::vec3 intensities;
+    float attenuation; 
+    float ambientCoefficient;
+};
+
 class Phong
 {
     std::vector<Renderable *> _objects;
     Shader shader;
-
-    void phong_uniforms();
+    std::vector<Light> gLights;
+    void default_phong_uniforms();
 
     public:
         Phong();
@@ -21,6 +28,5 @@ class Phong
         size_t add_object(Renderable * object);
         void draw();
         void cleanup();
-        void set_uniforms();
 };
 #endif 

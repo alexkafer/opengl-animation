@@ -20,6 +20,7 @@
 
 #include "entities/ball.h"
 #include "geometry/floor.h"
+#include "entities/player.h"
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
@@ -65,7 +66,7 @@ namespace Globals {
 	Scene * scene;
 }
 
-Ball * ball;
+Player * avatar;
 Ball * obstacle;
 Text2D * gui;
 
@@ -102,8 +103,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_LEFT_SHIFT: Globals::camera_target.y -= camera_distance; break;
 			case GLFW_KEY_SPACE: Globals::camera_target.y += camera_distance; break;
 			case GLFW_KEY_R: Globals::scene->reset(); break;
-			case GLFW_KEY_N: ball->navigate_to(glm::vec3(9.f, 0.5f, 9.f)); break;
-			case GLFW_KEY_M: ball->navigate_to(glm::vec3(-9.f, 0.5f, -9.f)); break;
+			case GLFW_KEY_N: avatar->navigate_to(glm::vec3(9.f, 0.5f, 9.f)); break;
+			case GLFW_KEY_M: avatar->navigate_to(glm::vec3(-9.f, 0.5f, -9.f)); break;
 			case GLFW_KEY_W: Globals::camera_target += camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
@@ -150,7 +151,7 @@ void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
 			target.y = 0.5f;
 
 			std::cout << "New target: " << glm::to_string(target) << std::endl;
-			ball->navigate_to(target);
+			avatar->navigate_to(target);
 		} catch (...){}
 	}
 }
@@ -248,13 +249,13 @@ void setup_scene() {
 
 	Globals::scene->add_renderable(new Floor());
         
-	ball = new Ball(0.5f);
-	ball->set_position(glm::vec3(-9.f, 0.5f, -9.f));
-	Globals::scene->add_entity(ball);
+	avatar = new Player(0.5f);
+	avatar->set_position(glm::vec3(-9.f, 0.5f, -9.f));
+	Globals::scene->add_entity(avatar);
 
 	obstacle = new Ball(5.f);
 	obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));
-	Globals::scene->add_entity(obstacle);
+	// Globals::scene->add_entity(obstacle);
 }
 
 //

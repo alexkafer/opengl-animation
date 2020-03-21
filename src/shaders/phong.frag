@@ -1,70 +1,74 @@
-#version 150 core
+#version 150
 
-out vec4 outColor;
+// Source: https://github.com/tomdalling/opengl-series/blob/master/source/08_even_more_lighting/resources/fragment-shader.txt
 
-in vec3 vposition;
-in vec3 vnormal;
-in vec2 vtexture_coord;
-in vec3 vcolor;
-
+uniform mat4 model;
 uniform vec3 eye;
-uniform vec4 lightPosition;             // should be in the eye space
-uniform vec4 lightAmbient;              // light ambient color
-uniform vec4 lightDiffuse;              // light diffuse color
-uniform vec4 lightSpecular;             // light specular color
-uniform vec4 materialAmbient;           // material ambient color
-uniform vec4 materialDiffuse;           // material diffuse color
-uniform vec4 materialSpecular;          // material specular color
-uniform float materialShininess;        // material specular shininess
 
-// uniform sampler2D texture_map;
-uniform sampler2D texture_map;                 // texture map #1
-uniform bool texture_used;
+uniform sampler2D materialTex;
+uniform float materialShininess;
+uniform vec3 materialSpecularColor;
 
+#define MAX_LIGHTS 10
+uniform int numLights;
+uniform struct Light {
+   vec4 position;
+   vec3 intensities; //a.k.a the color of the light
+   float attenuation;
+   float ambientCoefficient;
+} allLights[MAX_LIGHTS];
 
-vec3 phong(vec3 normal, vec3 light, vec3 view) {
-    vec3 color = vcolor * materialAmbient.rgb;        // begin with ambient
+in vec2 vtexture_coord;
+in vec3 vnormal;
+in vec4 vcolor;
+in vec3 vposition;
+
+out vec4 finalColor;
+
+vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, vec3 surfaceToCamera) {
+    vec3 surfaceToLight;
+    float attenuation = 1.0;
+    if(light.position.w == 0.0) {
+        //directional light
+        surfaceToLight = normalize(light.position.xyz);
+        attenuation = 1.0; //no attenuation for directional lights
+    } else {
+        //point light
+        surfaceToLight = normalize(light.position.xyz - surfacePos);
+        float distanceToLight = length(light.position.xyz - surfacePos);
+        attenuation = 1.0 / (1.0 + light.attenuation * pow(distanceToLight, 2));
+    }
+
+    //ambient
+    vec3 ambient = light.ambientCoefficient * surfaceColor.rgb * light.intensities;
+
+    //diffuse
+    float diffuseCoefficient = max(0.0, dot(normal, surfaceToLight));
+    vec3 diffuse = diffuseCoefficient * surfaceColor.rgb * light.intensities;
     
-    float dotNL = max(dot(normal, light), 0.0);
-    color += vcolor * materialDiffuse.rgb * dotNL;    // add diffuse
+    //specular
+    float specularCoefficient = 0.0;
+    if(diffuseCoefficient > 0.0)
+        specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), materialShininess);
+    vec3 specular = specularCoefficient * materialSpecularColor * light.intensities;
 
-    if(texture_used) {
-        color *= texture(texture_map, vtexture_coord).rgb;                // modulate texture map
-    }
-
-    if( false && dot(normal, light) > 0.0 ){
-        vec3 reflectDir = reflect(-light, normal);  
-        float dotNH = max(dot(view, reflectDir), 0.0);
-        color += pow(dotNH, materialShininess) * lightSpecular.rgb * materialSpecular.rgb; // add specular
-    }
-
-    return color;
+    //linear color (color before gamma correction)
+    return ambient + attenuation*(diffuse + specular);
 }
 
-vec3 get_light() {
-    if(lightPosition.w == 0.0)
-    {
-        return normalize(lightPosition.xyz);
-    }
-    else
-    {
-        return normalize(lightPosition.xyz - vposition);
-    }
-}
+void main() {
+    vec3 normal = normalize(transpose(inverse(mat3(model))) * vnormal);
+    vec3 surfacePos = vec3(model * vec4(vposition, 1));
+    vec4 surfaceColor = texture(materialTex, vtexture_coord) + vcolor;
+    vec3 surfaceToCamera = normalize(eye - surfacePos);
 
-void main(){
-	vec3 normal = normalize(vnormal);
-
+    //combine color from all the lights
+    vec3 linearColor = vec3(0);
+    for(int i = 0; i < numLights; ++i){
+        linearColor += ApplyLight(allLights[i], surfaceColor.rgb, normal, surfacePos, surfaceToCamera);
+    }
     
-    vec3 light_dir = get_light();
-
-    vec3 view = normalize(eye-vposition);
-
-    if (dot(normal, light_dir) < 0) {
-        normal *= -1;
-    }
-
-	vec3 result = phong( normal, light_dir, view );
-	outColor = vec4(result, materialDiffuse.a);
-    // outColor = vec4(0,0,1,1);
-} 
+    //final color (after gamma correction)
+    vec3 gamma = vec3(1.0/2.2);
+    finalColor = vec4(pow(linearColor, gamma), surfaceColor.a);
+}

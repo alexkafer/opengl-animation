@@ -5,9 +5,23 @@
 #include "../common.h"
 #include "../geometry/model.h"
 
-Phong::Phong(): _objects() {
+Phong::Phong(): _objects(), gLights() {
     std::stringstream shader_ss; shader_ss << MY_SRC_DIR << "shaders/phong.";
     shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
+
+    Light directionalLight;
+    directionalLight.position = glm::vec4(1, 0.8, 0.6, 0); //w == 0 indications a directional light
+    directionalLight.intensities = glm::vec3(0.2,0.2,0.2); //weak light
+    directionalLight.ambientCoefficient = 0.06f;
+
+    gLights.push_back(directionalLight);
+
+    Light centerLight;
+    centerLight.position = glm::vec4(1.f, 4.8f, 4.6f, 1.f); //w == 1 indications a point light
+    centerLight.intensities = glm::vec3(1.f, 1.f, 1.f); //strong white light
+    centerLight.ambientCoefficient = 0.1f;
+
+    gLights.push_back(centerLight);
 }
 
 size_t Phong::add_object(Renderable * entity) {
@@ -16,52 +30,49 @@ size_t Phong::add_object(Renderable * entity) {
     return _objects.size() - 1;
 }
 
-    ///////////////////////////////////////////////////////////////////////////////
+std::string CreateLightUniform(const char* propertyName, size_t lightIndex) {
+    std::ostringstream ss;
+    ss << "allLights[" << lightIndex << "]." << propertyName;
+    return ss.str();
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // set uniform constants
 ///////////////////////////////////////////////////////////////////////////////
-void Phong::phong_uniforms() {
-    GLint uniformLightPosition             = shader.uniform("lightPosition");
-    // GLint uniformLightAmbient              = shader.uniform("lightAmbient");
-    // GLint uniformLightDiffuse              = shader.uniform("lightDiffuse");
-    GLint uniformLightSpecular             = shader.uniform("lightSpecular");
-    GLint uniformMaterialAmbient           = shader.uniform("materialAmbient");
-    GLint uniformMaterialDiffuse           = shader.uniform("materialDiffuse");
-    GLint uniformMaterialSpecular          = shader.uniform("materialSpecular");
-    GLint uniformMaterialShininess         = shader.uniform("materialShininess");
+void Phong::default_phong_uniforms() {
+    check_gl_error();
+    
+    glUniform1i(shader.uniform("numLights"), (int)gLights.size());
+
     check_gl_error();
 
-    // set uniform values
-    float lightPosition[]  = {0.f, 5.0f, -3.f, 1.0f};
-    // float lightAmbient[]  = {0.3f, 0.1f, 0.1f, 1};
-    // float lightDiffuse[]  = {0.7f, 0.2f, 0.2f, 1};
-    float lightSpecular[] = {1.0f, 1.0f, 1.0f, 1};
-    float materialAmbient[]  = {0.4f, 0.4f, 0.4f, 1};
-    float materialDiffuse[]  = {0.5f, 0.5f, 0.5f, 1};
-    float materialSpecular[] = {0.4f, 0.4f, 0.4f, 1};
-    float materialShininess  = 4;
+    float materialSpecular[] = {0.f, 0.f, 0.f};
+    float materialShininess = 1;
 
-    glUniform4fv(uniformLightPosition, 1, lightPosition);
-    // glUniform4fv(uniformLightAmbient, 1, lightAmbient);
-    // glUniform4fv(uniformLightDiffuse, 1, lightDiffuse);
-    glUniform4fv(uniformLightSpecular, 1, lightSpecular);
-    glUniform4fv(uniformMaterialAmbient, 1, materialAmbient);
-    glUniform4fv(uniformMaterialDiffuse, 1, materialDiffuse);
-    glUniform4fv(uniformMaterialSpecular, 1, materialSpecular);
-    glUniform1f(uniformMaterialShininess, materialShininess);
+    for(size_t i = 0; i < gLights.size(); ++i){
+        glUniform4fv(shader.uniform(CreateLightUniform("position", i)), 1, glm::value_ptr(gLights[i].position));
+        glUniform3fv(shader.uniform(CreateLightUniform("intensities", i)), 1, glm::value_ptr(gLights[i].intensities));
+        glUniform1f(shader.uniform(CreateLightUniform("attenuation", i)), gLights[i].attenuation);
+        glUniform1f(shader.uniform(CreateLightUniform("ambientCoefficient", i)), gLights[i].ambientCoefficient);
+    }
+
+    glUniform3fv(shader.uniform("materialSpecularColor"), 1, materialSpecular);
+    glUniform1f(shader.uniform("materialShininess"), materialShininess);
 
     check_gl_error();
 }
 
 void Phong::draw() {
     shader.enable();
+    
+    glUniform3fv(shader.uniform("eye"), 1, glm::value_ptr(Globals::eye_pos));
+    glUniformMatrix4fv( shader.uniform("camera"), 1, GL_FALSE, glm::value_ptr(Globals::projection * Globals::view)); // viewing transformation
+	// glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, ); // projection matrix
 
-    phong_uniforms();
-
-    glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
-	glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
+    check_gl_error();
 
     for(auto t=_objects.begin(); t!=_objects.end(); ++t) {
-
+        default_phong_uniforms();
         glm::mat4 model_translate = glm::translate(
             glm::mat4( 1.0f ),
             (*t)->get_position()
@@ -73,12 +84,9 @@ void Phong::draw() {
         );
 
         glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(model)); // model matrix
-
-        glm::mat4 model_normal = model;
-        model_normal[3] = glm::vec4(0,0,0,1);
-
-        glUniformMatrix4fv( shader.uniform("normal"), 1, GL_FALSE, glm::value_ptr(model)); // projection matrix
-	    (*t)->draw(shader);
+        check_gl_error();
+        (*t)->draw(shader);
+        check_gl_error();
     }
 
     shader.disable();
