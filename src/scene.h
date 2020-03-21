@@ -35,8 +35,8 @@ class Scene {
         bool check_collisions(const glm::vec3 & a, const glm::vec3 & b, Entity * entity);
         std::vector<glm::vec3> find_path(glm::vec3 start, glm::vec3 destination, Entity * entity);
 
-        size_t add_entity(Entity * entity);
-        size_t add_renderable(Renderable * renderable);
+        void add_entity(Entity * entity);
+        void add_renderable(Renderable * renderable, Renderable * parent = nullptr);
 
         void print_stats();
         

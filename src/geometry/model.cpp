@@ -1,9 +1,9 @@
-#include "../common.h"
+#include "../scene.h"
 
 #include "model.h"
 
 #include "../utils/stb_image.h"
-
+// https://github.com/capnramses/antons_opengl_tutorials_book/blob/master/30_skinning_part_one/main.cpp
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
 Model::Model(string const &path, bool gamma = false) : gamma_correction(gamma)
@@ -14,13 +14,14 @@ Model::Model(string const &path, bool gamma = false) : gamma_correction(gamma)
 void Model::load_model(string const &path) {
     // read file via ASSIMP
     Assimp::Importer importer;
-    scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_PreTransformVertices);
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
         cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
         return;
     }
+ 
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
 
@@ -31,10 +32,7 @@ void Model::load_model(string const &path) {
 }
 
 // draws the model, and thus all its meshes
-void Model::init(Shader & shader) {
-    for(unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].init(shader);
-}
+void Model::init(Shader & shader) {}
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
 void Model::processNode(aiNode *node)
@@ -44,8 +42,8 @@ void Model::processNode(aiNode *node)
     {
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh));
+        Mesh * mesh = processMesh(scene->mMeshes[node->mMeshes[i]]);
+        Globals::scene->add_renderable(mesh, this);
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -55,7 +53,7 @@ void Model::processNode(aiNode *node)
 
 }
 
-Mesh Model::processMesh(aiMesh *mesh)
+Mesh * Model::processMesh(aiMesh *mesh)
     {
         // data to fill
         vector<Vertex> vertices;
@@ -72,7 +70,7 @@ Mesh Model::processMesh(aiMesh *mesh)
             glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
             // positions
             vector.x = mesh->mVertices[i].x;
-            vector.y = mesh->mVertices[i].y;
+            vector.y = mesh->mVertices[i].y; // Flip y and z coords
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
             // normals
@@ -187,7 +185,7 @@ Mesh Model::processMesh(aiMesh *mesh)
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
         
         // return a mesh object created from the extracted mesh data
-        return Mesh(vertices, indices, mat, textures);
+        return new Mesh(vertices, indices, mat, textures);
     }
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
@@ -223,16 +221,9 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
     return textures;
 }
 // draws the model, and thus all its meshes
-void Model::draw(Shader & shader) {
-    for(unsigned int i = 0; i < meshes.size(); i++) {
-        meshes[i].draw(shader);
-    }     
-}
+void Model::draw(Shader & shader) {}
 
-void Model::cleanup() {
-    for(unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].cleanup();
-}
+void Model::cleanup() {}
 
 
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)

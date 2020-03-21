@@ -230,7 +230,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	//aspect ratio needs update on resize
 	Globals::aspect = Globals::screen_width/ (float)Globals::screen_height; 
 
-	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 100.0f);
+	Globals::projection = glm::perspective(3.14f/4, Globals::aspect, 1.0f, 200.0f);
 	
     glViewport(0,0,width,height);
 }

@@ -18,16 +18,20 @@ Phong::Phong(): _objects(), gLights() {
 
     Light centerLight;
     centerLight.position = glm::vec4(1.f, 4.8f, 4.6f, 1.f); //w == 1 indications a point light
-    centerLight.intensities = glm::vec3(1.f, 1.f, 1.f); //strong white light
+    centerLight.intensities = glm::vec3(0.5f, 0.5f, 0.5f); //strong white light
     centerLight.ambientCoefficient = 0.1f;
 
     gLights.push_back(centerLight);
 }
 
-size_t Phong::add_object(Renderable * entity) {
+void Phong::add_object(Renderable * entity, Renderable * parent) {
     entity->init(shader);
-    _objects.push_back(entity);
-    return _objects.size() - 1;
+
+    if (parent) {
+        parent->add_child(entity);
+    } else {
+        _objects.push_back(entity);
+    }
 }
 
 std::string CreateLightUniform(const char* propertyName, size_t lightIndex) {
@@ -70,11 +74,18 @@ void Phong::draw() {
 	// glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, ); // projection matrix
 
     check_gl_error();
+    render_objects(_objects, glm::mat4(1.f));
 
-    for(auto t=_objects.begin(); t!=_objects.end(); ++t) {
+    shader.disable();
+}
+
+void Phong::render_objects(std::vector<Renderable *> renderables, glm::mat4 parent_model) {
+    if (renderables.size() == 0) return;
+    for(auto t=renderables.begin(); t!=renderables.end(); ++t) {
+        check_gl_error();
         default_phong_uniforms();
         glm::mat4 model_translate = glm::translate(
-            glm::mat4( 1.0f ),
+            parent_model,
             (*t)->get_position()
         );
 
@@ -87,9 +98,10 @@ void Phong::draw() {
         check_gl_error();
         (*t)->draw(shader);
         check_gl_error();
-    }
 
-    shader.disable();
+        // std::cout << "has children " << (*t)->get_children().size() << std::endl;
+        render_objects((*t)->get_children(), model);
+    }
 }
 
 void Phong::cleanup() {

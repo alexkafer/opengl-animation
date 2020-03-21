@@ -11,6 +11,7 @@ class Player: public Entity {
     Model * _model;
 public:
     Player(float radius);
+    ~Player();
 
     bool check_collision(const glm::vec3 & a, const glm::vec3 & b, float body_radius);
 

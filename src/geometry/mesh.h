@@ -4,6 +4,8 @@
 #include "../common.h"
 #include "../utils/shader.h"
 
+#include "../renderers/renderable.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -42,7 +44,7 @@ struct Material {
     float shininess;
 };
 
-class Mesh {
+class Mesh: public Renderable {
 public:
     /*  Mesh Data  */
     vector<Vertex> vertices;

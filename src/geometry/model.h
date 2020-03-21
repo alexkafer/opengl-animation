@@ -32,7 +32,7 @@ class Model : public Renderable
 public:
  /*  Model Data */
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    std::vector<Mesh> meshes;
+    // std::vector<Mesh> meshes;
     std::string directory;
     bool gamma_correction;
 
@@ -53,7 +53,7 @@ private:
     // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
     void load_model(string const &path);
     void processNode(aiNode *node);
-    Mesh processMesh(aiMesh *mesh);
+    Mesh * processMesh(aiMesh *mesh);
     // void material_uniforms(Shader & shader, const aiMaterial material);
     vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
 };

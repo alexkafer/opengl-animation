@@ -12,6 +12,7 @@ Mesh::Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material mater
 void Mesh::draw(Shader & shader) 
 {
     shader.enable();
+    check_gl_error();
     // bind appropriate textures
     unsigned int diffuseNr  = 1;
     unsigned int specularNr = 1;
@@ -36,6 +37,7 @@ void Mesh::draw(Shader & shader)
         glUniform1i(shader.uniform(name + number), i);
         // and finally bind the texture
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
+        check_gl_error();
     }
 
     GLint uniformMaterialSpecular          = shader.uniform("materialSpecularColor");

@@ -26,19 +26,17 @@ Scene::Scene () {
         particles = new Particles();
         check_gl_error();
 
-        world = new World();
-
-        renderer->add_object(&(world->tile));
+        world = new World(10);
 }
 
-size_t Scene::add_entity(Entity * entity) {
+void Scene::add_entity(Entity * entity) {
     std::cout << "Added entity" << std::endl;
     entities.push_back(entity);
-    return renderer->add_object(entity);
+    renderer->add_object(entity);
 }
 
-size_t Scene::add_renderable(Renderable * renderable) {
-    return renderer->add_object(renderable);
+void Scene::add_renderable(Renderable * renderable, Renderable * parent) {
+    renderer->add_object(renderable, parent);
 }
 
 void Scene::print_stats() {
@@ -47,6 +45,8 @@ void Scene::print_stats() {
  
 void Scene::init() {
     srand (time(NULL));
+
+    renderer->add_object(world);
 }
 
 void Scene::draw(float dt) {

@@ -4,13 +4,17 @@
 #include <vector>
 #include "tile.h"
 
-class World
+class World: public Renderable
 {
 private:
+    std::vector<std::vector<Tile *>> tiles;
 public:
-    Tile tile;
-    World();
+    World(size_t dims);
     ~World();
+
+    void init(Shader & shader); 
+    void draw(Shader & shader); 
+    void cleanup();
 };
 
 #endif // WORLD_H

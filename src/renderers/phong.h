@@ -20,12 +20,13 @@ class Phong
     Shader shader;
     std::vector<Light> gLights;
     void default_phong_uniforms();
+    void render_objects(std::vector<Renderable *> renderables, glm::mat4 parent_model);
 
     public:
         Phong();
 
         size_t add_model(const std::string &directory, const std::string &obj_file);
-        size_t add_object(Renderable * object);
+        void add_object(Renderable * object, Renderable * parent = nullptr);
         void draw();
         void cleanup();
 };
