@@ -24,7 +24,7 @@ static const std::map<TileType,const char*> TileModels {
 };
 
 
-Tile::Tile(TileOrientation state): Renderable(glm::vec3(0.05f))
+Tile::Tile(TileOrientation state): Renderable(glm::vec3(0.005f))
 {
    _state = state;
 }

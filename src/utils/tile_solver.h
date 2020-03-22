@@ -47,7 +47,7 @@ class TileSolver {
 
         void solve_next();
         bool has_undecided();
-        int test_tile(std::array<TileEdge, 4> edges, std::array<TileEdge, 4> neighors);
+        bool test_tile(std::array<TileEdge, 4> edges, std::array<TileEdge, 4> neighors, int rotation_offset);
         bool verify_pair(TileEdge a, TileEdge b);
 };
 

@@ -70,7 +70,9 @@ void TileSolver::solve_next() {
                     if (t.first != Undecided) {
                         // std::cout << t.first << " is to the right of  (" << i << "," << j <<"). It is rotated " << t.second << std::endl; 
                         neighors[3] = EdgeMap.at(t.first)[(1 + t.second) % 4];
-                    }
+                    } 
+                } else {
+                    neighors[3] = Land;
                 }
 
                 // If a tile exists to the left, get it's right edge
@@ -80,6 +82,8 @@ void TileSolver::solve_next() {
                         // std::cout << t.first << " is below (" << i << "," << j <<"). It is rotated " << t.second << std::endl; 
                         neighors[2] = EdgeMap.at(t.first)[(0 + t.second) % 4];
                     }
+                } else {
+                    neighors[2] = Land;
                 }
 
                 // If a tile exists below, get it's top edge
@@ -89,6 +93,8 @@ void TileSolver::solve_next() {
                         // std::cout << t.first << " is to the left of  (" << i << "," << j <<"). It is rotated " << t.second << std::endl; 
                         neighors[1] = EdgeMap.at(t.first)[(3 + t.second) % 4];
                     }
+                } else {
+                    neighors[1] = Land;
                 }
 
                 // If a tile exists to the right, get it's left edge
@@ -98,17 +104,21 @@ void TileSolver::solve_next() {
                         // std::cout << t.first << " is above (" << i << "," << j <<"). It is rotated " << t.second << std::endl; 
                         neighors[0] = EdgeMap.at(t.first)[(2 + t.second) % 4];
                     }
+                } else {
+                    neighors[0] = Water;
                 }
 
                 // Test all valid pairs
                 for ( int tile = Street_3Way_2; tile != Undecided; tile++ )
                 {
+                    if (tile == Street_Deadend) continue;
                     const TileType type = static_cast<TileType>(tile);
                     std::array<TileEdge, 4> edges = EdgeMap.at(type);
 
-                    int result = test_tile(edges, neighors);
-                    if (result != -1) {
-                        valid.push_back(std::make_pair(location, std::make_pair(type, result)));
+                    for (int rotation_offset = 0; rotation_offset < 4; rotation_offset++) {
+                        if (test_tile(edges, neighors, rotation_offset)) {
+                            valid.push_back(std::make_pair(location, std::make_pair(type, rotation_offset)));
+                        }
                     }
                 }
             }
@@ -155,16 +165,9 @@ bool TileSolver::verify_pair(TileEdge a, TileEdge b) {
     return false;
 }
 
-int TileSolver::test_tile(std::array<TileEdge, 4> edges, std::array<TileEdge, 4> neighors) {
-    for (int rotation_offset = 0; rotation_offset < 4; rotation_offset++) {
-        if (verify_pair(edges[(0 + rotation_offset) % 4], neighors[0]) &&
+bool TileSolver::test_tile(std::array<TileEdge, 4> edges, std::array<TileEdge, 4> neighors, int rotation_offset) {
+    return (verify_pair(edges[(0 + rotation_offset) % 4], neighors[0]) &&
             verify_pair(edges[(1 + rotation_offset) % 4], neighors[1]) &&
             verify_pair(edges[(2 + rotation_offset) % 4], neighors[2]) &&
-            verify_pair(edges[(3 + rotation_offset) % 4], neighors[3])) {
-                
-            return rotation_offset;
-        }
-    }
-
-    return -1;
+            verify_pair(edges[(3 + rotation_offset) % 4], neighors[3]));
 }

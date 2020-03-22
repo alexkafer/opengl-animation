@@ -5,7 +5,7 @@
 // Inspired by the algorithms here:
 // https://ijdykeman.github.io/ml/2017/10/12/wang-tile-procedural-generation.html
 
-World::World(size_t dims): solver(dims) {
+World::World(size_t dims): solver(dims), Renderable(glm::vec3(2.0f)) {
     tiles = std::vector<std::vector<Tile *>>(dims, std::vector<Tile*>(dims));
 
     for (int i = 0; i < tiles.size(); i++) { 
@@ -24,13 +24,12 @@ World::~World() {
     cleanup();
 }
 
-
 void World::init(Shader & shader) {
-    float offset_x = 10.f * tiles.size() / 2.f;
+    float offset_x = (tiles.size() - 1) / 2.f;
     for (int i = 0; i < tiles.size(); i++) { 
-        float offset_z = 10.f * tiles[i].size() / 2.f;
+        float offset_z = (tiles[i].size() - 1) / 2.f;
         for (int j = 0; j < tiles[i].size(); j++) {
-            tiles[i][j]->set_position(glm::vec3(i * 10.f - offset_x, 0.f, j * 10.f - offset_z));
+            tiles[i][j]->set_position(glm::vec3(i - offset_x, 0.f, j - offset_z));
             Globals::scene->add_renderable(tiles[i][j], this);
         }
     } 
