@@ -22,17 +22,19 @@ enum TileType {
     Street_Empty_Water,
     Street_Empty,
     Street_Straight,
-    Streets_all,
+    Undecided
 };
+
+typedef std::pair<TileType, int> TileOrientation;
 
 class Tile: public Renderable
 {
 private:
     /* data */
     Model * _model;
-    TileType _type;
+    TileOrientation _state;
 public:
-    Tile(TileType type);
+    Tile(TileOrientation type);
     ~Tile();
 
     void init(Shader & shader); 

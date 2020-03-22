@@ -25,7 +25,7 @@ void Model::load_model(string const &path) {
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
 
-    std::cout << "Directory: " << directory << std::endl;
+    // std::cout << "Directory: " << directory << std::endl;
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode);
@@ -163,7 +163,7 @@ Mesh * Model::processMesh(aiMesh *mesh)
         mat.shininess = 1;
         material->Get(AI_MATKEY_SHININESS, mat.shininess);
 
-        std::cout << "Loaded " << name.C_Str() << std::endl;
+        // std::cout << "Loaded " << name.C_Str() << std::endl;
         // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
         // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
         // Same applies to other texture as the following list summarizes:

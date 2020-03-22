@@ -5,9 +5,6 @@
 #include "../scene.h"
 
 static const std::map<TileType,const char*> TileModels {
-    // {TileType::Sign_NoParking, "Sign_NoParking.fbx"},
-    // {TileType::Sign_Stop, "Sign_Stop.fbx"},
-    // {TileType::Sign_Triangle, "Sign_Triangle.fbx"},
     {TileType::Street_3Way_2, "Street_3Way_2.fbx"},
     {TileType::Street_3Way, "Street_3Way.fbx"},
     {TileType::Street_4Way_2, "Street_4Way_2.fbx"},
@@ -24,27 +21,26 @@ static const std::map<TileType,const char*> TileModels {
     {TileType::Street_Empty_Water, "Street_Empty_Water.fbx"},
     {TileType::Street_Empty, "Street_Empty.fbx"},
     {TileType::Street_Straight, "Street_Straight.fbx"},
-    // {TileType::Streetlight_Double, "Streetlight_Double.fbx"},
-    // {TileType::Streetlight_Single, "Streetlight_Single.fbx"},
-    // {TileType::Streetlight_Triple, "Streetlight_Triple.fbx"},
-    {TileType::Streets_all, "Streets_all.fbx"},
-    // {TileType::TrafficLight_2, "TrafficLight_2.fbx"},
-    // {TileType::TrafficLight, "TrafficLight.fbx"}
 };
 
 
-Tile::Tile(TileType type): Renderable(glm::vec3(0.05f))
+Tile::Tile(TileOrientation state): Renderable(glm::vec3(0.05f))
 {
-   _type = type;
+   _state = state;
 }
 
 void Tile::init(Shader & shader) {
-    auto   it  = TileModels.find(_type);
+    auto   it  = TileModels.find(_state.first);
     std::string path = (it == TileModels.end()) ? "Out of range" : it->second;
 
     std::stringstream model_ss; model_ss << MY_MODELS_DIR << "tiles/" << path;
 
     _model = new Model(model_ss.str(), false);
+
+    if (_state.second != -1) {
+        _model->set_rotation(glm::angleAxis(glm::radians(-90.f * _state.second), glm::vec3(0.f, 1.f, 0.f)));
+    }
+    
     Globals::scene->add_renderable(_model, this);
 }
 
