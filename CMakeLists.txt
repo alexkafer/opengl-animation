@@ -245,6 +245,7 @@ set(MY_SOURCES
     src/renderers/lines.cpp
     src/geometry/particles.cpp
     src/geometry/mesh.cpp
+    src/geometry/skinned_mesh.cpp
     src/geometry/model.cpp
     src/geometry/sphere.cpp
     src/geometry/cloth.cpp

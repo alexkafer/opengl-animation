@@ -18,6 +18,7 @@
 #include <vector>
 using namespace std;
 
+
 struct Vertex {
     // position
     glm::vec3 Position;
@@ -32,6 +33,7 @@ struct Vertex {
     // // bitangent
     // glm::vec3 Bitangent;
 };
+
 
 struct Texture {
     unsigned int id;
@@ -55,14 +57,15 @@ public:
 
     /*  Functions  */
     // constructor
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material material, vector<Texture> textures);
+    // Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material material, vector<Texture> textures);
+    Mesh(const aiMesh *mesh, const aiMaterial *mat, const std::vector<Texture> textures_loaded);
 
     // render the mesh
     void draw(Shader & shader);
     void init(Shader & shader);
     void cleanup();
 
-private:
+protected:
     /*  Render data  */
     unsigned int VBO, EBO;
 };

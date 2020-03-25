@@ -9,6 +9,8 @@ uniform sampler2D texture_diffuse1;
 uniform float materialShininess;
 uniform vec3 materialSpecularColor;
 
+uniform bool has_textures;
+
 #define MAX_LIGHTS 10
 uniform int numLights;
 uniform struct Light {
@@ -59,7 +61,14 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 void main() {
     vec3 normal = normalize(transpose(inverse(mat3(model))) * vnormal);
     vec3 surfacePos = vec3(model * vec4(vposition, 1));
-    vec4 surfaceColor = texture(texture_diffuse1, vtexture_coord) + vcolor;
+
+    vec4 surfaceColor;
+    if (has_textures) {
+        surfaceColor = texture(texture_diffuse1, vtexture_coord) + vcolor;
+    } else {
+        surfaceColor = vcolor;
+    }
+    
     vec3 surfaceToCamera = normalize(eye - surfacePos);
 
     //combine color from all the lights

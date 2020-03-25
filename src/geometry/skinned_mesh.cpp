@@ -1,108 +1,12 @@
-#include "mesh.h"
+#include "skinned_mesh.h"
 
-Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture> textures)
-{
-    vertices.resize(mesh->mNumVertices);
-
-    vector<unsigned int> indices;
-    this->textures = textures;
-
-    // Walk through each of the mesh's vertices
-    for(unsigned int i = 0; i < mesh->mNumVertices; i++)
-    {
-        Vertex vertex;
-        glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
-        // positions
-        vector.x = mesh->mVertices[i].x;
-        vector.y = mesh->mVertices[i].y; // Flip y and z coords
-        vector.z = mesh->mVertices[i].z;
-        vertex.Position = vector;
-        // normals
-        vector.x = mesh->mNormals[i].x;
-        vector.y = mesh->mNormals[i].y;
-        vector.z = mesh->mNormals[i].z;
-        vertex.Normal = vector;
-        // texture coordinates
-        if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
-        {
-            glm::vec2 vec;
-            // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
-            // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-            vec.x = mesh->mTextureCoords[0][i].x; 
-            vec.y = mesh->mTextureCoords[0][i].y;
-            vertex.TexCoords = vec;
-        }
-        else 
-            vertex.TexCoords = glm::vec2(0.0f, 0.0f);
-        
-
-        float transparency = 1;
-        mat->Get(AI_MATKEY_OPACITY, transparency); 
-
-        aiColor3D diffuse(0.f,0.f,0.f);
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-        vertex.Color = glm::vec4(diffuse.r, diffuse.g, diffuse.b, transparency);
-        
-        // // tangent
-        // if (mesh->mTangents != nullptr) {
-        //     vector.x = mesh->mTangents[i].x;
-        //     vector.y = mesh->mTangents[i].y;
-        //     vector.z = mesh->mTangents[i].z;
-        //     vertex.Tangent = vector;
-        // }
-
-        // // bitangent
-        // if (mesh->mBitangents != nullptr) {
-        //     vector.x = mesh->mBitangents[i].x;
-        //     vector.y = mesh->mBitangents[i].y;
-        //     vector.z = mesh->mBitangents[i].z;
-        //     vertex.Bitangent = vector;
-        // }
-        vertices.push_back(vertex);
-    }
-
-    // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-    for(unsigned int i = 0; i < mesh->mNumFaces; i++)
-    {
-        aiFace face = mesh->mFaces[i];
-        // retrieve all indices of the face and store them in the indices vector
-        for(unsigned int j = 0; j < face.mNumIndices; j++)
-            indices.push_back(face.mIndices[j]);
-    }
-
-    // aiColor3D ambient(0.f,0.f,0.f);
-    // material->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
-    // mat.ambient[0] = ambient.r;
-    // mat.ambient[1] = ambient.g;
-    // mat.ambient[2] = ambient.b;
-    // mat.ambient[3] = transparency;
-    
-    // aiColor3D diffuse(0.f,0.f,0.f);
-    // material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-    // mat.diffuse[0] = diffuse.r;
-    // mat.diffuse[1] = diffuse.g;
-    // mat.diffuse[2] = diffuse.b;
-    // mat.diffuse[3] = transparency;
-    
-    aiColor3D specular(0.f,0.f,0.f);
-    mat->Get(AI_MATKEY_COLOR_SPECULAR, specular);
-    material.specular[0] = specular.r;
-    material.specular[1] = specular.g;
-    material.specular[2] = specular.b;
-
-    // aiColor3D emission(0.f,0.f,0.f);
-    // material->Get(AI_MATKEY_COLOR_EMISSIVE, emission);
-    // mat.emission[0] = emission.r;
-    // mat.emission[1] = emission.g;
-    // mat.emission[2] = emission.b;
-    // mat.specular[3] = transparency;
-    
-    material.shininess = 1;
-    mat->Get(AI_MATKEY_SHININESS, material.shininess);
+SkinnedMesh::SkinnedMesh(const aiMesh *mesh, const aiMaterial * mat, std::vector<Texture> textures, vector<VertexBoneData> bones)
+: Mesh(mesh, mat, textures) {
+    this->bones = bones;
 }
 
 // render the mesh
-void Mesh::draw(Shader & shader) 
+void SkinnedMesh::draw(Shader & shader) 
 {
     shader.enable();
     check_gl_error();
@@ -133,15 +37,14 @@ void Mesh::draw(Shader & shader)
         glUniform1i(shader.uniform(name + number), i);
         // and finally bind the texture
         glBindTexture(GL_TEXTURE_2D, textures[i].id);
-        check_gl_error();
+        check_gl_error();        
     }
-
 
     if (textures.size() > 0) {
         glUniform1i(shader.uniform("has_textures"), true);
     }
 
-    glUniform1i(shader.uniform("has_bones"), false);
+    glUniform1i(shader.uniform("has_bones"), true);
 
     GLint uniformMaterialSpecular          = shader.uniform("materialSpecularColor");
     GLint uniformMaterialShininess         = shader.uniform("materialShininess");
@@ -162,7 +65,7 @@ void Mesh::draw(Shader & shader)
     glActiveTexture(GL_TEXTURE0);
 }
 
-void Mesh::init(Shader & shader)
+void SkinnedMesh::init(Shader & shader)
 {
     shader.enable();
 
@@ -171,10 +74,14 @@ void Mesh::init(Shader & shader)
     GLint attribVertexTextureCoord  = shader.attribute("in_texture_coord");
     GLint attribVertexColor  = shader.attribute("in_color");
 
+    GLint attribVertexBoneID  = shader.attribute("in_bone_id");
+    GLint attribVertexBoneWeight  = shader.attribute("in_bone_weight");
+
     // create buffers/arrays
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
+    glGenBuffers(1, &BBO);
 
     glBindVertexArray(VAO);
     // load data into vertex buffers
@@ -204,11 +111,19 @@ void Mesh::init(Shader & shader)
     // glEnableVertexAttribArray(attribVertexBiTangent);
     // glVertexAttribPointer(attribVertexBiTangent, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
+    glBindBuffer(GL_ARRAY_BUFFER, BBO);
+    glBufferData(GL_ARRAY_BUFFER, bones.size() * sizeof(VertexBoneData), &bones[0], GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(attribVertexBoneID);
+    glVertexAttribIPointer(attribVertexBoneID, NUM_BONES_PER_VERTEX, GL_INT, sizeof(VertexBoneData), (void*)0);
+
+    glEnableVertexAttribArray(attribVertexBoneWeight);
+    glVertexAttribPointer(attribVertexBoneWeight, NUM_BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, Weights));
+    
     glBindVertexArray(0);
 }
 
-void Mesh::cleanup() {
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+void SkinnedMesh::cleanup() {
+    Mesh::cleanup();
+    glDeleteBuffers(1, &BBO);
 }

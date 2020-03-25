@@ -1,8 +1,10 @@
 #include "../scene.h"
 
 #include "model.h"
+#include <glm/gtc/type_ptr.hpp>
 
 #include "../utils/stb_image.h"
+
 // https://github.com/capnramses/antons_opengl_tutorials_book/blob/master/30_skinning_part_one/main.cpp
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
@@ -50,8 +52,7 @@ void Model::processNode(aiNode *node)
     {
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        Mesh * mesh = processMesh(scene->mMeshes[node->mMeshes[i]]);
-        Globals::scene->add_renderable(mesh, this);
+        processMesh(scene->mMeshes[node->mMeshes[i]]);
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -61,140 +62,73 @@ void Model::processNode(aiNode *node)
 
 }
 
-Mesh * Model::processMesh(aiMesh *mesh)
-    {
-        // data to fill
-        vector<Vertex> vertices;
-        vector<unsigned int> indices;
-        vector<Texture> textures;
+void Model::processMesh(aiMesh * mesh) {
+    // std::cout << "Loaded " << name.C_Str() << std::endl;
+    // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
+    // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
+    // Same applies to other texture as the following list summarizes:
+    // diffuse: texture_diffuseN
+    // specular: texture_specularN
+    // normal: texture_normalN
 
-        // process materials
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];  
+    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];  
 
-        // Walk through each of the mesh's vertices
-        for(unsigned int i = 0; i < mesh->mNumVertices; i++)
-        {
-            Vertex vertex;
-            glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
-            // positions
-            vector.x = mesh->mVertices[i].x;
-            vector.y = mesh->mVertices[i].y; // Flip y and z coords
-            vector.z = mesh->mVertices[i].z;
-            vertex.Position = vector;
-            // normals
-            vector.x = mesh->mNormals[i].x;
-            vector.y = mesh->mNormals[i].y;
-            vector.z = mesh->mNormals[i].z;
-            vertex.Normal = vector;
-            // texture coordinates
-            if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
-            {
-                glm::vec2 vec;
-                // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
-                // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-                vec.x = mesh->mTextureCoords[0][i].x; 
-                vec.y = mesh->mTextureCoords[0][i].y;
-                vertex.TexCoords = vec;
-            }
-            else 
-                vertex.TexCoords = glm::vec2(0.0f, 0.0f);
-            
+    vector<Texture> textures;
+    // 1. diffuse maps
+    vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+    // 2. specular maps
+    vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+    // 3. normal maps
+    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+    // 4. height maps
+    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
-            float transparency = 1;
-            material->Get(AI_MATKEY_OPACITY, transparency); 
-
-            aiColor3D diffuse(0.f,0.f,0.f);
-            material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-            vertex.Color = glm::vec4(diffuse.r, diffuse.g, diffuse.b, transparency);
-            
-            // // tangent
-            // if (mesh->mTangents != nullptr) {
-            //     vector.x = mesh->mTangents[i].x;
-            //     vector.y = mesh->mTangents[i].y;
-            //     vector.z = mesh->mTangents[i].z;
-            //     vertex.Tangent = vector;
-            // }
-
-            // // bitangent
-            // if (mesh->mBitangents != nullptr) {
-            //     vector.x = mesh->mBitangents[i].x;
-            //     vector.y = mesh->mBitangents[i].y;
-            //     vector.z = mesh->mBitangents[i].z;
-            //     vertex.Bitangent = vector;
-            // }
-            vertices.push_back(vertex);
-        }
-        // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-        for(unsigned int i = 0; i < mesh->mNumFaces; i++)
-        {
-            aiFace face = mesh->mFaces[i];
-            // retrieve all indices of the face and store them in the indices vector
-            for(unsigned int j = 0; j < face.mNumIndices; j++)
-                indices.push_back(face.mIndices[j]);
-        }
-        
-
-        aiString name;
-        material->Get(AI_MATKEY_NAME,name);
-
-        Material mat;
-
-
-        // aiColor3D ambient(0.f,0.f,0.f);
-        // material->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
-        // mat.ambient[0] = ambient.r;
-        // mat.ambient[1] = ambient.g;
-        // mat.ambient[2] = ambient.b;
-        // mat.ambient[3] = transparency;
-        
-        // aiColor3D diffuse(0.f,0.f,0.f);
-        // material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-        // mat.diffuse[0] = diffuse.r;
-        // mat.diffuse[1] = diffuse.g;
-        // mat.diffuse[2] = diffuse.b;
-        // mat.diffuse[3] = transparency;
-
-        
-        
-        aiColor3D specular(0.f,0.f,0.f);
-        material->Get(AI_MATKEY_COLOR_SPECULAR, specular);
-        mat.specular[0] = specular.r;
-        mat.specular[1] = specular.g;
-        mat.specular[2] = specular.b;
-
-        // aiColor3D emission(0.f,0.f,0.f);
-        // material->Get(AI_MATKEY_COLOR_EMISSIVE, emission);
-        // mat.emission[0] = emission.r;
-        // mat.emission[1] = emission.g;
-        // mat.emission[2] = emission.b;
-        // mat.specular[3] = transparency;
-        
-        mat.shininess = 1;
-        material->Get(AI_MATKEY_SHININESS, mat.shininess);
-
-        // std::cout << "Loaded " << name.C_Str() << std::endl;
-        // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-        // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
-        // Same applies to other texture as the following list summarizes:
-        // diffuse: texture_diffuseN
-        // specular: texture_specularN
-        // normal: texture_normalN
-        // 1. diffuse maps
-        vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-        textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        // 2. specular maps
-        vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-        // 3. normal maps
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-        // 4. height maps
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
-        textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-        
-        // return a mesh object created from the extracted mesh data
-        return new Mesh(vertices, indices, mat, textures);
+    if (mesh->HasBones()) {
+        Globals::scene->add_renderable(new SkinnedMesh(mesh, material, textures, loadBones(mesh)), this);
+    } else {
+        Globals::scene->add_renderable(new Mesh(mesh, material, textures), this);
     }
+}
+
+vector<VertexBoneData> Model::loadBones(const aiMesh* mesh) {
+    vector<VertexBoneData> bones;
+
+    for (uint i = 0 ; i < mesh->mNumBones ; i++) {                
+        uint BoneIndex = 0;        
+        string BoneName(mesh->mBones[i]->mName.data);
+        
+        if (m_BoneMapping.find(BoneName) == m_BoneMapping.end()) {
+            // Allocate an index for a new bone
+            BoneIndex = m_NumBones;
+            m_NumBones++;            
+	        BoneInfo bi;			
+			m_BoneInfo.push_back(bi);
+            m_BoneInfo[BoneIndex].BoneOffset = aiMatrix4x4ToGlm(&mesh->mBones[i]->mOffsetMatrix);            
+            m_BoneMapping[BoneName] = BoneIndex;
+        }
+        else {
+            BoneIndex = m_BoneMapping[BoneName];
+        }                      
+        
+        for (uint j = 0 ; j < mesh->mBones[i]->mNumWeights ; j++) {
+            uint VertexID = mesh->mBones[i]->mWeights[j].mVertexId;
+            float Weight  = mesh->mBones[i]->mWeights[j].mWeight;                   
+            bones[VertexID].AddBoneData(BoneIndex, Weight);
+        }
+    }  
+
+    return bones; 
+}
+
+std::string CreateBoneUniform(size_t boneIndex) {
+    std::ostringstream ss;
+    ss << "bones[" << boneIndex << "]";
+    return ss.str();
+}
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.
@@ -239,7 +173,11 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 }
 
 // draws the model, and thus all its meshes
-void Model::draw(Shader & shader) {}
+void Model::draw(Shader & shader) {
+    for (size_t i= 0; i < m_NumBones; i++) {
+        // glUniformMatrix4fv( shader.uniform(CreateBoneUniform(i)), 1, GL_FALSE, glm::value_ptr(m_BoneInfo[i].FinalTransformation)  ); // model transformation
+    }
+}
 
 void Model::cleanup() {}
 
