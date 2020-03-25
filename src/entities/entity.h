@@ -18,6 +18,8 @@ protected:
 
 public:
     Entity();
+    Entity(glm::vec3 scale);
+    
     void calculate_animation();
     void navigate_to(glm::vec3 target); 
 

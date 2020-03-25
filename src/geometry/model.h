@@ -25,7 +25,9 @@
 
 #include "../entities/entity.h"
 
-unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
+GLuint TextureFromData(const GLvoid *data, int width, int height, int nrComponents, bool gamma = false);
+GLuint TextureFromMemory(const aiTexture * texture, bool gamma = false);
+GLuint TextureFromFile(const char *path, const string &directory, bool gamma = false);
 
 class Model : public Renderable
 {

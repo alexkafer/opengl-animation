@@ -247,7 +247,7 @@ void lookAt(glm::vec3 center)
 void setup_scene() {
 	Globals::scene->init();
 
-	Globals::scene->add_renderable(new Floor());
+	// Globals::scene->add_renderable(new Floor());
         
 	avatar = new Player(0.5f);
 	avatar->set_position(glm::vec3(-9.f, 0.5f, -9.f));

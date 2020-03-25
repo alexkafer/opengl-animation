@@ -6,12 +6,16 @@
 #include "../common.h"
 #include "../scene.h"
 
-Entity::Entity() {
+
+
+Entity::Entity(glm::vec3 scale): Renderable(scale) {
     t = 0.f;
     step_time = 0.f;
 
     _current_path = std::vector<glm::vec3>(1, glm::vec3(0.0f));
 }
+
+Entity::Entity(): Entity(glm::vec3(1.f)) {}
 
 // Animated position
 void Entity::calculate_animation() {

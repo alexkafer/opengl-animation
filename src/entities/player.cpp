@@ -8,7 +8,7 @@
 #include "../utils/roadmap.h"
 #include "../scene.h"
 
-Player::Player(float radius) {
+Player::Player(float radius): Entity(glm::vec3(0.05f)) {
     _radius = radius;
 }
 
@@ -21,7 +21,7 @@ bool Player::check_collision(const glm::vec3 & a, const glm::vec3 & b, float rad
 }
 
 void Player::init(Shader & shader) {
-    std::stringstream model_ss; model_ss << MY_MODELS_DIR << "Firehydrant/firehydrant.obj";
+    std::stringstream model_ss; model_ss << MY_MODELS_DIR << "Zombie.fbx";
     _model = new Model(model_ss.str(), false);
     Globals::scene->add_renderable(_model, this);
 }

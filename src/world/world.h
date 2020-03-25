@@ -4,12 +4,14 @@
 #include <vector>
 #include "tile.h"
 #include "../utils/tile_solver.h"
+#include "../geometry/model.h"
 
 class World: public Renderable
 {
 private:
     std::vector<std::vector<Tile *>> tiles;
     TileSolver solver;
+    Model * world_model;
 public:
     World(size_t dims);
     ~World();

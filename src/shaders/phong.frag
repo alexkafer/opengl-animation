@@ -5,7 +5,7 @@
 uniform mat4 model;
 uniform vec3 eye;
 
-uniform sampler2D materialTex;
+uniform sampler2D texture_diffuse1;
 uniform float materialShininess;
 uniform vec3 materialSpecularColor;
 
@@ -59,7 +59,7 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 void main() {
     vec3 normal = normalize(transpose(inverse(mat3(model))) * vnormal);
     vec3 surfacePos = vec3(model * vec4(vposition, 1));
-    vec4 surfaceColor = texture(materialTex, vtexture_coord) + vcolor;
+    vec4 surfaceColor = texture(texture_diffuse1, vtexture_coord) + vcolor;
     vec3 surfaceToCamera = normalize(eye - surfacePos);
 
     //combine color from all the lights

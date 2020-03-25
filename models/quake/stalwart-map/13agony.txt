@@ -1,0 +1,28 @@
+_____
+Agony
+¯¯¯¯¯
+Game			: Quake 3 Arena
+Map Title		: Agony (by sst13)
+Map Filename		: 13agony.bsp
+Relase Date		: 21. December 2012
+
+Author			: Stefan Scholz "aka sst13 / [FDK]Railraver"
+e-Mail			: sst13@gmx.de
+Author Homepage		: http://www.sst13.de
+
+Description		: Remake of the Dreamast splitscreen map dc_ss405 "Agony"
+
+Player			: 2-4
+Gametypes		: FFA, Tournament
+Botsupport		: Yes
+
+New Textures		: Yes, ripped from Team Arena
+New Shaders		: Yes
+New Sounds		: No
+New Models		: Yes, modified original models
+
+Editors used		: Q3Radiant v2.02 , Q3Map Explorer, q3map2 v2.5.16, q3ASE v1.5.3, NPhernos MD3 Compiler, Milkshape 3D v1.7.8
+Compile Machine		: Intel core i5 with 4GB RAM
+Compile Time		: 1 min
+
+Credits			: id Software and all beta testers!

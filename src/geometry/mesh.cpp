@@ -20,10 +20,12 @@ void Mesh::draw(Shader & shader)
     unsigned int heightNr   = 1;
     for(unsigned int i = 0; i < textures.size(); i++)
     {
+        
         glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
         // retrieve texture number (the N in diffuse_textureN)
         string number;
         string name = textures[i].type;
+        
         if(name == "texture_diffuse")
             number = std::to_string(diffuseNr++);
         else if(name == "texture_specular")
@@ -32,7 +34,8 @@ void Mesh::draw(Shader & shader)
             number = std::to_string(normalNr++); // transfer unsigned int to stream
             else if(name == "texture_height")
             number = std::to_string(heightNr++); // transfer unsigned int to stream
-
+        
+        // std::cout << "Model has " << name + number << " texture" << std::endl;
         // now set the sampler to the correct texture unit
         glUniform1i(shader.uniform(name + number), i);
         // and finally bind the texture
