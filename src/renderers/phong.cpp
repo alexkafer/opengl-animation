@@ -10,19 +10,19 @@ Phong::Phong(): _objects(), gLights() {
     std::stringstream shader_ss; shader_ss << MY_SRC_DIR << "shaders/phong.";
     shader.init_from_files( shader_ss.str()+"vert", shader_ss.str()+"frag" );
 
-    Light directionalLight;
-    directionalLight.position = glm::vec4(1, 0.8, 0.6, 0); //w == 0 indications a directional light
-    directionalLight.intensities = glm::vec3(0.2,0.2,0.2); //weak light
-    directionalLight.ambientCoefficient = 0.06f;
+    add_light(
+        glm::vec4(1.f, 3.f, 1.f, 1), //w == 1 indications a directional light
+        glm::vec3(0.9,0.9,0.9), //weak light
+        10.0f, // Doesn't matter for direction
+        0.5f // Little ambient
+    );
 
-    gLights.push_back(directionalLight);
-
-    Light centerLight;
-    centerLight.position = glm::vec4(1.f, 4.8f, 4.6f, 1.f); //w == 1 indications a point light
-    centerLight.intensities = glm::vec3(0.5f, 0.5f, 0.5f); //strong white light
-    centerLight.ambientCoefficient = 0.1f;
-
-    gLights.push_back(centerLight);
+    add_light(
+        glm::vec4(1, 0.8, 0.6, 0), //w == 0 indications a directional light
+        glm::vec3(0.5,0.5,0.5), //weak light
+        0.0f, // Doesn't matter for direction
+        0.3f // Little ambient
+    );
 }
 
 void Phong::add_object(Renderable * entity, Renderable * parent) {
@@ -33,6 +33,10 @@ void Phong::add_object(Renderable * entity, Renderable * parent) {
     } else {
         _objects.push_back(entity);
     }
+}
+
+void Phong::add_light(glm::vec4 pos, glm::vec3 strength, float attenuation, float ambient) {
+    gLights.emplace_back(pos, strength, attenuation, ambient);
 }
 
 std::string CreateLightUniform(const char* propertyName, size_t lightIndex) {
@@ -64,6 +68,9 @@ void Phong::default_phong_uniforms() {
     glUniform3fv(shader.uniform("materialSpecularColor"), 1, materialSpecular);
     glUniform1f(shader.uniform("materialShininess"), materialShininess);
 
+    glUniform1i(shader.uniform("has_bones"), false);
+    glUniform1i(shader.uniform("has_textures"), false);
+
     check_gl_error();
 }
 
@@ -90,7 +97,8 @@ void Phong::render_objects(std::vector<Renderable *> renderables, glm::mat4 pare
         glm::mat4 translate_matrix = glm::translate( glm::mat4(1.0f), (*t)->get_position());
         glm::mat4 rotation_matrix = glm::toMat4((*t)->get_rotation());
         glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), (*t)->get_scale());
-        glm::mat4 model = parent_model * translate_matrix * rotation_matrix * scale_matrix;
+        glm::mat4 model = parent_model * (*t)->get_transformation() * translate_matrix * rotation_matrix * scale_matrix;
+        // glm::mat4 model = parent_model * (*t)->get_transformation();
 
         glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(model)); // model matrix
         check_gl_error();

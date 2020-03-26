@@ -60,15 +60,13 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
 
 void main() {
     vec3 normal = normalize(transpose(inverse(mat3(model))) * vnormal);
-    vec3 surfacePos = vec3(model * vec4(vposition, 1));
-
-    vec4 surfaceColor;
-    if (has_textures) {
-        surfaceColor = texture(texture_diffuse1, vtexture_coord) + vcolor;
-    } else {
-        surfaceColor = vcolor;
-    }
+    vec3 surfacePos = vec3(vec4(vposition, 1));
+    vec4 surfaceColor = vcolor;
     
+    if (has_textures) {
+        surfaceColor = texture(texture_diffuse1, vtexture_coord);
+    }
+
     vec3 surfaceToCamera = normalize(eye - surfacePos);
 
     //combine color from all the lights
@@ -78,6 +76,6 @@ void main() {
     }
     
     //final color (after gamma correction)
-    vec3 gamma = vec3(1.0/2.2);
+    vec3 gamma = vec3(1); // vec3(1.0/2.2);
     finalColor = vec4(pow(linearColor, gamma), surfaceColor.a);
 }

@@ -43,6 +43,7 @@ void main() {
     // Apply all matrix transformations to vert
     vposition = (model * PosL).xyz;
     vnormal = (model * NormalL).xyz;
+    // vnormal = NormalL.xyz;
 
     gl_Position = camera * model * PosL;
 }

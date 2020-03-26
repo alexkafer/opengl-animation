@@ -4,11 +4,12 @@
 #include <vector>
 #include "../renderers/renderable.h"
 
-static const float SPEED = 10.f; // 2 meters (units) per second
+static const float SPEED = 6.f; // 5 meters (units) per second
 
 class Entity: public Renderable {
 protected:
     float _radius;
+    glm::vec3 _forward;
 
     // Path Finding
     std::vector<glm::vec3> _current_path;

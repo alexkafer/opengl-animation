@@ -40,6 +40,13 @@ struct VertexBoneData
     uint IDs[NUM_BONES_PER_VERTEX];
     float Weights[NUM_BONES_PER_VERTEX];
 
+    VertexBoneData() {
+        for (uint i = 0 ; i < NUM_BONES_PER_VERTEX; i++) {
+            IDs[i] = 0;
+            Weights[i] = 0.0;
+        }
+    }
+
     void AddBoneData(uint BoneID, float Weight)
     {
         for (uint i = 0 ; i < NUM_BONES_PER_VERTEX; i++) {

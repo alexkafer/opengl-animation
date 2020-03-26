@@ -37,6 +37,7 @@ class Scene {
 
         void add_entity(Entity * entity);
         void add_renderable(Renderable * renderable, Renderable * parent = nullptr);
+        void add_light(glm::vec4 pos, glm::vec3 strength, float attenuation, float ambient);
 
         void print_stats();
         

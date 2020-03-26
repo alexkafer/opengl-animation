@@ -44,6 +44,11 @@ struct Texture {
 struct Material {
     float specular[3];
     float shininess;
+
+    Material() {
+        specular[0] = specular[1] = specular[2] = 0.0f;
+        shininess = 0.0f;
+    }
 };
 
 class Mesh: public Renderable {

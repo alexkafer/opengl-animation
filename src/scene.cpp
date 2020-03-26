@@ -39,6 +39,10 @@ void Scene::add_renderable(Renderable * renderable, Renderable * parent) {
     renderer->add_object(renderable, parent);
 }
 
+void Scene::add_light(glm::vec4 pos, glm::vec3 strength, float attenuation, float ambient) {
+    renderer->add_light(pos, strength, attenuation, ambient);
+}
+
 void Scene::print_stats() {
     particles->print_stats();
 }

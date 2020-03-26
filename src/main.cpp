@@ -19,7 +19,6 @@
 #include "utils/GLError.h"
 
 #include "entities/ball.h"
-#include "geometry/floor.h"
 #include "entities/player.h"
 
 #include <glm/gtx/string_cast.hpp>
@@ -246,16 +245,14 @@ void lookAt(glm::vec3 center)
 
 void setup_scene() {
 	Globals::scene->init();
-
-	// Globals::scene->add_renderable(new Floor());
         
-	avatar = new Player(0.5f);
+	avatar = new Player(0.8f);
 	avatar->set_position(glm::vec3(-9.f, 0.5f, -9.f));
 	Globals::scene->add_entity(avatar);
 
 	obstacle = new Ball(5.f);
 	obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));
-	// Globals::scene->add_entity(obstacle);
+	Globals::scene->add_entity(obstacle);
 }
 
 //

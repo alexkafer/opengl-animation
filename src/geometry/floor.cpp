@@ -4,8 +4,7 @@
 
 #include "../utils/GLError.h"
 
-// Make it 20x20
-Floor::Floor(): Renderable(glm::vec3(10.f)) {}
+Floor::Floor() {}
 
 void Floor::init(Shader & shader) {
 

@@ -13,6 +13,8 @@ public:
     Player(float radius);
     ~Player();
 
+    double time;
+
     bool check_collision(const glm::vec3 & a, const glm::vec3 & b, float body_radius);
 
     void init(Shader & shader);

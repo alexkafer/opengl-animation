@@ -8,6 +8,7 @@ SkinnedMesh::SkinnedMesh(const aiMesh *mesh, const aiMaterial * mat, std::vector
 // render the mesh
 void SkinnedMesh::draw(Shader & shader) 
 {
+    // std::cout << "Skinned is getting called" << std::endl;
     shader.enable();
     check_gl_error();
     // bind appropriate textures
@@ -42,7 +43,7 @@ void SkinnedMesh::draw(Shader & shader)
 
     if (textures.size() > 0) {
         glUniform1i(shader.uniform("has_textures"), true);
-    }
+    } 
 
     glUniform1i(shader.uniform("has_bones"), true);
 
@@ -74,8 +75,8 @@ void SkinnedMesh::init(Shader & shader)
     GLint attribVertexTextureCoord  = shader.attribute("in_texture_coord");
     GLint attribVertexColor  = shader.attribute("in_color");
 
-    GLint attribVertexBoneID  = shader.attribute("in_bone_id");
-    GLint attribVertexBoneWeight  = shader.attribute("in_bone_weight");
+    GLint attribVertexBoneID  = shader.attribute("in_bone_ids");
+    GLint attribVertexBoneWeight  = shader.attribute("in_bone_weights");
 
     // create buffers/arrays
     glGenVertexArrays(1, &VAO);
@@ -113,6 +114,11 @@ void SkinnedMesh::init(Shader & shader)
 
     glBindBuffer(GL_ARRAY_BUFFER, BBO);
     glBufferData(GL_ARRAY_BUFFER, bones.size() * sizeof(VertexBoneData), &bones[0], GL_STATIC_DRAW);
+
+    // for (size_t i = 0; i < bones.size(); i++) {
+    //     std::cout << "Bone for: " << i << " has (" << bones[i].IDs[0] << ","<< bones[i].IDs[1] << ","<< bones[i].IDs[2] << ","<< bones[i].IDs[3] << ")." << std::endl;
+    //     std::cout << "Their weights are (" << bones[i].Weights[0] << ","<< bones[i].Weights[1] << ","<< bones[i].Weights[2] << ","<< bones[i].Weights[3] << ")." << std::endl;
+    // }
 
     glEnableVertexAttribArray(attribVertexBoneID);
     glVertexAttribIPointer(attribVertexBoneID, NUM_BONES_PER_VERTEX, GL_INT, sizeof(VertexBoneData), (void*)0);

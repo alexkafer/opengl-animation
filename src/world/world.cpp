@@ -2,10 +2,12 @@
 
 #include "../scene.h"
 
+#include "../geometry/floor.h"
+
 // Inspired by the algorithms here:
 // https://ijdykeman.github.io/ml/2017/10/12/wang-tile-procedural-generation.html
 
-World::World(size_t dims): solver(dims), Renderable(glm::vec3(0.025f)) {
+World::World(size_t dims): solver(dims) {
     // tiles = std::vector<std::vector<Tile *>>(dims, std::vector<Tile*>(dims));
 
     // for (int i = 0; i < tiles.size(); i++) { 
@@ -27,9 +29,14 @@ World::~World() {
 }
 
 void World::init(Shader & shader) {
-    std::stringstream model_ss; model_ss << MY_MODELS_DIR << "quake/stalwart.fbx";
-    world_model = new Model(model_ss.str(), false);
-    Globals::scene->add_renderable(world_model, this);
+    // std::stringstream model_ss; model_ss << MY_MODELS_DIR << "quake/stalwart.fbx";
+    // world_model = new Model(model_ss.str(), false);
+    // world_model->set_scale(glm::vec3(0.025f));
+    // Globals::scene->add_renderable(world_model, this);
+
+    Floor * floor = new Floor();
+	floor->set_scale(glm::vec3(10.f));
+	Globals::scene->add_renderable(floor, this);
 
     // float offset_x = (tiles.size() - 1) / 2.f;
     // for (int i = 0; i < tiles.size(); i++) { 

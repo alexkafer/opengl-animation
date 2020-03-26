@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/vector_angle.hpp>
 
 #include "../common.h"
 #include "../scene.h"
@@ -11,6 +12,7 @@
 Entity::Entity(glm::vec3 scale): Renderable(scale) {
     t = 0.f;
     step_time = 0.f;
+    _forward = glm::vec3(0.f, 0.f, 1.f);
 
     _current_path = std::vector<glm::vec3>(1, glm::vec3(0.0f));
 }
@@ -24,7 +26,14 @@ void Entity::calculate_animation() {
     if (_current_path.size() > 1) {
         _current_path.back() = _origin;
 
-        float distance = glm::distance(_origin, _current_path.end()[-2]);
+        glm::vec3 target = _current_path.end()[-2];
+        glm::vec3 target_direction = glm::normalize(target - _origin); 
+
+        float angle = atan2( target_direction.x, target_direction.z);
+
+        this->set_rotation(glm::quat(cos(angle/2.f), 0.f, sin(angle/2.f), 0.f));
+
+        float distance = glm::distance(_origin, target);
         step_time = distance / SPEED;
     } else {
         step_time = 0.0f;

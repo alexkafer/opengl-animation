@@ -44,9 +44,6 @@ public:
     std::string directory;
     bool gamma_correction;
 
-    std::string mtl_dir;
-    std::string obj_file;
-
     /*  Functions   */
     // constructor, expects a filepath to a 3D model.
     Model(string const &path, bool gamma);
@@ -55,21 +52,37 @@ public:
     void init(Shader & shader);
     void draw(Shader & shader);
     void cleanup();
+
+    void update_animation(float time);
     
 private:
     const aiScene* scene;
+    Assimp::Importer importer;
+    glm::mat4 m_GlobalInverseTransform;
+
+
     // Based off of https://frame.42yeah.casa/2019/12/10/model-loading.html
     void load_model(string const &path);
-    void processNode(aiNode *node);
-    void processMesh(aiMesh *mesh);
+    void processNode(aiNode *node, Renderable * parent);
+    Mesh * processMesh(aiMesh *mesh);
     // void material_uniforms(Shader & shader, const aiMaterial material);
     vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName);
     vector<VertexBoneData> loadBones(const aiMesh* mesh);
 
+    uint find_scaling(float AnimationTime, const aiNodeAnim* pNodeAnim);
+    uint find_rotation(float AnimationTime, const aiNodeAnim* pNodeAnim);
+    uint find_position(float AnimationTime, const aiNodeAnim* pNodeAnim);
+
+    glm::vec3 calculate_scaling(float AnimationTime, const aiNodeAnim* pNodeAnim);
+    glm::quat calculate_rotation(float AnimationTime, const aiNodeAnim* pNodeAnim);
+    glm::vec3 calculate_position(float AnimationTime, const aiNodeAnim* pNodeAnim);
+
+    const aiNodeAnim* find_node_animation(const aiAnimation* pAnimation, const string NodeName);
+    void calculate_animation(float time, const aiNode* pNode, const glm::mat4 & parent);
+
     inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4* from)
     {
         glm::mat4 to;
-
 
         to[0][0] = (GLfloat)from->a1; to[0][1] = (GLfloat)from->b1;  to[0][2] = (GLfloat)from->c1; to[0][3] = (GLfloat)from->d1;
         to[1][0] = (GLfloat)from->a2; to[1][1] = (GLfloat)from->b2;  to[1][2] = (GLfloat)from->c2; to[1][3] = (GLfloat)from->d2;
@@ -77,6 +90,14 @@ private:
         to[3][0] = (GLfloat)from->a4; to[3][1] = (GLfloat)from->b4;  to[3][2] = (GLfloat)from->c4; to[3][3] = (GLfloat)from->d4;
 
         return to;
+    }
+    inline glm::vec3 aiVector3DToGlm(const aiVector3D* from)
+    {
+        return glm::vec3(from->x, from->y, from->z);
+    }
+    inline glm::quat aiQuaternionToGlm(const aiQuaternion* from)
+    {
+        return glm::quat(from->w, from->x, from->y, from->z);
     }
 };
 

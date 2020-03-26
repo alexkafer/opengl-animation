@@ -12,6 +12,9 @@ struct Light {
     glm::vec3 intensities;
     float attenuation; 
     float ambientCoefficient;
+
+    Light(const glm::vec4 & position_, const glm::vec3 & intensities_, float attenuation_, float ambientCoefficient)
+    : position(position_), intensities(intensities_), attenuation(attenuation_), ambientCoefficient(ambientCoefficient) {}
 };
 
 class Phong
@@ -27,6 +30,7 @@ class Phong
 
         size_t add_model(const std::string &directory, const std::string &obj_file);
         void add_object(Renderable * object, Renderable * parent = nullptr);
+        void add_light(glm::vec4 pos, glm::vec3 strength, float attenuation, float ambient); 
         void draw();
         void cleanup();
 };

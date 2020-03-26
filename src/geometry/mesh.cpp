@@ -2,9 +2,9 @@
 
 Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture> textures)
 {
-    vertices.resize(mesh->mNumVertices);
-
-    vector<unsigned int> indices;
+    vertices.reserve(mesh->mNumVertices);
+    indices.reserve(mesh->mNumFaces * 3);
+    
     this->textures = textures;
 
     // Walk through each of the mesh's vertices
@@ -36,7 +36,7 @@ Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture
             vertex.TexCoords = glm::vec2(0.0f, 0.0f);
         
 
-        float transparency = 1;
+        float transparency = 1.0f;
         mat->Get(AI_MATKEY_OPACITY, transparency); 
 
         aiColor3D diffuse(0.f,0.f,0.f);
@@ -113,7 +113,6 @@ void Mesh::draw(Shader & shader)
     unsigned int heightNr   = 1;
     for(unsigned int i = 0; i < textures.size(); i++)
     {
-        
         glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
         // retrieve texture number (the N in diffuse_textureN)
         string number;
@@ -136,7 +135,6 @@ void Mesh::draw(Shader & shader)
         check_gl_error();
     }
 
-
     if (textures.size() > 0) {
         glUniform1i(shader.uniform("has_textures"), true);
     }
@@ -154,6 +152,7 @@ void Mesh::draw(Shader & shader)
     check_gl_error();
     
     // draw mesh
+    // std::cout << "Drawing " << indices.size() << std::endl;
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
@@ -179,6 +178,7 @@ void Mesh::init(Shader & shader)
     glBindVertexArray(VAO);
     // load data into vertex buffers
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
     // A great thing about structs is that their memory layout is sequential for all its items.
     // The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
     // again translates to 3/2 floats which translates to a byte array.
@@ -206,6 +206,111 @@ void Mesh::init(Shader & shader)
 
     glBindVertexArray(0);
 }
+
+// uint Mesh::FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim)
+// {    
+//     for (uint i = 0 ; i < pNodeAnim->mNumPositionKeys - 1 ; i++) {
+//         if (AnimationTime < (float)pNodeAnim->mPositionKeys[i + 1].mTime) {
+//             return i;
+//         }
+//     }
+    
+//     assert(0);
+
+//     return 0;
+// }
+
+
+// uint Mesh::FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
+// {
+//     assert(pNodeAnim->mNumRotationKeys > 0);
+
+//     for (uint i = 0 ; i < pNodeAnim->mNumRotationKeys - 1 ; i++) {
+//         if (AnimationTime < (float)pNodeAnim->mRotationKeys[i + 1].mTime) {
+//             return i;
+//         }
+//     }
+    
+//     assert(0);
+
+//     return 0;
+// }
+
+
+// uint Mesh::FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim)
+// {
+//     assert(pNodeAnim->mNumScalingKeys > 0);
+    
+//     for (uint i = 0 ; i < pNodeAnim->mNumScalingKeys - 1 ; i++) {
+//         if (AnimationTime < (float)pNodeAnim->mScalingKeys[i + 1].mTime) {
+//             return i;
+//         }
+//     }
+    
+//     assert(0);
+
+//     return 0;
+// }
+
+// void Mesh::CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+// {
+//     if (pNodeAnim->mNumPositionKeys == 1) {
+//         Out = pNodeAnim->mPositionKeys[0].mValue;
+//         return;
+//     }
+            
+//     uint PositionIndex = FindPosition(AnimationTime, pNodeAnim);
+//     uint NextPositionIndex = (PositionIndex + 1);
+//     assert(NextPositionIndex < pNodeAnim->mNumPositionKeys);
+//     float DeltaTime = (float)(pNodeAnim->mPositionKeys[NextPositionIndex].mTime - pNodeAnim->mPositionKeys[PositionIndex].mTime);
+//     float Factor = (AnimationTime - (float)pNodeAnim->mPositionKeys[PositionIndex].mTime) / DeltaTime;
+//     assert(Factor >= 0.0f && Factor <= 1.0f);
+//     const aiVector3D& Start = pNodeAnim->mPositionKeys[PositionIndex].mValue;
+//     const aiVector3D& End = pNodeAnim->mPositionKeys[NextPositionIndex].mValue;
+//     aiVector3D Delta = End - Start;
+//     Out = Start + Factor * Delta;
+// }
+
+
+// void Mesh::CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+// {
+// 	// we need at least two values to interpolate...
+//     if (pNodeAnim->mNumRotationKeys == 1) {
+//         Out = pNodeAnim->mRotationKeys[0].mValue;
+//         return;
+//     }
+    
+//     uint RotationIndex = FindRotation(AnimationTime, pNodeAnim);
+//     uint NextRotationIndex = (RotationIndex + 1);
+//     assert(NextRotationIndex < pNodeAnim->mNumRotationKeys);
+//     float DeltaTime = (float)(pNodeAnim->mRotationKeys[NextRotationIndex].mTime - pNodeAnim->mRotationKeys[RotationIndex].mTime);
+//     float Factor = (AnimationTime - (float)pNodeAnim->mRotationKeys[RotationIndex].mTime) / DeltaTime;
+//     assert(Factor >= 0.0f && Factor <= 1.0f);
+//     const aiQuaternion& StartRotationQ = pNodeAnim->mRotationKeys[RotationIndex].mValue;
+//     const aiQuaternion& EndRotationQ   = pNodeAnim->mRotationKeys[NextRotationIndex].mValue;    
+//     aiQuaternion::Interpolate(Out, StartRotationQ, EndRotationQ, Factor);
+//     Out = Out.Normalize();
+// }
+
+
+// void Mesh::CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim)
+// {
+//     if (pNodeAnim->mNumScalingKeys == 1) {
+//         Out = pNodeAnim->mScalingKeys[0].mValue;
+//         return;
+//     }
+
+//     uint ScalingIndex = FindScaling(AnimationTime, pNodeAnim);
+//     uint NextScalingIndex = (ScalingIndex + 1);
+//     assert(NextScalingIndex < pNodeAnim->mNumScalingKeys);
+//     float DeltaTime = (float)(pNodeAnim->mScalingKeys[NextScalingIndex].mTime - pNodeAnim->mScalingKeys[ScalingIndex].mTime);
+//     float Factor = (AnimationTime - (float)pNodeAnim->mScalingKeys[ScalingIndex].mTime) / DeltaTime;
+//     assert(Factor >= 0.0f && Factor <= 1.0f);
+//     const aiVector3D& Start = pNodeAnim->mScalingKeys[ScalingIndex].mValue;
+//     const aiVector3D& End   = pNodeAnim->mScalingKeys[NextScalingIndex].mValue;
+//     aiVector3D Delta = End - Start;
+//     Out = Start + Factor * Delta;
+// }
 
 void Mesh::cleanup() {
     glDeleteVertexArrays(1, &VAO);
