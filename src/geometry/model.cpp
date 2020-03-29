@@ -16,9 +16,10 @@ Model::Model(string const &path, bool gamma = false) : gamma_correction(gamma)
 
 void Model::load_model(string const &path) {
     // read file via ASSIMP
-    scene = importer.ReadFile(path, aiProcess_Triangulate           |
+    scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_Fast |
+                                    aiProcess_Triangulate           |
                                     aiProcess_LimitBoneWeights      |
-                                    aiProcess_GenUVCoords           |          
+                                    aiProcess_FlipUVs               |          
                                     aiProcess_GenSmoothNormals      |
                                     aiProcess_OptimizeMeshes        |
                                     aiProcess_OptimizeGraph         |

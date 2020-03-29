@@ -49,10 +49,11 @@ vec3 ApplyLight(Light light, vec3 surfaceColor, vec3 normal, vec3 surfacePos, ve
     vec3 diffuse = diffuseCoefficient * surfaceColor.rgb * light.intensities;
     
     //specular
-    float specularCoefficient = 0.0;
-    if(diffuseCoefficient > 0.0)
-        specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), materialShininess);
-    vec3 specular = specularCoefficient * materialSpecularColor * light.intensities;
+    // float specularCoefficient = 0.0;
+    // if(diffuseCoefficient > 0.0)
+    //     specularCoefficient = pow(max(0.0, dot(surfaceToCamera, reflect(-surfaceToLight, normal))), materialShininess);
+    // vec3 specular = specularCoefficient * materialSpecularColor * light.intensities;
+    vec3 specular = vec3(0.0);
 
     //linear color (color before gamma correction)
     return ambient + attenuation*(diffuse + specular);
@@ -73,9 +74,11 @@ void main() {
     vec3 linearColor = vec3(0);
     for(int i = 0; i < numLights; ++i){
         linearColor += ApplyLight(allLights[i], surfaceColor.rgb, normal, surfacePos, surfaceToCamera);
+        
     }
     
     //final color (after gamma correction)
-    vec3 gamma = vec3(1); // vec3(1.0/2.2);
+    // vec3 gamma = vec3(1.0/2.2);
+    vec3 gamma = vec3(1.0);
     finalColor = vec4(pow(linearColor, gamma), surfaceColor.a);
 }
