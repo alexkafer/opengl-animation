@@ -11,13 +11,13 @@ Ball::Ball(float radius) {
     _sphere = Sphere(radius, 36, 18);
 }
 
-bool Ball::check_collision(const glm::vec3 & a, const glm::vec3 & b, float radius_offset) {
+bool Ball::check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) {
     if (a == b) {
-        float x = (a.x - _origin.x);
-        float z = (b.z - _origin.z);
+        float x = (a.first.x - _origin.x);
+        float z = (b.first.z - _origin.z);
         return (x*x + z*z) < ((_radius + radius_offset) * (_radius + radius_offset));
     } else {
-        float d = glm::length(glm::cross(_origin - a, _origin - b)) / glm::length(b - a);
+        float d = glm::length(glm::cross(_origin - a.first, _origin - b.first)) / glm::length(b.first - a.first);
         return d <= (_radius + radius_offset);
     }
 }

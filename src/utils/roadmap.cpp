@@ -12,7 +12,7 @@
 Roadmap::Roadmap(int milestones) {
     _milestones_count = milestones;
 
-    _milestones = std::vector<glm::vec3>();
+    _milestones = std::vector<orientation_state>();
     _adj = new std::vector<std::pair<int, float>>[milestones]; 
 }
 
@@ -20,7 +20,7 @@ Roadmap::~Roadmap() {
     delete []_adj;
 }
 
-const std::vector<glm::vec3> & Roadmap::get_milestones() {
+const std::vector<orientation_state> & Roadmap::get_milestones() {
     return _milestones;
 }
 
@@ -31,8 +31,8 @@ std::vector<glm::vec3> Roadmap::get_edges() {
     {
         for (auto it = _adj[u].begin(); it!= _adj[u].end(); it++) 
         { 
-            edges.push_back(_milestones.at(u));
-            edges.push_back(_milestones.at(it->first));
+            edges.push_back(_milestones.at(u).first);
+            edges.push_back(_milestones.at(it->first).first);
         }
     } 
 
@@ -48,8 +48,8 @@ void Roadmap::clear() {
     }
 }
 
-int Roadmap::add_milestone(glm::vec3 point) {
-    _milestones.push_back(point);
+int Roadmap::add_milestone(orientation_state state) {
+    _milestones.push_back(state);
 
     return _milestones.size() - 1;
 }
@@ -59,7 +59,7 @@ void Roadmap::add_edge(int u, int v, float distance) {
     _adj[v].push_back(std::make_pair(u, distance)); 
 }
 
-std::vector<glm::vec3> Roadmap::dijkstra_path(int src, int dest) {
+std::vector<orientation_state> Roadmap::dijkstra_path(int src, int dest) {
     std::priority_queue<std::pair<int, int>, std::vector <std::pair<int, int>>, std::greater<std::pair<int, int>>> pq;
 
     std::vector<int> dist(_milestones_count, std::numeric_limits<int>::max()); 
@@ -89,7 +89,7 @@ std::vector<glm::vec3> Roadmap::dijkstra_path(int src, int dest) {
         } 
     }
 
-    std::vector<glm::vec3> path;
+    std::vector<orientation_state> path;
    
     int i = dest;
     while(i != -1) {

@@ -9,27 +9,28 @@ static const float SPEED = 6.f; // 5 meters (units) per second
 class Entity: public Renderable {
 protected:
     float _radius;
-    glm::vec3 _forward;
 
-    // Path Finding
-    std::vector<glm::vec3> _current_path;
+    // Rotation Animation
+    float rotation_t, rotation_total;
 
-    // Animation
-    float t, step_time;
-
+    glm::vec3 _velocity;
+    // glm::vec3 _acceleration;
 public:
     Entity();
-    Entity(glm::vec3 scale);
+    Entity(glm::vec3 scale, glm::vec3 direction);
     
-    void calculate_animation();
-    void navigate_to(glm::vec3 target); 
+    // void calculate_animation();
+    virtual void navigate_to(orientation_state target); 
 
     virtual void reset(); 
     virtual void update(float dt); 
-    virtual bool check_collision(const glm::vec3 & a, const glm::vec3 & b, float radius_offset) = 0; 
+    virtual bool check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) = 0; 
 
-    std::vector<glm::vec3> get_current_path();
+    std::vector<orientation_state> get_current_path();
     float get_radius();
+
+    friend class FollowPathBehavior;
+    friend class BoidBehavior;
 };
 
 #endif // ENTITY_H

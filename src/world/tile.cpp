@@ -24,7 +24,7 @@ static const std::map<TileType,const char*> TileModels {
 };
 
 
-Tile::Tile(TileOrientation state): Renderable(glm::vec3(0.005f))
+Tile::Tile(TileOrientation state): Renderable(glm::vec3(0.005f), glm::vec3(1.f, 0.f, 0.f))
 {
    _state = state;
 }
@@ -37,9 +37,10 @@ void Tile::init(Shader & shader) {
 
     _model = new Model(model_ss.str(), false);
 
-    if (_state.second != -1) {
-        _model->set_rotation(glm::angleAxis(glm::radians(-90.f * _state.second), glm::vec3(0.f, 1.f, 0.f)));
-    }
+    // This should use direction instead of rotation
+    // if (_state.second != -1) {
+    //     _model->set_rotation(glm::angleAxis(glm::radians(-90.f * _state.second), glm::vec3(0.f, 1.f, 0.f)));
+    // }
     
     Globals::scene->add_renderable(_model, this);
 }

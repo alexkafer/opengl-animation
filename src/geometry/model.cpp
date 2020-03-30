@@ -16,7 +16,7 @@ Model::Model(string const &path, bool gamma = false) : gamma_correction(gamma)
 
 void Model::load_model(string const &path) {
     // read file via ASSIMP
-    scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_Fast |
+    this->scene = importer.ReadFile(path, aiProcessPreset_TargetRealtime_Fast |
                                     aiProcess_Triangulate           |
                                     aiProcess_LimitBoneWeights      |
                                     aiProcess_FlipUVs               |          
@@ -24,6 +24,7 @@ void Model::load_model(string const &path) {
                                     aiProcess_OptimizeMeshes        |
                                     aiProcess_OptimizeGraph         |
                                     aiProcess_FixInfacingNormals    |
+                                    aiProcess_FindInvalidData |
                                     aiProcess_SortByPType           
                                     // aiProcess_PreTransformVertices
     );
@@ -31,7 +32,7 @@ void Model::load_model(string const &path) {
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
         cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
-        return;
+        throw 0;
     }
  
     // retrieve the directory path of the filepath
@@ -158,6 +159,8 @@ std::string CreateBoneUniform(size_t boneIndex) {
 }
 
 void Model::update_animation(float time) {
+    if (!scene->HasAnimations()) return;
+
     float ticks_per_second = (float)(scene->mAnimations[0]->mTicksPerSecond != 0 ? scene->mAnimations[0]->mTicksPerSecond : 25.0f);
     float time_in_ticks = time * ticks_per_second;
     float animation_time = fmod(time_in_ticks, (float)scene->mAnimations[0]->mDuration);

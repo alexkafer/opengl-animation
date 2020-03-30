@@ -8,6 +8,7 @@
 #include "renderers/lines.h"
 #include "entities/entity.h"
 #include "geometry/particles.h"
+#include "geometry/model.h"
 
 #include "world/world.h"
 
@@ -21,6 +22,7 @@ class Scene {
         Phong * renderer;
         PathRenderer * path_renderer;
         std::vector<Entity*> entities;
+        std::map<std::string, Model*> loaded_models;
 
         Roadmap * roadmap;
         
@@ -30,10 +32,12 @@ class Scene {
         void populate_roadmap(Entity * entity);
     public:
         Scene();
+        Model * load_model(std::string path);
+        orientation_state get_random_orientation();
 
         glm::vec3 find_collision(glm::vec3 origin, glm::vec3 direction);
-        bool check_collisions(const glm::vec3 & a, const glm::vec3 & b, Entity * entity);
-        std::vector<glm::vec3> find_path(glm::vec3 start, glm::vec3 destination, Entity * entity);
+        bool check_collisions(const orientation_state & a, const orientation_state & b, Entity * entity);
+        std::vector<orientation_state> find_path(orientation_state destination, Entity * entity);
 
         void add_entity(Entity * entity);
         void add_renderable(Renderable * renderable, Renderable * parent = nullptr);

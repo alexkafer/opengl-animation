@@ -20,6 +20,7 @@
 
 #include "entities/ball.h"
 #include "entities/player.h"
+#include "entities/bird.h"
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
@@ -102,8 +103,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_LEFT_SHIFT: Globals::camera_target.y -= camera_distance; break;
 			case GLFW_KEY_SPACE: Globals::camera_target.y += camera_distance; break;
 			case GLFW_KEY_R: Globals::scene->reset(); break;
-			case GLFW_KEY_N: avatar->navigate_to(glm::vec3(9.f, 0.5f, 9.f)); break;
-			case GLFW_KEY_M: avatar->navigate_to(glm::vec3(-9.f, 0.5f, -9.f)); break;
 			case GLFW_KEY_W: Globals::camera_target += camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
@@ -150,7 +149,7 @@ void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
 			target.y = 0.5f;
 
 			std::cout << "New target: " << glm::to_string(target) << std::endl;
-			avatar->navigate_to(target);
+			avatar->navigate_to({target, avatar->get_direction()});
 		} catch (...){}
 	}
 }
@@ -246,9 +245,14 @@ void lookAt(glm::vec3 center)
 void setup_scene() {
 	Globals::scene->init();
         
-	avatar = new Player(0.8f);
+	avatar = new Player(1.2f);
 	avatar->set_position(glm::vec3(-9.f, 0.5f, -9.f));
 	Globals::scene->add_entity(avatar);
+
+	for (size_t i = 0; i < 10; i++) {
+		Bird * bird = new Bird(0.25f);
+		Globals::scene->add_entity(bird);
+	}
 
 	obstacle = new Ball(5.f);
 	obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));

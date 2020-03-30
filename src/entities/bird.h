@@ -1,21 +1,21 @@
-#ifndef BALL_H
-#define BALL_H
+#ifndef BIRD_H
+#define BIRD_H
 
 #include <vector>
 #include "../utils/shader.h"
 
 #include "../entities/entity.h"
-#include "../geometry/sphere.h"
+#include "../geometry/model.h"
+#include "../behaviors/boid.h"
 
-class Ball: public Entity{
-    Sphere _sphere;
-
-    GLuint vao;
-    GLuint vbo;
-    GLuint ibo;
-
+class Bird: public Entity {
+    Model * _model;
+    BoidBehavior * boids;
 public:
-    Ball(float radius);
+    Bird(float radius);
+    ~Bird();
+
+    double time;
 
     bool check_collision(const orientation_state & a, const orientation_state & b, float body_radius);
 
@@ -27,4 +27,4 @@ public:
 
 };
 
-#endif // BALL_H
+#endif // BIRD_H

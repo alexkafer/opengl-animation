@@ -240,6 +240,8 @@ set(MY_SOURCES
 	src/utils/texture.cpp
 	src/utils/roadmap.cpp
 	src/utils/tile_solver.cpp
+	src/behaviors/boid.cpp
+	src/behaviors/follow_path.cpp
     src/scene.cpp
     src/renderers/phong.cpp
     src/renderers/lines.cpp
@@ -254,6 +256,7 @@ set(MY_SOURCES
     src/entities/entity.cpp
     src/entities/ball.cpp
     src/entities/player.cpp
+    src/entities/bird.cpp
     src/world/world.cpp
     src/world/tile.cpp
 )

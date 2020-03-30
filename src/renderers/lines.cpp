@@ -2,7 +2,6 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../common.h"
 #include "../geometry/model.h"
 
 PathRenderer::PathRenderer() {
@@ -16,7 +15,7 @@ PathRenderer::PathRenderer() {
     glEnable(GL_PROGRAM_POINT_SIZE);
 }
 
-void PathRenderer::draw_milestones(const std::vector<glm::vec3> milestones, const glm::vec4 color) {
+void PathRenderer::draw_milestones(const std::vector<orientation_state> milestones, const glm::vec4 color) {
     if (milestones.size() == 0) return;
 
     shader.enable();

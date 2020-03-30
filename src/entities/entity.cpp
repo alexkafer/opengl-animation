@@ -9,84 +9,27 @@
 
 
 
-Entity::Entity(glm::vec3 scale): Renderable(scale) {
-    t = 0.f;
-    step_time = 0.f;
-    _forward = glm::vec3(0.f, 0.f, 1.f);
-
-    _current_path = std::vector<glm::vec3>(1, glm::vec3(0.0f));
+Entity::Entity(glm::vec3 scale, glm::vec3 direction): Renderable(scale, direction) {
+    _velocity = glm::vec3(0.f);
 }
 
-Entity::Entity(): Entity(glm::vec3(1.f)) {}
-
-// Animated position
-void Entity::calculate_animation() {
-    t = 0.0f;
-
-    if (_current_path.size() > 1) {
-        _current_path.back() = _origin;
-
-        glm::vec3 target = _current_path.end()[-2];
-        glm::vec3 target_direction = glm::normalize(target - _origin); 
-
-        float angle = atan2( target_direction.x, target_direction.z);
-
-        this->set_rotation(glm::quat(cos(angle/2.f), 0.f, sin(angle/2.f), 0.f));
-
-        float distance = glm::distance(_origin, target);
-        step_time = distance / SPEED;
-    } else {
-        step_time = 0.0f;
-    }
-}
+Entity::Entity(): Entity(glm::vec3(1.f), glm::vec3(1.f, 0.f, 0.f)) {}
 
 void Entity::update(float dt) {
-    // _current_path always has the expected destination in front ([0]) 
-    // and current position (_origin) greater than or equal to the back
-    
-    // If path is 1, thats just the current position and we're not moving 
-    if (_current_path.size() > 1) {
-
-        // Path smoothing
-        // If there is a clear shot to the target, remove the in-between
-        for (std::vector<glm::vec3>::iterator future_target = _current_path.begin(); future_target < _current_path.end() - 2; future_target++) {
-            
-            if (!Globals::scene->check_collisions(_origin, *future_target, this)) {
-                _current_path.erase(future_target + 1, _current_path.end()-1);
-                // _current_path.push_back(_origin);
-                calculate_animation();
-                break;
-            }
-        }
-
-        // We are in the process of LERPing to the next point in the path 
-        if (t < step_time ) {
-            // LERP from the back to the second to back
-            t += dt;
-            _origin = glm::mix(_current_path.back(), _current_path[_current_path.size()-2], t / step_time);
-        } else {
-            // Made it to the end. _origin is now the second to back, so drop the old back
-            if (t > step_time) _current_path.pop_back();
-            // start a new animation if necessary
-            calculate_animation();
-        }
-    }             
+    // Update the current rotation based on direction the entity is facing
+    // float current_angle = atan2( _direction.x, _direction.z);
+    // _rotation = glm::quat(cos(current_angle/2.f), 0.f, sin(current_angle/2.f), 0.f);  
 }
 
-void Entity::reset() {
-    t = 0;
-    step_time = 0;
-    _current_path.clear();
+void Entity::reset() {}
+
+void Entity::navigate_to(orientation_state pos) {
+    std::cout << "Not exactly sure how to get there. I'm not real. " << std::endl;
+    throw 0;
 }
 
-void Entity::navigate_to(glm::vec3 pos) {
-    std::cout << "Navigating to " << glm::to_string(pos) << std::endl;
-    _current_path = Globals::scene->find_path(_origin, pos, this);
-    calculate_animation();
-}
-
-std::vector<glm::vec3> Entity::get_current_path() {
-    return _current_path;
+std::vector<orientation_state> Entity::get_current_path() {
+    return {{_origin + _direction, _direction}, {_origin, _direction}};
 }
 
 float Entity::get_radius() {

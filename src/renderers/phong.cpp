@@ -89,6 +89,7 @@ void Phong::draw() {
 
 void Phong::render_objects(std::vector<Renderable *> renderables, glm::mat4 parent_model) {
     if (renderables.size() == 0) return;
+    
     for(auto t=renderables.begin(); t!=renderables.end(); ++t) {
         
         check_gl_error();

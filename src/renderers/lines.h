@@ -5,6 +5,7 @@
 #include <array>
 #include <glm/mat4x4.hpp>
 
+#include "../common.h"
 #include "../utils/shader.h"
 
 
@@ -19,7 +20,7 @@ class PathRenderer
         PathRenderer();
 
         void draw_edges(const std::vector<glm::vec3> edges, const glm::vec4 color);
-        void draw_milestones(const std::vector<glm::vec3> milestones, const glm::vec4 color);
+        void draw_milestones(const std::vector<orientation_state> milestones, const glm::vec4 color);
         void cleanup();
 };
 #endif // LINE_RENDERER_H

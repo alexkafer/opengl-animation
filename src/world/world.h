@@ -9,12 +9,15 @@
 class World: public Renderable
 {
 private:
+    float x_dim, z_dim;
     std::vector<std::vector<Tile *>> tiles;
-    TileSolver solver;
+    // TileSolver solver;
     Model * world_model;
 public:
-    World(size_t dims);
+    World(float x_dim, float z_dim);
     ~World();
+
+    glm::vec3 get_random_point();
 
     void init(Shader & shader); 
     void draw(Shader & shader); 
