@@ -15,6 +15,8 @@ Roadmap::Roadmap(int milestones) {
 
     _milestones = std::vector<orientation_state>();
     _adj = new std::vector<std::pair<int, float>>[milestones]; 
+
+    _renderable_edges = std::vector<uint>();
 }
 
 Roadmap::~Roadmap() {
@@ -25,19 +27,22 @@ const std::vector<orientation_state> & Roadmap::get_milestones() {
     return _milestones;
 }
 
-std::vector<glm::vec3> Roadmap::get_edges() {
-    std::vector<glm::vec3> edges; 
+void Roadmap::calculate_edges() {
+    _renderable_edges.clear();
 
     for (int u = 0; u < _milestones_count; u++) 
     {
+        _renderable_edges.reserve(2 * _adj[u].size());
         for (auto it = _adj[u].begin(); it!= _adj[u].end(); it++) 
         { 
-            edges.push_back(_milestones.at(u).first);
-            edges.push_back(_milestones.at(it->first).first);
+            _renderable_edges.push_back(u);
+            _renderable_edges.push_back(it->first);
         }
-    } 
+    }
+}
 
-    return edges;
+const std::vector<uint> & Roadmap::get_edges() {
+    return _renderable_edges;
 }
 
 void Roadmap::clear() {

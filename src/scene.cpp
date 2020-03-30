@@ -74,8 +74,8 @@ void Scene::init() {
 void Scene::draw(float dt) {
     renderer->draw();
     
-    path_renderer->draw_milestones(roadmap->get_milestones(), glm::vec4(0.f, 0.f, 0.f, 0.5f));
-    // path_renderer->draw_edges(roadmap->get_edges(), glm::vec4(0.f, 0.f, 0.f, 0.1f));
+    path_renderer->draw_graph(roadmap->get_milestones(), roadmap->get_edges(), glm::vec4(0.f, 0.f, 0.f, 0.5f));
+    // path_renderer->draw_edges(roadmap->get_edges(), glm::vec4(0.f, 0.f, 0.f, 0.2f));
 
     for(auto t=entities.begin(); t!=entities.end(); ++t) {
         std::vector<orientation_state> path = (*t)->get_current_path();
@@ -148,6 +148,8 @@ void Scene::populate_roadmap(Entity * entity) {
             }
         }
     }
+    // Let the roadmap know we're done, so it should compute the renderable graph
+    roadmap->calculate_edges();
 }
 
 std::vector<orientation_state> Scene::find_path(orientation_state destination, Entity * entity) {

@@ -33,7 +33,7 @@ public:
     virtual void update(float dt); 
     virtual bool check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) = 0; 
 
-    std::vector<orientation_state> get_current_path();
+    virtual std::vector<orientation_state> get_current_path();
     float get_radius();
 
     EntityType get_type() {return _type;}
