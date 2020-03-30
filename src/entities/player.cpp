@@ -8,7 +8,7 @@
 #include "../utils/roadmap.h"
 #include "../scene.h"
 
-Player::Player(float radius): Entity(glm::vec3(0.04f), glm::vec3(0.f, 0.f, 1.f)), path_behavior(this) {
+Player::Player(float radius): Entity(PlayerEntity, glm::vec3(0.04f), glm::vec3(0.f, 0.f, 1.f)), path_behavior(this) {
     _radius = radius;
 }
 
@@ -33,13 +33,9 @@ void Player::update(float dt) {
     Entity::update(dt);
     path_behavior.update(dt);
 
-    
-
-    if (glm::length2(_velocity) > 0.0001f) {
+    if (path_behavior.is_animating()) {
         time += dt;
         _model->update_animation(time);
-    } else {
-        time = 0.f;
     }
 }
 

@@ -45,7 +45,7 @@ static size_t spatial_hashing_func(const glm::vec3 & key) {
 
 void Cloth::reset() {};
 
-Cloth::Cloth(size_t x_dim, size_t y_dim) {
+Cloth::Cloth(size_t x_dim, size_t y_dim): Entity(ObstacleEntity) {
     _x_dim = x_dim;
     _y_dim = y_dim;
     _total = x_dim * y_dim;

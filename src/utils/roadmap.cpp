@@ -9,6 +9,7 @@
 #include <queue>          // std::priority_queue
 #include <functional>     // std::greater
 
+
 Roadmap::Roadmap(int milestones) {
     _milestones_count = milestones;
 
@@ -84,6 +85,12 @@ std::vector<orientation_state> Roadmap::dijkstra_path(int src, int dest) {
                 // Updating distance of v 
                 dist[v] = dist[u] + weight; 
                 parent[v] = u;
+
+                // If we found our target
+                if (v == dest) {
+                    pq.empty();
+                    break;
+                }
                 pq.push(std::make_pair(dist[v], v)); 
             } 
         } 
@@ -93,9 +100,74 @@ std::vector<orientation_state> Roadmap::dijkstra_path(int src, int dest) {
    
     int i = dest;
     while(i != -1) {
-        path.push_back(_milestones.at(i));
+        path.push_back(_milestones[i]);
         i = parent[i];
     }
+
+    // Smooth the orientations, if we can. This is done by moving backwards through the path 
+    for (std::vector<orientation_state>::reverse_iterator i = path.rbegin() + 1; i != path.rend(); ++i ) { 
+        glm::vec3 last_pos = i[-1].first;
+        glm::vec3 current_pos = i[0].first;
+        i->second = glm::normalize(current_pos - last_pos);
+    } 
+
+    return path;
+}
+
+float Roadmap::heuristic(int node, int goal) {
+    return glm::distance(_milestones[node].first, _milestones[goal].first);
+}
+
+std::vector<orientation_state> Roadmap::a_star_path(int src, int dest) {
+    std::priority_queue<std::pair<int, int>, std::vector <std::pair<int, int>>, std::greater<std::pair<int, int>>> pq;
+
+    std::vector<int> dist(_milestones_count, std::numeric_limits<int>::max()); 
+    std::vector<int> parent(_milestones_count, -1); 
+
+    pq.push(std::make_pair(0, src)); 
+    dist[src] = 0; 
+
+    while (!pq.empty()) 
+    { 
+        int u = pq.top().second; 
+        pq.pop(); 
+  
+        for (auto x : _adj[u])
+        { 
+            int v = x.first; 
+            int weight = x.second; 
+  
+            //  If there is shorted path to v through u. 
+            if (dist[v] > dist[u] + weight) 
+            { 
+                // Updating distance of v 
+                dist[v] = dist[u] + weight; 
+                parent[v] = u;
+
+                // If we found our target
+                if (v == dest) {
+                    pq.empty();
+                    break;
+                }
+                pq.push(std::make_pair(dist[v] + heuristic(v, dest), v)); 
+            } 
+        } 
+    }
+
+    std::vector<orientation_state> path;
+   
+    int i = dest;
+    while(i != -1) {
+        path.push_back(_milestones[i]);
+        i = parent[i];
+    }
+
+    // Smooth the orientations, if we can. This is done by moving backwards through the path 
+    for (std::vector<orientation_state>::reverse_iterator i = path.rbegin() + 1; i != path.rend(); ++i ) { 
+        glm::vec3 last_pos = i[-1].first;
+        glm::vec3 current_pos = i[0].first;
+        i->second = glm::normalize(current_pos - last_pos);
+    } 
 
     return path;
 }

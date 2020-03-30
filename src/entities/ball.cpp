@@ -6,7 +6,7 @@
 
 #include "../utils/roadmap.h"
 
-Ball::Ball(float radius) {
+Ball::Ball(float radius): Entity(ObstacleEntity) {
     _radius = radius;
     _sphere = Sphere(radius, 36, 18);
 }

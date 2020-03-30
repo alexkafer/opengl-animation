@@ -146,7 +146,7 @@ void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
 		try
 		{
 			glm::vec3 target = Globals::scene->find_collision(Globals::eye_pos, ray_world);
-			target.y = 0.5f;
+			target.y = 0.f;
 
 			std::cout << "New target: " << glm::to_string(target) << std::endl;
 			avatar->navigate_to({target, avatar->get_direction()});
@@ -246,7 +246,7 @@ void setup_scene() {
 	Globals::scene->init();
         
 	avatar = new Player(1.2f);
-	avatar->set_position(glm::vec3(-9.f, 0.5f, -9.f));
+	avatar->set_position(glm::vec3(-9.f, 0.0f, -9.f));
 	Globals::scene->add_entity(avatar);
 
 	for (size_t i = 0; i < 10; i++) {

@@ -10,7 +10,7 @@
 
 class Bird: public Entity {
     Model * _model;
-    BoidBehavior * boids;
+    BoidBehavior boid_behavior;
 public:
     Bird(float radius);
     ~Bird();

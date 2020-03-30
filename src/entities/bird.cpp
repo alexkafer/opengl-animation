@@ -8,11 +8,11 @@
 #include "../utils/roadmap.h"
 #include "../scene.h"
 
-Bird::Bird(float radius): Entity(glm::vec3(radius), glm::vec3(0.f, 0.f, -1.f)) {
+Bird::Bird(float radius): Entity(BirdEntity, glm::vec3(radius), glm::vec3(1.f, 0.f, 0.f)), boid_behavior(this) {
     _radius = radius;
-    _direction = glm::vec3(0.f, 0.f, 1.f);
+   
 
-    orientation_state state = Globals::scene->get_random_orientation();
+    orientation_state state = Globals::scene->get_random_orientation(false);
     set_position(state.first);
     set_direction(state.second);
 }
@@ -37,8 +37,9 @@ void Bird::reset() {
 void Bird::update(float dt) {
     Entity::update(dt);
 
-    time += dt;
+    boid_behavior.update(dt);
 
+    time += dt;
     _model->update_animation(time);
 }
 

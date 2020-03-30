@@ -7,13 +7,11 @@
 #include "../common.h"
 #include "../scene.h"
 
-
-
-Entity::Entity(glm::vec3 scale, glm::vec3 direction): Renderable(scale, direction) {
+Entity::Entity(EntityType type, glm::vec3 scale, glm::vec3 model_direction): Renderable(scale, model_direction) {
     _velocity = glm::vec3(0.f);
 }
 
-Entity::Entity(): Entity(glm::vec3(1.f), glm::vec3(1.f, 0.f, 0.f)) {}
+Entity::Entity(EntityType type): Entity(type, glm::vec3(1.f), glm::vec3(1.f, 0.f, 0.f)) {}
 
 void Entity::update(float dt) {
     // Update the current rotation based on direction the entity is facing

@@ -7,8 +7,9 @@
 // Inspired by the algorithms here:
 // https://ijdykeman.github.io/ml/2017/10/12/wang-tile-procedural-generation.html
 
-World::World(float x_dim, float z_dim) {
+World::World(float x_dim, float y_dim, float z_dim) {
     this->x_dim = x_dim;
+    this->y_dim = y_dim;
     this->z_dim = z_dim;
     // tiles = std::vector<std::vector<Tile *>>(dims, std::vector<Tile*>(dims));
 
@@ -27,7 +28,7 @@ World::~World() {
     cleanup();
 }
 
-glm::vec3 World::get_random_point() {
+glm::vec3 World::get_random_point(bool ground) {
     float X_HI = x_dim / 2.f;
     float X_LO = -X_HI;
 
@@ -36,7 +37,7 @@ glm::vec3 World::get_random_point() {
 
     return glm::vec3(
         X_LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(X_HI-X_LO))),
-        0.5f,
+        ground ? 0.0f : static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(y_dim))),
         Z_LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(Z_HI-Z_LO))));
 }
 

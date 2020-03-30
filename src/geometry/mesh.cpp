@@ -165,8 +165,6 @@ void Mesh::init(Shader & shader)
 {
     shader.enable();
 
-    std::cout << "Mesh init called" << std::endl;
-
     GLint attribVertexPosition  = shader.attribute("in_position");
     GLint attribVertexNormal  = shader.attribute("in_normal");
     GLint attribVertexTextureCoord  = shader.attribute("in_texture_coord");

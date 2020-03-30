@@ -2,13 +2,15 @@
 #define ROADMAP_H
 
 #include <vector>
+#include <unordered_map>
 #include "../common.h"
+
+typedef std::pair<int, float> weighted_edge;
 
 class Roadmap {
     std::vector<orientation_state> _milestones;
     std::vector<std::pair<int, float>> * _adj;
     int _milestones_count;
-
 public:
     Roadmap(int milestones);
     ~Roadmap();
@@ -21,6 +23,9 @@ public:
     void add_edge(int u, int v, float distance);
 
     std::vector<orientation_state> dijkstra_path(int src, int dest);
+
+    float heuristic(int node, int goal);
+    std::vector<orientation_state> a_star_path(int src, int dest);
 };
 
 #endif // ROADMAP_H

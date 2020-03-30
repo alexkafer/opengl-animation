@@ -6,9 +6,16 @@
 
 static const float SPEED = 6.f; // 5 meters (units) per second
 
+enum EntityType { 
+    ObstacleEntity,
+    BirdEntity,
+    PlayerEntity
+};
+
 class Entity: public Renderable {
 protected:
     float _radius;
+    EntityType _type;
 
     // Rotation Animation
     float rotation_t, rotation_total;
@@ -16,8 +23,8 @@ protected:
     glm::vec3 _velocity;
     // glm::vec3 _acceleration;
 public:
-    Entity();
-    Entity(glm::vec3 scale, glm::vec3 direction);
+    Entity(EntityType type);
+    Entity(EntityType type, glm::vec3 scale, glm::vec3 direction);
     
     // void calculate_animation();
     virtual void navigate_to(orientation_state target); 
@@ -28,6 +35,8 @@ public:
 
     std::vector<orientation_state> get_current_path();
     float get_radius();
+
+    EntityType get_type() {return _type;}
 
     friend class FollowPathBehavior;
     friend class BoidBehavior;

@@ -33,8 +33,9 @@ class Scene {
     public:
         Scene();
         Model * load_model(std::string path);
-        orientation_state get_random_orientation();
+        orientation_state get_random_orientation(bool ground);
 
+        std::vector<Entity*> get_nearby_entities(Entity * nearby, float radius);
         glm::vec3 find_collision(glm::vec3 origin, glm::vec3 direction);
         bool check_collisions(const orientation_state & a, const orientation_state & b, Entity * entity);
         std::vector<orientation_state> find_path(orientation_state destination, Entity * entity);
