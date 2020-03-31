@@ -20,7 +20,7 @@ class Scene {
         GLuint vao;
 
         Phong * renderer;
-        PathRenderer * path_renderer;
+        LineRenderer * path_renderer;
         std::vector<Entity*> entities;
         std::map<std::string, Model*> loaded_models;
 

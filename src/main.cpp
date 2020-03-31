@@ -21,6 +21,7 @@
 #include "entities/ball.h"
 #include "entities/player.h"
 #include "entities/bird.h"
+#include "entities/box.h"
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
@@ -254,9 +255,15 @@ void setup_scene() {
 		Globals::scene->add_entity(bird);
 	}
 
-	obstacle = new Ball(5.f);
-	obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));
-	Globals::scene->add_entity(obstacle);
+	for (size_t i = 0; i < 3; i++) {
+		Box * box = new Box(0.25f, Wide);
+		Globals::scene->add_entity(box);
+	}
+
+	for (size_t i = 0; i < 3; i++) {
+		Box * box = new Box(0.25f, Single);
+		Globals::scene->add_entity(box);
+	}
 }
 
 //

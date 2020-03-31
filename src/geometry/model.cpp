@@ -67,21 +67,25 @@ void Model::processNode(aiNode *node, Renderable * parent)
 {
     Renderable * node_placeholder = new DummyRenderable();
     node_placeholder->set_transformation(aiMatrix4x4ToGlm(&node->mTransformation));
-    Globals::scene->add_renderable(node_placeholder, parent);
 
     // process each mesh located at the current node
     for(unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        // Mesh * mesh = ;
-        Globals::scene->add_renderable(processMesh(scene->mMeshes[node->mMeshes[i]]), node_placeholder);
+        Mesh * mesh = processMesh(scene->mMeshes[node->mMeshes[i]]);
+
+        Globals::scene->add_renderable(mesh, node_placeholder);
     }
+
     // after we've processed all of the meshes (if any) wqe then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
     {
         processNode(node->mChildren[i], node_placeholder);
     }
+
+    node_placeholder->update_bounding_box();
+    Globals::scene->add_renderable(node_placeholder, parent);
 }
 
 Mesh * Model::processMesh(aiMesh * mesh) {

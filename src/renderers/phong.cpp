@@ -98,16 +98,15 @@ void Phong::render_objects(std::vector<Renderable *> renderables, glm::mat4 pare
         glm::mat4 translate_matrix = glm::translate( glm::mat4(1.0f), (*t)->get_position());
         glm::mat4 rotation_matrix = glm::toMat4((*t)->get_rotation());
         glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), (*t)->get_scale());
-        glm::mat4 model = parent_model * (*t)->get_transformation() * translate_matrix * rotation_matrix * scale_matrix;
-        // glm::mat4 model = parent_model * (*t)->get_transformation();
+        (*t)->_model = parent_model * (*t)->get_transformation() * translate_matrix * rotation_matrix * scale_matrix;
 
-        glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(model)); // model matrix
+        glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr((*t)->_model)); // model matrix
         check_gl_error();
         (*t)->draw(shader);
         check_gl_error();
 
         // std::cout << "has children " << (*t)->get_children().size() << std::endl;
-        render_objects((*t)->get_children(), model);
+        render_objects((*t)->get_children(), (*t)->_model);
     }
 }
 

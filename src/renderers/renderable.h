@@ -42,6 +42,8 @@ static glm::quat RotationBetweenVectors(glm::vec3 start, glm::vec3 dest){
 
 
 class Renderable {
+private:
+    glm::mat4 _model;
 protected:
     glm::vec3 _scale;
     glm::vec3 _origin;
@@ -49,10 +51,12 @@ protected:
     glm::vec3 _direction;
     glm::quat _rotation;
     glm::mat4 _transformation;
+    
+    bounding_box bbox;
     std::vector<Renderable *> _children;
 public:
     Renderable(const glm::vec3 & scale, const glm::vec3 & model_direction): 
-        _direction(1.f, 0.f, 0.f), _model_direction(model_direction), _origin(0.f), _scale(scale), _rotation(1.f, 0.f, 0.f, 0.f), _transformation(1.f) {};
+        bbox({glm::vec3(0.f), glm::vec3(0.f)}), _direction(1.f, 0.f, 0.f), _model_direction(model_direction), _origin(0.f), _scale(scale), _rotation(1.f, 0.f, 0.f, 0.f), _transformation(1.f) {};
     Renderable(): Renderable(glm::vec3(1.f), glm::vec3(1.f, 0.f, 0.f)) {};
 
     virtual void init(Shader & shader) = 0; 
@@ -79,6 +83,7 @@ public:
         return rot2 * rot1;
     }
 
+
     virtual void set_direction(glm::vec3 direction) { 
         _direction = direction;
         _rotation = calculate_rotation(direction);
@@ -96,8 +101,22 @@ public:
     virtual glm::vec3 get_scale() { return _scale; }
     virtual void set_scale(glm::vec3 scale) {  _scale = scale; }
 
+    virtual void update_bounding_box() {
+        bbox.first = _transformation * glm::vec4(bbox.first, 0);
+        bbox.second = _transformation * glm::vec4(bbox.second, 0);
+    }
+    virtual bounding_box& get_bounding_box() { return bbox; }
+
     std::vector<Renderable *> get_children() { return _children; }
-    void add_child(Renderable * child) { _children.push_back(child);}
+    void add_child(Renderable * child) { 
+        _children.push_back(child);
+        
+        bbox.first = glm::max(bbox.first, child->bbox.first);
+        bbox.second = glm::min(bbox.second, child->bbox.second);
+    }
+
+    friend class Phong;
+    friend class LineRenderer;
 };
 
 class DummyRenderable: public Renderable {

@@ -255,6 +255,7 @@ set(MY_SOURCES
     src/geometry/floor.cpp
     src/entities/entity.cpp
     src/entities/ball.cpp
+    src/entities/box.cpp
     src/entities/player.cpp
     src/entities/bird.cpp
     src/world/world.cpp

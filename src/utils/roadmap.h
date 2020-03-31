@@ -11,16 +11,13 @@ class Roadmap {
     std::vector<orientation_state> _milestones;
     std::vector<std::pair<int, float>> * _adj;
     int _milestones_count;
-
-    std::vector<unsigned int> _renderable_edges;
 public:
     Roadmap(int milestones);
     ~Roadmap();
     void clear();
     void print();
 
-    void calculate_edges();
-    const std::vector<unsigned int> & get_edges();
+    std::vector<unsigned int> get_edges();
     const std::vector<orientation_state> & get_milestones();
     int add_milestone(orientation_state state);
     void add_edge(int u, int v, float distance);

@@ -36,6 +36,8 @@ public:
     virtual std::vector<orientation_state> get_current_path();
     float get_radius();
 
+    void draw_bounding_box();
+
     EntityType get_type() {return _type;}
 
     friend class FollowPathBehavior;

@@ -21,13 +21,13 @@ Scene::Scene () {
         renderer = new Phong();
         check_gl_error();
 
-        path_renderer = new PathRenderer();
+        path_renderer = new LineRenderer();
         check_gl_error();
 
         particles = new Particles();
         check_gl_error();
 
-        world = new World(25.f, 20.f, 25.f);
+        world = new World(100.f, 30.f, 100.f);
 }
 
 Model * Scene::load_model(const std::string path) {
@@ -74,8 +74,7 @@ void Scene::init() {
 void Scene::draw(float dt) {
     renderer->draw();
     
-    path_renderer->draw_graph(roadmap->get_milestones(), roadmap->get_edges(), glm::vec4(0.f, 0.f, 0.f, 0.5f));
-    // path_renderer->draw_edges(roadmap->get_edges(), glm::vec4(0.f, 0.f, 0.f, 0.2f));
+    path_renderer->draw_graph(glm::vec4(0.f, 0.f, 0.f, 0.5f));
 
     for(auto t=entities.begin(); t!=entities.end(); ++t) {
         std::vector<orientation_state> path = (*t)->get_current_path();
@@ -88,7 +87,14 @@ void Scene::draw(float dt) {
             edges.push_back(path.at(i).first);
         } 
 
-        path_renderer->draw_edges(edges, glm::vec4(1.f, 0.f, 0.f, 0.5f));
+        path_renderer->draw_path(edges, glm::vec4(1.f, 0.f, 0.f, 0.5f));
+
+        bounding_box bbox = (*t)->get_bounding_box();
+        if (bbox.first != glm::vec3(0.f) && bbox.second != glm::vec3(0.f)) {
+            path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 0.f, 0.f, 0.5f));
+        }
+        
+        check_gl_error();
     }
 }
 
@@ -137,7 +143,7 @@ void Scene::populate_roadmap(Entity * entity) {
     }
 
     std::cout << "Generated milestones" << std::endl;;
-    const std::vector<std::pair<glm::vec3,glm::vec3>> milestones = roadmap->get_milestones();
+    const std::vector<orientation_state> milestones = roadmap->get_milestones();
 
     for (size_t i = 0; i < milestones.size(); i++) {
         for (size_t j = 0; j < milestones.size(); j++) {
@@ -149,7 +155,7 @@ void Scene::populate_roadmap(Entity * entity) {
         }
     }
     // Let the roadmap know we're done, so it should compute the renderable graph
-    roadmap->calculate_edges();
+    path_renderer->init_graph(milestones, roadmap->get_edges());
 }
 
 std::vector<orientation_state> Scene::find_path(orientation_state destination, Entity * entity) {

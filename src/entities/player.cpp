@@ -25,6 +25,7 @@ void Player::init(Shader & shader) {
     Globals::scene->add_renderable(_model, this);
 }
 
+
 void Player::reset() {
     Entity::reset();
 }
@@ -33,9 +34,15 @@ void Player::update(float dt) {
     Entity::update(dt);
     path_behavior.update(dt);
 
+    std::cout << "Player bounding box is: " << glm::to_string(bbox.first) << " to " << glm::to_string(bbox.second)<< std::endl;
+
     if (path_behavior.is_animating()) {
         time += dt;
         _model->update_animation(time);
+        // update_bounding_box();
+
+        // bbox.first = glm::max(bbox.first, _model->get_bounding_box().first);
+        // bbox.second = glm::min(bbox.second, _model->get_bounding_box().second);
     }
 }
 

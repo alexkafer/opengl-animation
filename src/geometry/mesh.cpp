@@ -14,9 +14,13 @@ Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture
         glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
         // positions
         vector.x = mesh->mVertices[i].x;
-        vector.y = mesh->mVertices[i].y; // Flip y and z coords
+        vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
         vertex.Position = vector;
+
+        bbox.first = glm::max(bbox.first, vector);
+        bbox.second = glm::min(bbox.second, vector);
+
         // normals
         vector.x = mesh->mNormals[i].x;
         vector.y = mesh->mNormals[i].y;
