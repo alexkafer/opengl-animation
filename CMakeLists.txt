@@ -240,6 +240,7 @@ set(MY_SOURCES
 	src/utils/texture.cpp
 	src/utils/roadmap.cpp
 	src/utils/tile_solver.cpp
+	src/utils/obb.cpp
 	src/behaviors/boid.cpp
 	src/behaviors/follow_path.cpp
     src/scene.cpp

@@ -170,6 +170,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 			
 			if (clicked_entity != Globals::selected_entity) {
 				Globals::selected_entity = clicked_entity;
+				// Globals::scene->populate_roadmap(Globals::selected_entity);
 			}
 		}
 

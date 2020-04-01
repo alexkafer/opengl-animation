@@ -29,7 +29,6 @@ class Scene {
         
         void init_static_uniforms();
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);
-        void populate_roadmap(Entity * entity);
 
        
     public:
@@ -47,6 +46,7 @@ class Scene {
         void add_light(glm::vec4 pos, glm::vec3 strength, float attenuation, float ambient);
 
         void print_stats();
+        void populate_roadmap(Entity * entity);
         
         void init();
         void draw(float dt);

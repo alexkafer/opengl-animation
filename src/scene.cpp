@@ -10,7 +10,7 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/random.hpp>
 
-const int NUM_MILESTONES = 100;
+const int NUM_MILESTONES = 10;
 
 Scene::Scene () {
         entities = std::vector<Entity*>();
@@ -94,7 +94,7 @@ void Scene::draw(float dt) {
         if ((*t) == Globals::selected_entity) {
             path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 0.f, 0.f, 0.5f));
         } else {
-            path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 1.f, 1.f, 0.1f));
+            path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 1.f, 1.f, 0.5f));
         }
         
         check_gl_error();
@@ -105,15 +105,21 @@ void Scene::draw(float dt) {
 // -7.433999, 0.500000, -3.219673   1
 // 6.968929, 0.500000, 6.793032  2
 
+// Check collisions for entity from orientation_state a to orientation state b
 bool Scene::check_collisions(const orientation_state & a, const orientation_state & b, Entity * entity) {
-    float body_radius = entity->get_radius();
     std::vector<Entity*> nearby = get_nearby_entities(entity, 10.f);
 
     for(auto t=nearby.begin(); t!=nearby.end(); ++t) {
         if ((*t) == entity) continue;
 
-        if ((*t)->check_collision(a, b, body_radius)) {
-            return true;
+        if (a == b) {
+            if ((*t)->check_collision(OBB(entity->get_model_bounding_box(), a))) {
+                return true;
+            }
+        } else {
+            if ((*t)->check_collision(a, b, entity)) {
+                return true;
+            }
         }
     }
 
@@ -135,6 +141,8 @@ orientation_state Scene::get_random_orientation(bool ground) {
 void Scene::populate_roadmap(Entity * entity) {
     // Update milestones
     int count = 0;
+
+    roadmap->clear();
 
     while (count < NUM_MILESTONES-2) {
         orientation_state milestone = get_random_orientation(true);

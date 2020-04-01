@@ -30,14 +30,14 @@ public:
     virtual void reset(); 
     virtual void update(float dt); 
 
-    virtual bool check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) = 0; 
+    virtual bool check_collision(const orientation_state & a, const orientation_state & b, Entity * entity); 
+    virtual bool check_collision(const OBB & bbox); 
+    
     virtual bool test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance); 
     virtual void navigate_to(orientation_state target) = 0; 
 
     virtual std::vector<orientation_state> get_current_path();
     float get_radius();
-
-    void draw_bounding_box();
 
     void drag(const glm::vec3 & origin, const glm::vec3 & direction);
     void stop_dragging();

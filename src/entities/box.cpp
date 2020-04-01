@@ -17,24 +17,8 @@ Box::~Box() {
     delete _model;
 }
 
-bool Box::check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) {
-
-    if (_size == Wide) {
-        //  // Collision x-axis?
-        // bool collisionX = one.Position.x + one.Size.x >= two.Position.x &&
-        //     two.Position.x + two.Size.x >= one.Position.x;
-        // // Collision y-axis?
-        // bool collisionY = one.Position.y + one.Size.y >= two.Position.y &&
-        //     two.Position.y + two.Size.y >= one.Position.y;
-        // // Collision only if on both axes
-        // return collisionX && collisionY;
-    }
-    return false;
-}
-
 void Box::navigate_to(orientation_state pos) {
-    std::cout << "Not exactly sure how to get there. " << std::endl;
-    throw 0;
+    set_position(pos.first);
 }
 
 void Box::init(Shader & shader) {

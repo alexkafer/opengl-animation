@@ -25,18 +25,18 @@ Player::~Player() {
 // 	return shape.intersect(ray_origin, ray_direction, intersection_distance);
 // }
 
-bool Player::check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) {
-    if (a == b) {
-        float x = (a.first.x - _origin.x);
-        float y = (a.first.y - _origin.y);
-        float z = (a.first.z - _origin.z);
-        if (y > (height+ radius_offset ) || y < -radius_offset) return false;
-        return (x*x + z*z) < ((_radius + radius_offset) * (_radius + radius_offset));
-    } else {
-        float d = glm::length(glm::cross(_origin - a.first, _origin - b.first)) / glm::length(b.first - a.first);
-        return d <= (_radius + radius_offset);
-    }
-}
+// bool Player::check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) {
+//     if (a == b) {
+//         float x = (a.first.x - _origin.x);
+//         float y = (a.first.y - _origin.y);
+//         float z = (a.first.z - _origin.z);
+//         if (y > (height+ radius_offset ) || y < -radius_offset) return false;
+//         return (x*x + z*z) < ((_radius + radius_offset) * (_radius + radius_offset));
+//     } else {
+//         float d = glm::length(glm::cross(_origin - a.first, _origin - b.first)) / glm::length(b.first - a.first);
+//         return d <= (_radius + radius_offset);
+//     }
+// }
 
 void Player::init(Shader & shader) {
     _model = Globals::scene->load_model("character/walking.fbx", glm::vec3(0.5f));

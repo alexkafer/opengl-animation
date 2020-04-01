@@ -17,8 +17,6 @@ class Ball: public Entity{
 public:
     Ball(float radius);
 
-    bool check_collision(const orientation_state & a, const orientation_state & b, float body_radius);
-
     void init(Shader & shader);
     void reset();
     void update(float dt);

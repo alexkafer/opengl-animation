@@ -18,8 +18,8 @@ Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture
         vector.z = mesh->mVertices[i].z;
         vertex.Position = transform * glm::vec4(vector, 1);
 
-        _bbox.first = glm::max(_bbox.first, vertex.Position);
-        _bbox.second = glm::min(_bbox.second, vertex.Position);
+        _model_bbox.max = glm::max(_model_bbox.max, vertex.Position);
+        _model_bbox.min = glm::min(_model_bbox.min, vertex.Position);
 
         // normals
         vector.x = mesh->mNormals[i].x;

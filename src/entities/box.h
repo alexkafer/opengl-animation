@@ -22,7 +22,6 @@ public:
 
     double time;
 
-    bool check_collision(const orientation_state & a, const orientation_state & b, float body_radius);
     void navigate_to(orientation_state target);
 
     void init(Shader & shader);

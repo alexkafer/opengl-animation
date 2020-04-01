@@ -3,7 +3,6 @@
 #include <glm/mat4x4.hpp>
 
 typedef std::pair<glm::vec3, glm::vec3> orientation_state;
-typedef std::pair<glm::vec3, glm::vec3> bounding_box;
 
 //
 //	Global state variables

@@ -47,21 +47,53 @@ float Entity::get_radius() {
 void Entity::drag(const glm::vec3 & origin, const glm::vec3 & direction) {
 	dragging = true;
 	this->set_position(origin + glm::distance(origin, _origin) * direction);
+
+	orientation_state state = get_current_state();
+
+	if (Globals::scene->check_collisions(state, state, this)) {
+		std::cout << "Collision!" << std::endl;
+	} else {
+		std::cout << "Nope." << std::endl;
+	}
 }
 
 void Entity::stop_dragging() {
 	dragging = false;
 }
 
+// Does entity collide with this entity if it were to travel from a to b
+
+bool Entity::check_collision(const orientation_state & a, const orientation_state & b, Entity * entity) {
+	
+	// Check 10 times every 1 unit
+	float steps_per_unit = 10.f;
+	float step_size = 1.0f / (steps_per_unit * glm::distance(a.first, b.first));
+	
+	for (float t = 0; t < 1.0f; t += step_size) {
+		orientation_state test = {glm::mix(a.first, b.first, t), glm::mix(a.second, b.second, t)};
+		if (check_collision(OBB(entity->get_model_bounding_box(), test))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// Check if I would collide with bounding box with given orientation bound
+bool Entity::check_collision(const OBB & bbox) {
+	// Lets move the bbox towards me
+	return OBB(get_model_bounding_box(), get_current_state()).test_obb_obb_collision(bbox);
+}
+
 bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {
     glm::mat4 model_matrix = get_last_model();
-	bounding_box bbox = { 
-		model_matrix * glm::vec4(_bbox.first, 1), 
-		model_matrix * glm::vec4(_bbox.second, 1)
-	};
+	
+	bounding_box bbox;
+	bbox.max = model_matrix * glm::vec4(_model_bbox.max, 1);
+	bbox.min = 	model_matrix * glm::vec4(_model_bbox.min, 1);
 
     // Should be max min, so if min is bigger than max we've got nothing
-    if (bbox.first.x < bbox.second.x && bbox.first.y < bbox.second.y && bbox.first.z < bbox.second.z) return false;
+    if (bbox.max.x < bbox.min.x && bbox.max.y < bbox.min.y && bbox.max.z < bbox.min.z) return false;
 
     // Intersection method from Real-Time Rendering and Essential Mathematics for Games
 	
@@ -80,8 +112,8 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 
 		if ( fabs(f) > 0.001f ){ // Standard case
 
-			float t1 = (e+bbox.second.x)/f; // Intersection with the "left" plane
-			float t2 = (e+bbox.first.x)/f; // Intersection with the "right" plane
+			float t1 = (e+bbox.min.x)/f; // Intersection with the "left" plane
+			float t2 = (e+bbox.max.x)/f; // Intersection with the "right" plane
 			// t1 and t2 now contain distances betwen ray origin and ray-plane intersections
 
 			// We want t1 to represent the nearest intersection, 
@@ -104,7 +136,7 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 				return false;
 
 		}else{ // Rare case : the ray is almost parallel to the planes, so they don't have any "intersection"
-			if(-e+bbox.second.x > 0.0f || -e+bbox.first.x < 0.0f)
+			if(-e+bbox.min.x > 0.0f || -e+bbox.max.x < 0.0f)
 				return false;
 		}
 	}
@@ -119,8 +151,8 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 
 		if ( fabs(f) > 0.001f ){
 
-			float t1 = (e+bbox.second.y)/f;
-			float t2 = (e+bbox.first.y)/f;
+			float t1 = (e+bbox.min.y)/f;
+			float t2 = (e+bbox.max.y)/f;
 
 			if (t1>t2){float w=t1;t1=t2;t2=w;}
 
@@ -132,7 +164,7 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 				return false;
 
 		}else{
-			if(-e+bbox.second.y > 0.0f || -e+bbox.first.y < 0.0f)
+			if(-e+bbox.min.y > 0.0f || -e+bbox.max.y < 0.0f)
 				return false;
 		}
 	}
@@ -147,8 +179,8 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 
 		if ( fabs(f) > 0.001f ){
 
-			float t1 = (e+bbox.second.z)/f;
-			float t2 = (e+bbox.first.z)/f;
+			float t1 = (e+bbox.min.z)/f;
+			float t2 = (e+bbox.max.z)/f;
 
 			if (t1>t2){float w=t1;t1=t2;t2=w;}
 
@@ -160,7 +192,7 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 				return false;
 
 		}else{
-			if(-e+bbox.second.z > 0.0f || -e+bbox.first.z < 0.0f)
+			if(-e+bbox.min.z > 0.0f || -e+bbox.max.z < 0.0f)
 				return false;
 		}
 	}

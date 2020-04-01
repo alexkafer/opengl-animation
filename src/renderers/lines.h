@@ -7,6 +7,7 @@
 
 #include "../common.h"
 #include "../utils/shader.h"
+#include "../utils/obb.h"
 
 #include "renderable.h"
 
@@ -36,7 +37,8 @@ class LineRenderer
 
         void draw_path(const std::vector<glm::vec3> & edges, const glm::vec4 color);
         void draw_bounding_box(Renderable * box, const glm::vec4 color);
-        
+        void draw_bounding_box(const OBB & bbox, const glm::mat4 & model, const glm::vec4 color);
+
         void cleanup();
 };
 #endif // LINE_RENDERER_H
