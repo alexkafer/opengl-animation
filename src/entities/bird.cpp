@@ -8,12 +8,12 @@
 #include "../utils/roadmap.h"
 #include "../scene.h"
 
-Bird::Bird(float radius): Entity(BirdEntity, glm::vec3(0.f, 0.f, 0.f)), boid_behavior(this) {
+Bird::Bird(float radius): Entity(BirdEntity, glm::vec3(0.f, 0.f, 1.f)), boid_behavior(this) {
     _radius = radius;
 
     orientation_state state = Globals::scene->get_random_orientation(false);
-    // set_position(state.first);
-    // set_direction(state.second);
+    set_position(state.first);
+    set_direction(state.second);
 }
 
 Bird::~Bird() {
