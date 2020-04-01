@@ -1,6 +1,6 @@
 #include "mesh.h"
 
-Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture> textures)
+Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture> textures, glm::mat4 transform)
 {
     vertices.reserve(mesh->mNumVertices);
     indices.reserve(mesh->mNumFaces * 3);
@@ -16,10 +16,10 @@ Mesh::Mesh(const aiMesh *mesh, const aiMaterial * mat, const std::vector<Texture
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
-        vertex.Position = vector;
+        vertex.Position = transform * glm::vec4(vector, 1);
 
-        bbox.first = glm::max(bbox.first, vector);
-        bbox.second = glm::min(bbox.second, vector);
+        _bbox.first = glm::max(_bbox.first, vertex.Position);
+        _bbox.second = glm::min(_bbox.second, vertex.Position);
 
         // normals
         vector.x = mesh->mNormals[i].x;

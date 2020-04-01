@@ -72,7 +72,7 @@ public:
     /*  Functions  */
     // constructor
     // SkinnedMesh(vector<Vertex> vertices, vector<VertexBoneData> bones, vector<unsigned int> indices, Material material, vector<Texture> textures);
-    SkinnedMesh(const aiMesh *mesh, const aiMaterial *mat, std::vector<Texture> textures, vector<VertexBoneData> bones);
+    SkinnedMesh(const aiMesh *mesh, const aiMaterial *mat, std::vector<Texture> textures, vector<VertexBoneData> bones, glm::mat4 transform);
 
     // render the mesh
     void draw(Shader & shader);

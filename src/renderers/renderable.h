@@ -5,6 +5,7 @@
 #include <glm/vec3.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <vector> 
+#include <limits>       // std::numeric_limits
 
 #include "../utils/shader.h"
 
@@ -43,30 +44,40 @@ static glm::quat RotationBetweenVectors(glm::vec3 start, glm::vec3 dest){
 
 class Renderable {
 private:
-    glm::mat4 _model;
+    glm::mat4 _model_matrix;
 protected:
-    glm::vec3 _scale;
     glm::vec3 _origin;
+    glm::vec3 _scale;
     glm::vec3 _model_direction;
     glm::vec3 _direction;
     glm::quat _rotation;
-    glm::mat4 _transformation;
+    glm::mat4 _to_parent_matrix;
     
-    bounding_box bbox;
+    bounding_box _bbox;
+
     std::vector<Renderable *> _children;
 public:
-    Renderable(const glm::vec3 & scale, const glm::vec3 & model_direction): 
-        bbox({glm::vec3(0.f), glm::vec3(0.f)}), _direction(1.f, 0.f, 0.f), _model_direction(model_direction), _origin(0.f), _scale(scale), _rotation(1.f, 0.f, 0.f, 0.f), _transformation(1.f) {};
-    Renderable(): Renderable(glm::vec3(1.f), glm::vec3(1.f, 0.f, 0.f)) {};
+    Renderable(const glm::vec3 & model_direction): 
+        _bbox({glm::vec3(std::numeric_limits<float>::min()), glm::vec3(std::numeric_limits<float>::max())}), // Goes max, min
+        _direction(1.f, 0.f, 0.f),
+        _model_direction(model_direction),
+        _origin(0.f),
+        _scale(1.f),
+        _rotation(1.f, 0.f, 0.f, 0.f),
+        _to_parent_matrix(1.f),
+        _model_matrix(1.f) {};
+    Renderable(): Renderable(glm::vec3(1.f, 0.f, 0.f)) {};
 
     virtual void init(Shader & shader) = 0; 
     virtual void draw(Shader & shader) = 0; 
     virtual void cleanup() = 0;
 
-    virtual void set_transformation(glm::mat4 transformation) { _transformation = transformation; }
-    virtual glm::mat4& get_transformation() { return _transformation; }
+    virtual void set_parent_matrix(glm::mat4 transformation) { _to_parent_matrix = transformation; }
+    virtual glm::mat4& get_to_parent_matrix() { return _to_parent_matrix; }
 
-    virtual void set_position(glm::vec3 pos) { _origin = pos; }
+    const glm::mat4& get_last_model() { return _model_matrix; }
+
+    virtual void set_position(const glm::vec3 & pos) { _origin = pos; }
     virtual glm::vec3& get_position() { return _origin; }
 
     glm::quat calculate_rotation(glm::vec3 direction) {
@@ -83,6 +94,13 @@ public:
         return rot2 * rot1;
     }
 
+    void update_model() {
+        glm::mat4 translate_matrix = glm::translate( glm::mat4(1.0f), _origin);
+        glm::mat4 rotation_matrix = glm::toMat4(_rotation);
+        glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), _scale);
+       
+        _model_matrix = _to_parent_matrix * translate_matrix * rotation_matrix * scale_matrix;
+    }
 
     virtual void set_direction(glm::vec3 direction) { 
         _direction = direction;
@@ -101,18 +119,13 @@ public:
     virtual glm::vec3 get_scale() { return _scale; }
     virtual void set_scale(glm::vec3 scale) {  _scale = scale; }
 
-    virtual void update_bounding_box() {
-        bbox.first = _transformation * glm::vec4(bbox.first, 0);
-        bbox.second = _transformation * glm::vec4(bbox.second, 0);
-    }
-    virtual bounding_box& get_bounding_box() { return bbox; }
+    virtual void update_bounding_box();
+
+    virtual bounding_box& get_bounding_box() { return _bbox; }
 
     std::vector<Renderable *> get_children() { return _children; }
     void add_child(Renderable * child) { 
         _children.push_back(child);
-        
-        bbox.first = glm::max(bbox.first, child->bbox.first);
-        bbox.second = glm::min(bbox.second, child->bbox.second);
     }
 
     friend class Phong;

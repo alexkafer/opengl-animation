@@ -43,10 +43,12 @@ public:
     // std::vector<Mesh> meshes;
     std::string directory;
     bool gamma_correction;
+    glm::mat4 global_transform;
+    glm::mat4 global_transform_inverse;
 
     /*  Functions   */
     // constructor, expects a filepath to a 3D model.
-    Model(string const &path, bool gamma);
+    Model(string const &path, const glm::vec3 & scale, bool gamma);
 
     // draws the model, and thus all its meshes
     void init(Shader & shader);

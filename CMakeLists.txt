@@ -243,6 +243,7 @@ set(MY_SOURCES
 	src/behaviors/boid.cpp
 	src/behaviors/follow_path.cpp
     src/scene.cpp
+    src/renderers/renderable.cpp
     src/renderers/phong.cpp
     src/renderers/lines.cpp
     src/geometry/particles.cpp
@@ -250,6 +251,7 @@ set(MY_SOURCES
     src/geometry/skinned_mesh.cpp
     src/geometry/model.cpp
     src/geometry/sphere.cpp
+    src/geometry/cylinder.cpp
     src/geometry/cloth.cpp
     src/geometry/fluid.cpp
     src/geometry/floor.cpp

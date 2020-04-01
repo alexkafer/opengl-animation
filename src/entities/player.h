@@ -6,6 +6,7 @@
 
 #include "../entities/entity.h"
 #include "../geometry/model.h"
+#include "../geometry/cylinder.h"
 #include "../behaviors/follow_path.h"
 
 class Player: public Entity {
@@ -20,7 +21,8 @@ public:
     bool check_collision(const orientation_state & a, const orientation_state & b, float body_radius);
     std::vector<orientation_state> get_current_path();
 
-    void navigate_to(orientation_state pos);
+    bool test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance); 
+    void navigate_to(orientation_state target);
 
     void init(Shader & shader);
     void reset();

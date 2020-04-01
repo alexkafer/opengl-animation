@@ -30,7 +30,7 @@ Scene::Scene () {
         world = new World(100.f, 30.f, 100.f);
 }
 
-Model * Scene::load_model(const std::string path) {
+Model * Scene::load_model(const std::string path, const glm::vec3 & scale) {
     map<std::string, Model *>::iterator it = loaded_models.find(path);
 
     if (it != loaded_models.end()) {
@@ -39,7 +39,7 @@ Model * Scene::load_model(const std::string path) {
     } else {
         std::cout << "Loading " << path << std::endl;
         std::stringstream model_ss; model_ss << MY_MODELS_DIR << path;
-        Model * model = new Model(model_ss.str(), false);
+        Model * model = new Model(model_ss.str(), scale, false);
         loaded_models.insert({path, model});
 
         return model;
@@ -48,7 +48,7 @@ Model * Scene::load_model(const std::string path) {
 }
 
 void Scene::add_entity(Entity * entity) {
-    std::cout << "Added entity" << std::endl;
+    std::cout << "Added entity of type: " << entity->get_type() << std::endl;
     entities.push_back(entity);
     renderer->add_object(entity);
 }
@@ -89,9 +89,12 @@ void Scene::draw(float dt) {
 
         path_renderer->draw_path(edges, glm::vec4(1.f, 0.f, 0.f, 0.5f));
 
-        bounding_box bbox = (*t)->get_bounding_box();
-        if (bbox.first != glm::vec3(0.f) && bbox.second != glm::vec3(0.f)) {
+        
+        
+        if ((*t) == selected_entity) {
             path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 0.f, 0.f, 0.5f));
+        } else {
+            path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 1.f, 1.f, 0.1f));
         }
         
         check_gl_error();
@@ -190,7 +193,7 @@ void Scene::update(float dt) {
 }
 
 // Finds the collision for the floor to know where to target our walking dude
-glm::vec3 Scene::find_collision(glm::vec3 origin, glm::vec3 direction) {
+glm::vec3 Scene::find_target(glm::vec3 origin, glm::vec3 direction) {
     // assuming vectors are all normalized
     // Dot floor normal (up) and ray direction
     float denom = glm::dot(glm::vec3(0.f, 1.f, 0.f), direction); 
@@ -210,10 +213,44 @@ std::vector<Entity*> Scene::get_nearby_entities(Entity * nearby, float radius) {
     return entities;
 }
 
-void Scene::interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down) {
-    // std::cout << "Test" << std::endl;
-    //fluid->interaction(origin, direction, mouse_down);
-    // cloth->interaction(origin, direction, mouse_down);
+void Scene::interaction(glm::vec3 origin, glm::vec3 direction) {
+
+    if (!Globals::mouse_down) return;
+
+    Entity * closest_entity = nullptr;
+    float closest_distance = 100000.f;
+
+    for (size_t i = 0; i < entities.size(); i++) {
+        float distance;
+        if (entities[i]->test_ray(origin, direction, distance)) {
+            std::cout << "Found: " << entities[i]->get_type() << std::endl;
+            closest_entity = entities[i];
+            closest_distance = distance;
+        }
+    }
+
+    if (closest_entity != nullptr) {
+        selected_entity = closest_entity;
+    } 
+
+    // Guard
+    if(selected_entity == nullptr) return;
+
+    
+
+    if (selected_entity->get_type() == PlayerEntity) {
+        try
+        {
+            glm::vec3 target = find_target(Globals::eye_pos, direction);
+            target.y = 0.f;
+
+            std::cout << "New target: " << glm::to_string(target) << std::endl;
+            selected_entity->navigate_to({target, glm::vec3(0.0)});
+
+        } catch (...){}
+    } else {
+        selected_entity->set_position(origin + glm::distance(origin, selected_entity->get_position()) * direction);
+    }
 }
 
 void Scene::key_down(int key) {}

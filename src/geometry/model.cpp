@@ -8,9 +8,14 @@
 // https://github.com/capnramses/antons_opengl_tutorials_book/blob/master/30_skinning_part_one/main.cpp
 /*  Functions   */
 // constructor, expects a filepath to a 3D model.
-Model::Model(string const &path, bool gamma = false) : gamma_correction(gamma)
+Model::Model(string const &path, const glm::vec3 & scale, bool gamma = false) : gamma_correction(gamma)
 {
     m_NumBones = 0;
+    global_transform = glm::scale(glm::mat4(1.f), scale);
+
+    global_transform_inverse = glm::inverse(global_transform);
+
+    // set_scale(scale);
     load_model(path);
 }
 
@@ -66,16 +71,14 @@ void Model::init(Shader & shader) {}
 void Model::processNode(aiNode *node, Renderable * parent)
 {
     Renderable * node_placeholder = new DummyRenderable();
-    node_placeholder->set_transformation(aiMatrix4x4ToGlm(&node->mTransformation));
+    node_placeholder->set_parent_matrix(aiMatrix4x4ToGlm(&node->mTransformation));
 
     // process each mesh located at the current node
     for(unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        Mesh * mesh = processMesh(scene->mMeshes[node->mMeshes[i]]);
-
-        Globals::scene->add_renderable(mesh, node_placeholder);
+        Globals::scene->add_renderable(processMesh(scene->mMeshes[node->mMeshes[i]]), this);
     }
 
     // after we've processed all of the meshes (if any) wqe then recursively process each of the children nodes
@@ -84,7 +87,6 @@ void Model::processNode(aiNode *node, Renderable * parent)
         processNode(node->mChildren[i], node_placeholder);
     }
 
-    node_placeholder->update_bounding_box();
     Globals::scene->add_renderable(node_placeholder, parent);
 }
 
@@ -115,9 +117,9 @@ Mesh * Model::processMesh(aiMesh * mesh) {
 
     if (mesh->HasBones()) {
         std::cout << "Model has bones" << std::endl;
-        return new SkinnedMesh(mesh, material, textures, loadBones(mesh));
+        return new SkinnedMesh(mesh, material, textures, loadBones(mesh), global_transform);
     } else {
-        return new Mesh(mesh, material, textures);
+        return new Mesh(mesh, material, textures, global_transform);
     }
 }
 
@@ -242,8 +244,6 @@ glm::quat Model::calculate_rotation(float time, const aiNodeAnim* pNodeAnim) {
     } else {
         return start;
     }
-
-    
 }
 
 glm::vec3 Model::calculate_position(float time, const aiNodeAnim* pNodeAnim) {

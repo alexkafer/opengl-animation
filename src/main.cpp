@@ -141,18 +141,7 @@ void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
 	// 	}
 	// }
 
-	Globals::scene->interaction(Globals::eye_pos, ray_world, Globals::mouse_down);
-
-	if (Globals::mouse_down) {
-		try
-		{
-			glm::vec3 target = Globals::scene->find_collision(Globals::eye_pos, ray_world);
-			target.y = 0.f;
-
-			std::cout << "New target: " << glm::to_string(target) << std::endl;
-			avatar->navigate_to({target, avatar->get_direction()});
-		} catch (...){}
-	}
+	Globals::scene->interaction(Globals::eye_pos, ray_world);
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -160,8 +149,8 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 
 		if (action == GLFW_PRESS) {
 			std::cout << "Interacting with the scene" << std::endl;
+			
 			Globals::mouse_down = true;
-
 			mouse_interaction(window, Globals::mouse_x, Globals::mouse_y);
 		}
 
@@ -251,7 +240,8 @@ void setup_scene() {
 	Globals::scene->add_entity(avatar);
 
 	for (size_t i = 0; i < 10; i++) {
-		Bird * bird = new Bird(0.25f);
+		Bird * bird = new Bird(1.f);
+		bird->set_position(glm::vec3(i * 2.f, 1.f, 0.f));
 		Globals::scene->add_entity(bird);
 	}
 

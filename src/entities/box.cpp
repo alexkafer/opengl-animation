@@ -8,17 +8,14 @@
 #include "../utils/roadmap.h"
 #include "../scene.h"
 
-Box::Box(float radius, BoxSize size): Entity(ObstacleEntity, glm::vec3(radius * (size == Wide ? 0.04f: 18.f)), glm::vec3(1.f, 0.f, 0.f)) {
+Box::Box(float radius, BoxSize size): Entity(ObstacleEntity, glm::vec3(1.f, 0.f, 0.f)) {
     _radius = radius;
     _size = size;
    
-
     orientation_state state = Globals::scene->get_random_orientation(true);
     set_position(state.first);
     set_direction(state.second);
 }
-
-
 
 Box::~Box() {
     delete _model;
@@ -39,13 +36,18 @@ bool Box::check_collision(const orientation_state & a, const orientation_state &
     return false;
 }
 
+void Box::navigate_to(orientation_state pos) {
+    std::cout << "Not exactly sure how to get there. " << std::endl;
+    throw 0;
+}
+
 void Box::init(Shader & shader) {
 
     if (_size == Wide) {
-        _model = Globals::scene->load_model("box/metal.fbx");
+        _model = Globals::scene->load_model("box/metal.fbx", glm::vec3(1.f));
         Globals::scene->add_renderable(_model, this);
     } else {
-        _model = Globals::scene->load_model("box/wooden_crate/scene.gltf");
+        _model = Globals::scene->load_model("box/wooden_crate/scene.gltf", glm::vec3(10.f));
         Globals::scene->add_renderable(_model, this);
     }
     

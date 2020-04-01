@@ -17,6 +17,8 @@ static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 class Scene {
         World * world;
         Particles * particles; 
+        Entity * selected_entity = nullptr;
+
         GLuint vao;
 
         Phong * renderer;
@@ -28,15 +30,16 @@ class Scene {
         
         void init_static_uniforms();
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);
-
         void populate_roadmap(Entity * entity);
+
+        glm::vec3 find_target(glm::vec3 origin, glm::vec3 direction);
     public:
         Scene();
-        Model * load_model(std::string path);
+        Model * load_model(std::string path, const glm::vec3 & scale);
         orientation_state get_random_orientation(bool ground);
 
         std::vector<Entity*> get_nearby_entities(Entity * nearby, float radius);
-        glm::vec3 find_collision(glm::vec3 origin, glm::vec3 direction);
+        
         bool check_collisions(const orientation_state & a, const orientation_state & b, Entity * entity);
         std::vector<orientation_state> find_path(orientation_state destination, Entity * entity);
 
@@ -49,7 +52,7 @@ class Scene {
         void init();
         void draw(float dt);
         void update(float dt);
-        void interaction(glm::vec3 origin, glm::vec3 direction, bool mouse_down);
+        void interaction(glm::vec3 origin, glm::vec3 direction);
         void key_down(int key);
         void reset();
 

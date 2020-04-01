@@ -24,7 +24,7 @@ static const std::map<TileType,const char*> TileModels {
 };
 
 
-Tile::Tile(TileOrientation state): Renderable(glm::vec3(0.005f), glm::vec3(1.f, 0.f, 0.f))
+Tile::Tile(TileOrientation state): Renderable(glm::vec3(1.f, 0.f, 0.f))
 {
    _state = state;
 }
@@ -35,7 +35,7 @@ void Tile::init(Shader & shader) {
 
     std::stringstream model_ss; model_ss << MY_MODELS_DIR << "tiles/" << path;
 
-    _model = new Model(model_ss.str(), false);
+    _model = new Model(model_ss.str(), glm::vec3(0.005f), false);
 
     // This should use direction instead of rotation
     // if (_state.second != -1) {

@@ -18,6 +18,8 @@ public:
     double time;
 
     bool check_collision(const orientation_state & a, const orientation_state & b, float body_radius);
+    bool test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance);; 
+    void navigate_to(orientation_state target);
 
     void init(Shader & shader);
     void reset();

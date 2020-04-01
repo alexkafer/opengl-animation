@@ -63,7 +63,7 @@ public:
     /*  Functions  */
     // constructor
     // Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material material, vector<Texture> textures);
-    Mesh(const aiMesh *mesh, const aiMaterial *mat, const std::vector<Texture> textures_loaded);
+    Mesh(const aiMesh *mesh, const aiMaterial *mat, const std::vector<Texture> textures_loaded, glm::mat4 transform);
 
     // render the mesh
     void draw(Shader & shader);

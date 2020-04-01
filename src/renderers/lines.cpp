@@ -156,23 +156,26 @@ void LineRenderer::draw_path(const std::vector<glm::vec3> & edges, const glm::ve
 
 void LineRenderer::draw_bounding_box(Renderable * renderable, const glm::vec4 color) {
     check_gl_error();
+    bounding_box bbox = renderable->get_bounding_box();
+
+    // Should be max min, so if min is bigger than max we've got nothing
+    if (bbox.first.x < bbox.second.x && bbox.first.y < bbox.second.y && bbox.first.z < bbox.second.z) return;
+
     shader.enable();
 
     glBindVertexArray(vao_bounding_box);
 
-    bounding_box box = renderable->get_bounding_box();
+    // glm::vec3 position = renderable->get_position();
 
-    glm::vec3 size = glm::vec3(box.first.x-box.second.x, box.first.y-box.second.y, box.first.z-box.second.z);
-    glm::vec3 center = glm::vec3((box.second.x+box.first.x)/2, (box.second.y+box.first.y)/2, (box.second.z+box.first.z)/2);
-
+    glm::vec3 size = glm::vec3(bbox.first.x-bbox.second.x, bbox.first.y-bbox.second.y, bbox.first.z-bbox.second.z);
+    glm::vec3 center = glm::vec3((bbox.second.x+bbox.first.x)/2, (bbox.second.y+bbox.first.y)/2, (bbox.second.z+bbox.first.z)/2);
     glm::mat4 transform = glm::translate(glm::mat4(1), center) * glm::scale(glm::mat4(1), size);
-    // glm::mat4 transform = glm::translate(glm::mat4(1), center);
-    // glm::mat4 transform = glm::scale(glm::mat4(1), size);
+    // glm::mat4 transform = glm::mat4(1);p
 
     check_gl_error();
 
     /* Apply object's transformation matrix */
-    glm::mat4 m = renderable->_model * transform; // * transform;
+    glm::mat4 m = renderable->get_last_model() * transform;
     glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
     glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
     glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(m)); // model matrix
@@ -185,6 +188,13 @@ void LineRenderer::draw_bounding_box(Renderable * renderable, const glm::vec4 co
     glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_SHORT, 0);
     glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_SHORT, (GLvoid*)(4*sizeof(GLushort)));
     glDrawElements(GL_LINES, 8, GL_UNSIGNED_SHORT, (GLvoid*)(8*sizeof(GLushort)));
+
+    // if (renderable->_children.size() > 0) {
+    //     for(auto t=renderable->_children.begin(); t!=renderable->_children.end(); ++t) {
+    //         draw_bounding_box(*t, color);
+    //     }
+    // }
+    
 
     glBindVertexArray(0);
 

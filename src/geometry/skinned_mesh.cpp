@@ -1,7 +1,7 @@
 #include "skinned_mesh.h"
 
-SkinnedMesh::SkinnedMesh(const aiMesh *mesh, const aiMaterial * mat, std::vector<Texture> textures, vector<VertexBoneData> bones)
-: Mesh(mesh, mat, textures) {
+SkinnedMesh::SkinnedMesh(const aiMesh *mesh, const aiMaterial * mat, std::vector<Texture> textures, vector<VertexBoneData> bones, glm::mat4 transform)
+: Mesh(mesh, mat, textures, transform) {
     this->bones = bones;
 }
 

@@ -24,14 +24,14 @@ protected:
     // glm::vec3 _acceleration;
 public:
     Entity(EntityType type);
-    Entity(EntityType type, glm::vec3 scale, glm::vec3 direction);
-    
-    // void calculate_animation();
-    virtual void navigate_to(orientation_state target); 
+    Entity(EntityType type, glm::vec3 direction);
 
     virtual void reset(); 
     virtual void update(float dt); 
+
     virtual bool check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) = 0; 
+    virtual bool test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance); 
+    virtual void navigate_to(orientation_state target) = 0; 
 
     virtual std::vector<orientation_state> get_current_path();
     float get_radius();
