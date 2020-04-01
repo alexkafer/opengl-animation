@@ -56,7 +56,7 @@ public:
     void cleanup();
 
     void update_animation(int num, float time);
-    
+
 private:
     const aiScene* scene;
     Assimp::Importer importer;

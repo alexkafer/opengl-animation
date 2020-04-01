@@ -174,7 +174,6 @@ void Model::update_animation(int num, float time) {
     // std::cout << "ticks_per_second: " << ticks_per_second << std::endl;
     // std::cout << "time_in_ticks: " << time_in_ticks << std::endl;
     // std::cout << "animation_time: " << animation_time << " out of " << (float)scene->mAnimations[0]->mDuration << std::endl;
-
     calculate_animation(num, animation_time, scene->mRootNode, glm::mat4(1.f));
 }
 
@@ -319,7 +318,7 @@ void Model::calculate_animation(int num, float time, const aiNode* pNode, const 
 
     if (m_BoneMapping.find(NodeName) != m_BoneMapping.end()) {
         uint BoneIndex = m_BoneMapping[NodeName];
-        m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * global_transformation * m_BoneInfo[BoneIndex].BoneOffset;
+         m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * global_transform * global_transformation * m_BoneInfo[BoneIndex].BoneOffset * global_transform_inverse;
     }
 
     for (uint i = 0 ; i < pNode->mNumChildren ; i++) {
@@ -384,6 +383,9 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 
 // draws the model, and thus all its meshes
 void Model::draw(Shader & shader) {
+
+    // glUniformMatrix4fv( shader.uniform("bones"), bones.size(), GL_FALSE, glm::value_ptr(bones[0]));
+
     for (size_t i= 0; i < m_NumBones; i++) {
         // std::cout << "Bone for: " << i << " has (" << glm::to_string(m_BoneInfo[i].FinalTransformation) << ")." << std::endl;
         glUniformMatrix4fv( shader.uniform(CreateBoneUniform(i)), 1, GL_FALSE, glm::value_ptr(m_BoneInfo[i].FinalTransformation)  ); // model transformation

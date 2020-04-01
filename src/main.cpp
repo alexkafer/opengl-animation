@@ -241,7 +241,7 @@ void setup_scene() {
 
 	for (size_t i = 0; i < 10; i++) {
 		Bird * bird = new Bird(1.f);
-		bird->set_position(glm::vec3(i * 2.f, 1.f, 0.f));
+		// bird->set_position(glm::vec3(i * 2.f, 1.f, 0.f));
 		Globals::scene->add_entity(bird);
 	}
 

@@ -33,7 +33,7 @@ bool Bird::check_collision(const orientation_state & a, const orientation_state 
 }
 
 void Bird::init(Shader & shader) {
-    _model = Globals::scene->load_model("bird/bird.fbx", glm::vec3(0.005f));
+    _model = Globals::scene->load_model("bird/Eagle.fbx", glm::vec3(0.005f));
     Globals::scene->add_renderable(_model, this);
 }
 
