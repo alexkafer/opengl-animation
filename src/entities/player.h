@@ -12,6 +12,8 @@
 class Player: public Entity {
     Model * _model;
     FollowPathBehavior path_behavior;
+
+    std::vector<glm::mat4> bone_transformations;
 public:
     Player(float radius);
     ~Player();

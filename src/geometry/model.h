@@ -52,9 +52,11 @@ public:
 
     // draws the model, and thus all its meshes
     void init(Shader & shader);
-    void draw(Shader & shader);
+    void draw(Shader & shader) {};
+    void draw(Shader & shader, std::vector<glm::mat4> bones = std::vector<glm::mat4>());
     void cleanup();
 
+    std::vector<glm::mat4> get_animation(float time);
     void update_animation(float time);
     
 private:
@@ -80,7 +82,7 @@ private:
     glm::vec3 calculate_position(float AnimationTime, const aiNodeAnim* pNodeAnim);
 
     const aiNodeAnim* find_node_animation(const aiAnimation* pAnimation, const string NodeName);
-    void calculate_animation(float time, const aiNode* pNode, const glm::mat4 & parent);
+    void calculate_animation(float time, const aiNode* pNode, std::vector<glm::mat4> & bone_transformations, const glm::mat4 & parent);
 
     inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4* from)
     {

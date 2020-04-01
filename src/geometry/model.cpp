@@ -164,18 +164,18 @@ std::string CreateBoneUniform(size_t boneIndex) {
     return ss.str();
 }
 
-void Model::update_animation(float time) {
-    if (!scene->HasAnimations()) return;
+std::vector<glm::mat4> Model::get_animation(float time) {
+    std::vector<glm::mat4> bone_transformations(m_NumBones, glm::mat4(1.f));
 
+    if (!scene->HasAnimations()) return bone_transformations;
+    
     float ticks_per_second = (float)(scene->mAnimations[0]->mTicksPerSecond != 0 ? scene->mAnimations[0]->mTicksPerSecond : 25.0f);
     float time_in_ticks = time * ticks_per_second;
     float animation_time = fmod(time_in_ticks, (float)scene->mAnimations[0]->mDuration);
 
-    // std::cout << "ticks_per_second: " << ticks_per_second << std::endl;
-    // std::cout << "time_in_ticks: " << time_in_ticks << std::endl;
-    // std::cout << "animation_time: " << animation_time << " out of " << (float)scene->mAnimations[0]->mDuration << std::endl;
+    calculate_animation(animation_time, scene->mRootNode, bone_transformations, glm::mat4(1.f));
 
-    calculate_animation(animation_time, scene->mRootNode, glm::mat4(1.f));
+    return bone_transformations;
 }
 
 uint Model::find_position(float time, const aiNodeAnim* pNodeAnim)
@@ -291,7 +291,7 @@ glm::vec3 Model::calculate_scaling(float time, const aiNodeAnim* pNodeAnim) {
     }
 }
 
-void Model::calculate_animation(float time, const aiNode* pNode, const glm::mat4 & parent) {
+void Model::calculate_animation(float time, const aiNode* pNode, std::vector<glm::mat4> & bone_transformations, const glm::mat4 & parent) {
     std::string NodeName(pNode->mName.data);
 
     const aiAnimation* pAnimation = scene->mAnimations[0];
@@ -319,11 +319,11 @@ void Model::calculate_animation(float time, const aiNode* pNode, const glm::mat4
 
     if (m_BoneMapping.find(NodeName) != m_BoneMapping.end()) {
         uint BoneIndex = m_BoneMapping[NodeName];
-        m_BoneInfo[BoneIndex].FinalTransformation = m_GlobalInverseTransform * global_transformation * m_BoneInfo[BoneIndex].BoneOffset;
+        bone_transformations[BoneIndex] = m_GlobalInverseTransform * global_transform * global_transformation * m_BoneInfo[BoneIndex].BoneOffset * global_transform_inverse;
     }
 
     for (uint i = 0 ; i < pNode->mNumChildren ; i++) {
-        calculate_animation(time, pNode->mChildren[i], global_transformation);
+        calculate_animation(time, pNode->mChildren[i], bone_transformations, global_transformation);
     }
 }
 
@@ -383,11 +383,14 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
 }
 
 // draws the model, and thus all its meshes
-void Model::draw(Shader & shader) {
-    for (size_t i= 0; i < m_NumBones; i++) {
-        // std::cout << "Bone for: " << i << " has (" << glm::to_string(m_BoneInfo[i].FinalTransformation) << ")." << std::endl;
-        glUniformMatrix4fv( shader.uniform(CreateBoneUniform(i)), 1, GL_FALSE, glm::value_ptr(m_BoneInfo[i].FinalTransformation)  ); // model transformation
-    }
+void Model::draw(Shader & shader, std::vector<glm::mat4> bones) {
+
+    glUniformMatrix4fv( shader.uniform("bones"), bones.size(), GL_FALSE, glm::value_ptr(bones[0]));
+
+    // for (size_t i= 0; i < bones.size(); i++) {
+    //     // std::cout << "Bone for: " << i << " has (" << glm::to_string(m_BoneInfo[i].FinalTransformation) << ")." << std::endl;
+    //     glUniformMatrix4fv( shader.uniform(CreateBoneUniform(i)), 1, GL_FALSE, glm::value_ptr(bones[i])); // model transformation
+    // }
 }
 
 void Model::cleanup() {}

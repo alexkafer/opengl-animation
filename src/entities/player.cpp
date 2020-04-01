@@ -40,7 +40,8 @@ bool Player::check_collision(const orientation_state & a, const orientation_stat
 
 void Player::init(Shader & shader) {
     _model = Globals::scene->load_model("character/walking.fbx", glm::vec3(0.5f));
-    Globals::scene->add_renderable(_model, this);
+    // Globals::scene->add_renderable(_model, this);
+    _model->init(shader);
 }
 
 
@@ -54,7 +55,7 @@ void Player::update(float dt) {
 
     if (path_behavior.is_animating()) {
         time += dt;
-        _model->update_animation(time);
+        bone_transformations = _model->get_animation(time);
     }
 }
 
@@ -68,6 +69,8 @@ void Player::navigate_to(orientation_state pos) {
     path_behavior.navigate_to(pos);
 }
 
-void Player::draw(Shader & shader) {}
+void Player::draw(Shader & shader) {
+    _model->draw(shader, bone_transformations);
+}
 
 void Player::cleanup() {}

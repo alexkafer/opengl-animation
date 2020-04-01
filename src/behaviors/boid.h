@@ -7,7 +7,6 @@
 
 class BoidBehavior {
     Entity * entity;
-    bool perching;
     float perch_timer;
     // glm::vec3 velocity;
 
@@ -15,6 +14,7 @@ class BoidBehavior {
     glm::vec3 get_alignment();
     glm::vec3 get_cohesion();
 public:
+    bool perching;
     BoidBehavior(Entity * entity);
     ~BoidBehavior();
 

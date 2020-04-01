@@ -33,8 +33,10 @@ bool Bird::check_collision(const orientation_state & a, const orientation_state 
 }
 
 void Bird::init(Shader & shader) {
-    _model = Globals::scene->load_model("bird/bird.fbx", glm::vec3(0.005f));
-    Globals::scene->add_renderable(_model, this);
+    _model = Globals::scene->load_model("bird/Eagle.fbx", glm::vec3(0.005f));
+    // Globals::scene->add_renderable(_model, this);
+
+    _model->init(shader);
 }
 
 void Bird::navigate_to(orientation_state pos) {
@@ -53,12 +55,16 @@ void Bird::reset() {
 void Bird::update(float dt) {
     Entity::update(dt);
 
-    // boid_behavior.update(dt);
+    boid_behavior.update(dt);
 
-    time += dt;
-    _model->update_animation(time);
+    if (!boid_behavior.perching) {
+        time += dt;
+        bone_transformations = _model->get_animation(time);
+    }
 }
 
-void Bird::draw(Shader & shader) {}
+void Bird::draw(Shader & shader) {
+    _model->draw(shader, bone_transformations);
+}
 
 void Bird::cleanup() {}

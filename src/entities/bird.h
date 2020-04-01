@@ -11,6 +11,7 @@
 class Bird: public Entity {
     Model * _model;
     BoidBehavior boid_behavior;
+    std::vector<glm::mat4> bone_transformations;
 public:
     Bird(float radius);
     ~Bird();
