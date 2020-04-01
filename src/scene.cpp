@@ -32,8 +32,8 @@ Scene::Scene () {
 
 Model * Scene::load_model(const std::string path, const glm::vec3 & scale) {
     map<std::string, Model *>::iterator it = loaded_models.find(path);
-
-    if (it != loaded_models.end()) {
+    bool should_reuse = false;
+    if (should_reuse && it != loaded_models.end()) {
         std::cout << "Re-using " << path << std::endl;
         return it->second;
     } else {

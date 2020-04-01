@@ -54,7 +54,7 @@ void Player::update(float dt) {
 
     if (path_behavior.is_animating()) {
         time += dt;
-        _model->update_animation(time);
+        _model->update_animation(0, time);
     }
 }
 

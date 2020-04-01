@@ -164,18 +164,18 @@ std::string CreateBoneUniform(size_t boneIndex) {
     return ss.str();
 }
 
-void Model::update_animation(float time) {
+void Model::update_animation(int num, float time) {
     if (!scene->HasAnimations()) return;
 
-    float ticks_per_second = (float)(scene->mAnimations[0]->mTicksPerSecond != 0 ? scene->mAnimations[0]->mTicksPerSecond : 25.0f);
+    float ticks_per_second = (float)(scene->mAnimations[num]->mTicksPerSecond != 0 ? scene->mAnimations[num]->mTicksPerSecond : 25.0f);
     float time_in_ticks = time * ticks_per_second;
-    float animation_time = fmod(time_in_ticks, (float)scene->mAnimations[0]->mDuration);
+    float animation_time = fmod(time_in_ticks, (float)scene->mAnimations[num]->mDuration);
 
     // std::cout << "ticks_per_second: " << ticks_per_second << std::endl;
     // std::cout << "time_in_ticks: " << time_in_ticks << std::endl;
     // std::cout << "animation_time: " << animation_time << " out of " << (float)scene->mAnimations[0]->mDuration << std::endl;
 
-    calculate_animation(animation_time, scene->mRootNode, glm::mat4(1.f));
+    calculate_animation(num, animation_time, scene->mRootNode, glm::mat4(1.f));
 }
 
 uint Model::find_position(float time, const aiNodeAnim* pNodeAnim)
@@ -291,10 +291,10 @@ glm::vec3 Model::calculate_scaling(float time, const aiNodeAnim* pNodeAnim) {
     }
 }
 
-void Model::calculate_animation(float time, const aiNode* pNode, const glm::mat4 & parent) {
+void Model::calculate_animation(int num, float time, const aiNode* pNode, const glm::mat4 & parent) {
     std::string NodeName(pNode->mName.data);
 
-    const aiAnimation* pAnimation = scene->mAnimations[0];
+    const aiAnimation* pAnimation = scene->mAnimations[num];
     glm::mat4 node_transformation = aiMatrix4x4ToGlm(&pNode->mTransformation);
     
     const aiNodeAnim* pNodeAnim = find_node_animation(pAnimation, NodeName);
@@ -323,7 +323,7 @@ void Model::calculate_animation(float time, const aiNode* pNode, const glm::mat4
     }
 
     for (uint i = 0 ; i < pNode->mNumChildren ; i++) {
-        calculate_animation(time, pNode->mChildren[i], global_transformation);
+        calculate_animation(num, time, pNode->mChildren[i], global_transformation);
     }
 }
 

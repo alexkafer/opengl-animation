@@ -55,7 +55,7 @@ public:
     void draw(Shader & shader);
     void cleanup();
 
-    void update_animation(float time);
+    void update_animation(int num, float time);
     
 private:
     const aiScene* scene;
@@ -80,7 +80,7 @@ private:
     glm::vec3 calculate_position(float AnimationTime, const aiNodeAnim* pNodeAnim);
 
     const aiNodeAnim* find_node_animation(const aiAnimation* pAnimation, const string NodeName);
-    void calculate_animation(float time, const aiNode* pNode, const glm::mat4 & parent);
+    void calculate_animation(int num, float time, const aiNode* pNode, const glm::mat4 & parent);
 
     inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4* from)
     {

@@ -53,10 +53,12 @@ void Bird::reset() {
 void Bird::update(float dt) {
     Entity::update(dt);
 
-    // boid_behavior.update(dt);
+    boid_behavior.update(dt);
 
-    time += dt;
-    _model->update_animation(time);
+    if (!boid_behavior.perching) {
+        time += dt;
+        _model->update_animation(1, time);
+    }
 }
 
 void Bird::draw(Shader & shader) {}
