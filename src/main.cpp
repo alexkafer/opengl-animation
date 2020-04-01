@@ -163,6 +163,10 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 			Globals::mouse_down = true;
 			glm::vec3 ray_world = calculate_ray_world(window, Globals::mouse_x, Globals::mouse_y);
 			Entity * clicked_entity = Globals::scene->find_entity(Globals::eye_pos, ray_world);
+
+			if (clicked_entity == nullptr && Globals::selected_entity != nullptr) {
+				Globals::selected_entity->navigate_to({Globals::scene->find_target(Globals::eye_pos, ray_world), glm::vec3(0.f)});
+			}
 			
 			if (clicked_entity != Globals::selected_entity) {
 				Globals::selected_entity = clicked_entity;

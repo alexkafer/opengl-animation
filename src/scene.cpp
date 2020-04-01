@@ -219,8 +219,9 @@ Entity * Scene::find_entity(glm::vec3 origin, glm::vec3 direction) {
 
     for (size_t i = 0; i < entities.size(); i++) {
         float distance;
-        if (entities[i]->test_ray(origin, direction, distance)) {
-            std::cout << "Found: " << entities[i]->get_type() << std::endl;
+        if (entities[i]->test_ray(origin, direction, distance) && distance < closest_distance) {
+            std::cout << "Found new closest: " << entities[i]->get_type() << " at " << distance << std::endl;
+            
             closest_entity = entities[i];
             closest_distance = distance;
         }
@@ -230,19 +231,19 @@ Entity * Scene::find_entity(glm::vec3 origin, glm::vec3 direction) {
 }
 
 void Scene::interaction(glm::vec3 origin, glm::vec3 direction) {
-    // if (Globals::selected_entity->get_type() == PlayerEntity) {
-    //     try
-    //     {
-    //         glm::vec3 target = find_target(Globals::eye_pos, direction);
-    //         target.y = 0.f;
+    if (Globals::selected_entity->get_type() == PlayerEntity) {
+        try
+        {
+            glm::vec3 target = find_target(Globals::eye_pos, direction);
+            target.y = 0.f;
 
-    //         std::cout << "New target: " << glm::to_string(target) << std::endl;
-    //         Globals::selected_entity->navigate_to({target, glm::vec3(0.0)});
+            std::cout << "New target: " << glm::to_string(target) << std::endl;
+            Globals::selected_entity->navigate_to({target, glm::vec3(0.0)});
 
-    //     } catch (...){}
-    // } else {
+        } catch (...){}
+    } else {
         Globals::selected_entity->drag(origin, direction);
-    // }
+    }
 }
 
 void Scene::key_down(int key) {}

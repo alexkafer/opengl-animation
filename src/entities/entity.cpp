@@ -54,13 +54,12 @@ void Entity::stop_dragging() {
 }
 
 bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {
-    bounding_box unscaled_box = get_bounding_box();
+    glm::mat4 model_matrix = get_last_model();
+	bounding_box bbox = { 
+		model_matrix * glm::vec4(_bbox.first, 1), 
+		model_matrix * glm::vec4(_bbox.second, 1)
+	};
 
-	glm::mat4 model_matrix = get_last_model();
-
-	bounding_box bbox = { model_matrix * glm::vec4(unscaled_box.first, 1), model_matrix * glm::vec4(unscaled_box.second, 1) };
-	
-	model_matrix = glm::mat4(1.f);
     // Should be max min, so if min is bigger than max we've got nothing
     if (bbox.first.x < bbox.second.x && bbox.first.y < bbox.second.y && bbox.first.z < bbox.second.z) return false;
 
@@ -69,13 +68,13 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 	float tMin = 0.0f;
 	float tMax = 100000.0f;
 
-	glm::vec3 OBBposition_worldspace(model_matrix[3].x, model_matrix[3].y, model_matrix[3].z);
+	// glm::vec3 OBBposition_worldspace(model_matrix[3].x, model_matrix[3].y, model_matrix[3].z);
 
-	glm::vec3 delta = OBBposition_worldspace - ray_origin;
+	glm::vec3 delta = - ray_origin;
 
 	// Test intersection with the 2 planes perpendicular to the OBB's X axis
 	{
-		glm::vec3 xaxis(model_matrix[0].x, model_matrix[0].y, model_matrix[0].z);
+		glm::vec3 xaxis(1.f, 0.f, 0.f);
 		float e = glm::dot(xaxis, delta);
 		float f = glm::dot(ray_direction, xaxis);
 
@@ -114,7 +113,7 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 	// Test intersection with the 2 planes perpendicular to the OBB's Y axis
 	// Exactly the same thing than above.
 	{
-		glm::vec3 yaxis(model_matrix[1].x, model_matrix[1].y, model_matrix[1].z);
+		glm::vec3 yaxis(0.f, 1.f, 0.f);
 		float e = glm::dot(yaxis, delta);
 		float f = glm::dot(ray_direction, yaxis);
 
@@ -142,7 +141,7 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 	// Test intersection with the 2 planes perpendicular to the OBB's Z axis
 	// Exactly the same thing than above.
 	{
-		glm::vec3 zaxis(model_matrix[2].x, model_matrix[2].y, model_matrix[2].z);
+		glm::vec3 zaxis(0.f, 0.f, 1.f);
 		float e = glm::dot(zaxis, delta);
 		float f = glm::dot(ray_direction, zaxis);
 

@@ -31,7 +31,7 @@ class Scene {
         void draw_model(glm::mat4 matrix_model, GLuint model_vao, GLuint model_size);
         void populate_roadmap(Entity * entity);
 
-        glm::vec3 find_target(glm::vec3 origin, glm::vec3 direction);
+       
     public:
         Scene();
         Model * load_model(std::string path, const glm::vec3 & scale);
@@ -51,7 +51,10 @@ class Scene {
         void init();
         void draw(float dt);
         void update(float dt);
+
         Entity * find_entity(glm::vec3 origin, glm::vec3 direction);
+        glm::vec3 find_target(glm::vec3 origin, glm::vec3 direction);
+
         void interaction(glm::vec3 origin, glm::vec3 direction);
         void key_down(int key);
         void reset();
