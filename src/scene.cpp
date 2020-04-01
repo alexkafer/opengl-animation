@@ -91,7 +91,7 @@ void Scene::draw(float dt) {
 
         
         
-        if ((*t) == selected_entity) {
+        if ((*t) == Globals::selected_entity) {
             path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 0.f, 0.f, 0.5f));
         } else {
             path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 1.f, 1.f, 0.1f));
@@ -213,10 +213,7 @@ std::vector<Entity*> Scene::get_nearby_entities(Entity * nearby, float radius) {
     return entities;
 }
 
-void Scene::interaction(glm::vec3 origin, glm::vec3 direction) {
-
-    if (!Globals::mouse_down) return;
-
+Entity * Scene::find_entity(glm::vec3 origin, glm::vec3 direction) {
     Entity * closest_entity = nullptr;
     float closest_distance = 100000.f;
 
@@ -229,28 +226,23 @@ void Scene::interaction(glm::vec3 origin, glm::vec3 direction) {
         }
     }
 
-    if (closest_entity != nullptr) {
-        selected_entity = closest_entity;
-    } 
+    return closest_entity;
+}
 
-    // Guard
-    if(selected_entity == nullptr) return;
+void Scene::interaction(glm::vec3 origin, glm::vec3 direction) {
+    // if (Globals::selected_entity->get_type() == PlayerEntity) {
+    //     try
+    //     {
+    //         glm::vec3 target = find_target(Globals::eye_pos, direction);
+    //         target.y = 0.f;
 
-    
+    //         std::cout << "New target: " << glm::to_string(target) << std::endl;
+    //         Globals::selected_entity->navigate_to({target, glm::vec3(0.0)});
 
-    if (selected_entity->get_type() == PlayerEntity) {
-        try
-        {
-            glm::vec3 target = find_target(Globals::eye_pos, direction);
-            target.y = 0.f;
-
-            std::cout << "New target: " << glm::to_string(target) << std::endl;
-            selected_entity->navigate_to({target, glm::vec3(0.0)});
-
-        } catch (...){}
-    } else {
-        selected_entity->set_position(origin + glm::distance(origin, selected_entity->get_position()) * direction);
-    }
+    //     } catch (...){}
+    // } else {
+        Globals::selected_entity->drag(origin, direction);
+    // }
 }
 
 void Scene::key_down(int key) {}

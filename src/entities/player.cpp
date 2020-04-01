@@ -20,10 +20,10 @@ Player::~Player() {
     delete _model;
 }
 
-bool Player::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {
-    Cylinder shape(_origin, 1.5f, _radius);
-	return shape.intersect(ray_origin, ray_direction, intersection_distance);
-}
+// bool Player::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {
+//     Cylinder shape(_origin, 1.5f, _radius);
+// 	return shape.intersect(ray_origin, ray_direction, intersection_distance);
+// }
 
 bool Player::check_collision(const orientation_state & a, const orientation_state & b, float radius_offset) {
     if (a == b) {

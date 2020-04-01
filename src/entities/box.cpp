@@ -11,10 +11,6 @@
 Box::Box(float radius, BoxSize size): Entity(ObstacleEntity, glm::vec3(1.f, 0.f, 0.f)) {
     _radius = radius;
     _size = size;
-   
-    orientation_state state = Globals::scene->get_random_orientation(true);
-    set_position(state.first);
-    set_direction(state.second);
 }
 
 Box::~Box() {

@@ -16,8 +16,7 @@ static const glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 class Scene {
         World * world;
-        Particles * particles; 
-        Entity * selected_entity = nullptr;
+        Particles * particles;
 
         GLuint vao;
 
@@ -52,6 +51,7 @@ class Scene {
         void init();
         void draw(float dt);
         void update(float dt);
+        Entity * find_entity(glm::vec3 origin, glm::vec3 direction);
         void interaction(glm::vec3 origin, glm::vec3 direction);
         void key_down(int key);
         void reset();
@@ -61,6 +61,7 @@ class Scene {
 
 namespace Globals {
 	extern Scene * scene;
+    extern Entity * selected_entity;
 }
 
 #endif

@@ -299,19 +299,24 @@ void Model::calculate_animation(int num, float time, const aiNode* pNode, const 
     const aiNodeAnim* pNodeAnim = find_node_animation(pAnimation, NodeName);
 
     if (pNodeAnim) {
-        glm::vec3 scaling = calculate_scaling(time, pNodeAnim);
-        glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), scaling);
-     
+        node_transformation = glm::mat4(1.f);
+
+        if (pNodeAnim->mNumScalingKeys > 0) {
+            glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), calculate_scaling(time, pNodeAnim));
+            node_transformation *= scale_matrix;
+        }
+
         // Interpolate rotation and generate rotation transformation matrix
-        glm::quat rotation = calculate_rotation(time, pNodeAnim);
-        glm::mat4 rotation_matrix = glm::toMat4(rotation);
+        if (pNodeAnim->mNumPositionKeys > 0) {
+            glm::mat4 rotation_matrix = glm::toMat4(calculate_rotation(time, pNodeAnim));
+            node_transformation *= rotation_matrix;
+        }
 
         // Interpolate translation and generate translation transformation matrix
-        glm::vec3 position = calculate_position(time, pNodeAnim);
-        glm::mat4 translate_matrix = glm::translate( glm::mat4(1.0f), position);
-        
-        // Combine the above transformations
-        node_transformation = translate_matrix * rotation_matrix * scale_matrix;
+        if (pNodeAnim->mNumPositionKeys > 0) {
+            glm::mat4 translate_matrix = glm::translate( glm::mat4(1.0f), calculate_position(time, pNodeAnim));
+            node_transformation *= translate_matrix;
+        }
     }
 
     glm::mat4 global_transformation = parent * node_transformation;

@@ -52,6 +52,7 @@ namespace Globals {
 
 	bool interacting;
 	bool mouse_down;
+	Entity * selected_entity;
 
 	float yaw;
 	float pitch;
@@ -67,8 +68,6 @@ namespace Globals {
 	Scene * scene;
 }
 
-Player * avatar;
-Ball * obstacle;
 Text2D * gui;
 
 static const float camera_height = 1.f;
@@ -108,16 +107,35 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_S: Globals::camera_target -= camera_distance * Globals::eye_dir; break;
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
 			case GLFW_KEY_D: Globals::camera_target += 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
-			case GLFW_KEY_P: toggle_interaction(window);  break;
+			case GLFW_KEY_I: toggle_interaction(window);  break;
 		}
 		Globals::scene->key_down(key);
 	}
 }
 
-void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
-	// Need to convert the click into a 3D normalized device coordinates
-	// and then 4d Homogeneous Clip Clip coordinates
+// void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
+// 	// Need to convert the click into a 3D normalized device coordinates
+// 	// and then 4d Homogeneous Clip Clip coordinates
 
+// 	int width, height;
+// 	glfwGetWindowSize(window, &width, &height);
+
+// 	float x = (2.0f * xpos) / width - 1.0f;
+// 	float y = 1.0f - (2.0f * ypos) / height;
+// 	glm::vec4 ray_clip = glm::vec4(x, y, -1.f, 1.f);
+
+// 	// Transform from the clip space to view space using the projection matrix
+// 	glm::vec4 ray_view = glm::inverse(Globals::projection) * ray_clip;
+
+// 	// We only need x and y, so z should be set to forward (in view space), and homogeneous vector
+// 	ray_view = glm::vec4(ray_view.x, ray_view.y, -1.0, 0.0);
+
+// 	glm::vec3 ray_world = glm::normalize(glm::inverse(Globals::view) * ray_view);
+
+// 	Globals::scene->interaction(Globals::eye_pos, ray_world);
+// }
+
+glm::vec3 calculate_ray_world(GLFWwindow* window, double xpos, double ypos) {
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
 
@@ -131,34 +149,40 @@ void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
 	// We only need x and y, so z should be set to forward (in view space), and homogeneous vector
 	ray_view = glm::vec4(ray_view.x, ray_view.y, -1.0, 0.0);
 
-	glm::vec3 ray_world = glm::normalize(glm::inverse(Globals::view) * ray_view);
-
-	// if (Globals::dragging_object) {
-	// 	if (Globals::selected != -1) {
-	// 		scene->drag_object(Globals::selected, ray_world);
-	// 	} else {
-	// 		Globals::selected = scene->find_object(Globals::eye_pos, ray_world);
-	// 	}
-	// }
-
-	Globals::scene->interaction(Globals::eye_pos, ray_world);
+	return glm::normalize(glm::inverse(Globals::view) * ray_view);
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && Globals::interacting) {
+	if (!Globals::interacting) return;
+	
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
 
 		if (action == GLFW_PRESS) {
 			std::cout << "Interacting with the scene" << std::endl;
 			
 			Globals::mouse_down = true;
-			mouse_interaction(window, Globals::mouse_x, Globals::mouse_y);
+			glm::vec3 ray_world = calculate_ray_world(window, Globals::mouse_x, Globals::mouse_y);
+			Entity * clicked_entity = Globals::scene->find_entity(Globals::eye_pos, ray_world);
+			
+			if (clicked_entity != Globals::selected_entity) {
+				Globals::selected_entity = clicked_entity;
+			}
 		}
 
 		if (action == GLFW_RELEASE) {
 			Globals::mouse_down = false;
 			Globals::reset_mouse = true;
+
+			if (Globals::selected_entity != nullptr) {
+				Globals::selected_entity->stop_dragging();
+			}
+
 			std::cout << "stopped picking object" << std::endl;
 		}
+	}
+
+	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+		Globals::selected_entity = nullptr;
 	}
 }
 
@@ -188,7 +212,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 	// Showing the mouse
 	if (Globals::interacting && !Globals::reset_mouse) {
-		mouse_interaction(window, xpos, ypos);
+		if (Globals::mouse_down && Globals::selected_entity != nullptr) {
+			glm::vec3 ray_world = calculate_ray_world(window, Globals::mouse_x, Globals::mouse_y);
+			Globals::scene->interaction(Globals::eye_pos, ray_world);
+		}
 		return;
 	};
 
@@ -235,23 +262,45 @@ void lookAt(glm::vec3 center)
 void setup_scene() {
 	Globals::scene->init();
         
-	avatar = new Player(1.2f);
-	avatar->set_position(glm::vec3(-9.f, 0.0f, -9.f));
-	Globals::scene->add_entity(avatar);
+	Globals::selected_entity = nullptr;
+	
+	for (size_t i = 0; i < 3; i++) {
+		Player * player = new Player(1.2f);
 
-	for (size_t i = 0; i < 10; i++) {
-		Bird * bird = new Bird(1.f);
-		// bird->set_position(glm::vec3(i * 2.f, 1.f, 0.f));
-		Globals::scene->add_entity(bird);
+		orientation_state state = Globals::scene->get_random_orientation(true);
+		player->set_position(state.first);
+		player->set_direction(state.second);
+
+		Globals::scene->add_entity(player);
 	}
+
+	// for (size_t i = 0; i < 10; i++) {
+	// 	Bird * bird = new Bird(1.f);
+	// 	// bird->set_position(glm::vec3(i * 2.f, 1.f, 0.f));
+
+    // orientation_state state = Globals::scene->get_random_orientation(false);
+    // bird->set_position(state.first);
+    // bird->set_direction(state.second);
+	// 	Globals::scene->add_entity(bird);
+	// }
 
 	for (size_t i = 0; i < 3; i++) {
 		Box * box = new Box(0.25f, Wide);
+		
+		orientation_state state = Globals::scene->get_random_orientation(true);
+		box->set_position(state.first);
+		box->set_direction(state.second);
+
 		Globals::scene->add_entity(box);
 	}
 
 	for (size_t i = 0; i < 3; i++) {
 		Box * box = new Box(0.25f, Single);
+		
+		orientation_state state = Globals::scene->get_random_orientation(true);
+		box->set_position(state.first);
+		box->set_direction(state.second);
+
 		Globals::scene->add_entity(box);
 	}
 }

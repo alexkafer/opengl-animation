@@ -16,6 +16,7 @@ class Entity: public Renderable {
 protected:
     float _radius;
     EntityType _type;
+    bool dragging;
 
     // Rotation Animation
     float rotation_t, rotation_total;
@@ -38,6 +39,9 @@ public:
 
     void draw_bounding_box();
 
+    void drag(const glm::vec3 & origin, const glm::vec3 & direction);
+    void stop_dragging();
+    
     EntityType get_type() {return _type;}
 
     friend class FollowPathBehavior;

@@ -18,6 +18,19 @@ void Entity::update(float dt) {
     // Update the current rotation based on direction the entity is facing
     // float current_angle = atan2( _direction.x, _direction.z);
     // _rotation = glm::quat(cos(current_angle/2.f), 0.f, sin(current_angle/2.f), 0.f);  
+	if (!dragging) {
+		if (_origin.y > 0) {
+			_velocity.y -= dt * 20.f;
+			_origin += dt * _velocity;
+		}
+
+		if (_origin.y < 0) {
+			_origin.y = 0;
+			_velocity = glm::vec3(0.f);
+		}
+	} else {
+		_velocity = glm::vec3(0.f);
+	}
 }
 
 void Entity::reset() {}
@@ -31,9 +44,23 @@ float Entity::get_radius() {
     return _radius;
 }
 
-bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {
-    bounding_box bbox = get_bounding_box();
+void Entity::drag(const glm::vec3 & origin, const glm::vec3 & direction) {
+	dragging = true;
+	this->set_position(origin + glm::distance(origin, _origin) * direction);
+}
 
+void Entity::stop_dragging() {
+	dragging = false;
+}
+
+bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {
+    bounding_box unscaled_box = get_bounding_box();
+
+	glm::mat4 model_matrix = get_last_model();
+
+	bounding_box bbox = { model_matrix * glm::vec4(unscaled_box.first, 1), model_matrix * glm::vec4(unscaled_box.second, 1) };
+	
+	model_matrix = glm::mat4(1.f);
     // Should be max min, so if min is bigger than max we've got nothing
     if (bbox.first.x < bbox.second.x && bbox.first.y < bbox.second.y && bbox.first.z < bbox.second.z) return false;
 
@@ -41,8 +68,6 @@ bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& inte
 	
 	float tMin = 0.0f;
 	float tMax = 100000.0f;
-
-    glm::mat4 model_matrix = get_last_model();
 
 	glm::vec3 OBBposition_worldspace(model_matrix[3].x, model_matrix[3].y, model_matrix[3].z);
 
