@@ -87,6 +87,12 @@ static void toggle_interaction(GLFWwindow* window) {
 	}
 }
 
+static void rotate_object(bool left) {
+	if (Globals::selected_entity != nullptr) {
+		Globals::selected_entity->set_rotation(glm::angleAxis(glm::radians(left ? 10.f : -10.f), glm::vec3(0.f, 1.f, 0.f)) * Globals::selected_entity->get_rotation());
+	}
+}
+
 //
 //	Callbacks
 //
@@ -108,10 +114,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			case GLFW_KEY_A: Globals::camera_target -= 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
 			case GLFW_KEY_D: Globals::camera_target += 0.5f * glm::normalize(glm::cross( Globals::eye_dir, up)) * camera_distance; break;
 			case GLFW_KEY_I: toggle_interaction(window);  break;
+			case GLFW_KEY_LEFT: rotate_object(true); break;
+			case GLFW_KEY_RIGHT: rotate_object(false); break;
 		}
 		Globals::scene->key_down(key);
 	}
 }
+
+
 
 // void mouse_interaction(GLFWwindow* window, double xpos, double ypos) {
 // 	// Need to convert the click into a 3D normalized device coordinates
@@ -170,7 +180,6 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 			
 			if (clicked_entity != Globals::selected_entity) {
 				Globals::selected_entity = clicked_entity;
-				// Globals::scene->populate_roadmap(Globals::selected_entity);
 			}
 		}
 
@@ -269,30 +278,30 @@ void setup_scene() {
         
 	Globals::selected_entity = nullptr;
 	
-	for (size_t i = 0; i < 3; i++) {
+	for (size_t i = 0; i < 1; i++) {
 		Player * player = new Player(1.2f);
 
-		orientation_state state = Globals::scene->get_random_orientation(true);
+		orientation_state state = Globals::scene->get_random_orientation(true, player);
 		player->set_position(state.position);
 		player->set_rotation(state.rotation);
 
 		Globals::scene->add_entity(player);
 	}
 
-	// for (size_t i = 0; i < 10; i++) {
+	// for (size_t i = 0; i < 100; i++) {
 	// 	Bird * bird = new Bird(1.f);
 	// 	// bird->set_position(glm::vec3(i * 2.f, 1.f, 0.f));
 
-    // orientation_state state = Globals::scene->get_random_orientation(false);
-    // bird->set_position(state.position);
-    // bird->set_direction(state.second);
+	// 	orientation_state state = Globals::scene->get_random_orientation(false, bird);
+	// 	bird->set_position(state.position);
+	// 	// bird->set_rotation(state.rotation);
 	// 	Globals::scene->add_entity(bird);
 	// }
 
-	for (size_t i = 0; i < 3; i++) {
+	for (size_t i = 0; i < 4; i++) {
 		Box * box = new Box(0.25f, Wide);
 		
-		orientation_state state = Globals::scene->get_random_orientation(true);
+		orientation_state state = Globals::scene->get_random_orientation(true, box);
 		box->set_position(state.position);
 		box->set_rotation(state.rotation);
 

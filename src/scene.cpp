@@ -4,13 +4,14 @@
 #include <time.h>       /* time */
 
 #include <iostream>
+#include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/random.hpp>
 
-const int NUM_MILESTONES = 10;
+const int NUM_MILESTONES = 200;
 
 Scene::Scene () {
         entities = std::vector<Entity*>();
@@ -27,7 +28,7 @@ Scene::Scene () {
         particles = new Particles();
         check_gl_error();
 
-        world = new World(100.f, 30.f, 100.f);
+        world = new World(50.f, 30.f, 50.f);
 }
 
 Model * Scene::load_model(const std::string path, const glm::vec3 & scale) {
@@ -74,7 +75,7 @@ void Scene::init() {
 void Scene::draw(float dt) {
     renderer->draw();
     
-    path_renderer->draw_graph(glm::vec4(0.f, 0.f, 0.f, 0.5f));
+    // path_renderer->draw_graph(glm::vec4(0.f, 0.f, 0.f, 0.2f));
 
     for(auto t=entities.begin(); t!=entities.end(); ++t) {
         std::vector<orientation_state> path = (*t)->get_current_path();
@@ -83,18 +84,16 @@ void Scene::draw(float dt) {
 
         for (int i = 1; i < path.size(); i++) 
         {
-            edges.push_back(path.at(i-1).first);
-            edges.push_back(path.at(i).first);
+            edges.push_back(path.at(i-1).position);
+            edges.push_back(path.at(i).position);
         } 
 
-        path_renderer->draw_path(edges, glm::vec4(1.f, 0.f, 0.f, 0.5f));
-
-        
+        path_renderer->draw_path(edges, glm::vec4(1.f, 0.f, 0.f, 0.8f));
         
         if ((*t) == Globals::selected_entity) {
             path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 0.f, 0.f, 0.5f));
         } else {
-            path_renderer->draw_bounding_box((*t), glm::vec4(1.f, 1.f, 1.f, 0.5f));
+            path_renderer->draw_bounding_box((*t), glm::vec4(0.f, 0.f, 0.f, 0.1f));
         }
         
         check_gl_error();
@@ -112,29 +111,37 @@ bool Scene::check_collisions(const orientation_state & a, const orientation_stat
     for(auto t=nearby.begin(); t!=nearby.end(); ++t) {
         if ((*t) == entity) continue;
 
-        if (a == b) {
-            if ((*t)->check_collision(OBB(entity->get_model_bounding_box(), a, entity->get_rotation()))) {
-                return true;
-            }
-        } else {
-            if ((*t)->check_collision(a, b, entity)) {
-                return true;
-            }
+        if ((*t)->check_collision(a, b, entity)) {
+            return true;
+        }        
+    }
+
+    return false;
+}
+
+bool Scene::check_collisions(const orientation_state & state, Entity * entity) {
+    std::vector<Entity*> nearby = get_nearby_entities(entity, 10.f);
+
+    for(auto t=nearby.begin(); t!=nearby.end(); ++t) {
+        if ((*t) == entity) continue;
+
+        if ((*t)->check_collision(OBB(entity->get_model_bounding_box(), state))) {
+            return true;
         }
     }
 
     return false;
 }
 
-orientation_state Scene::get_random_orientation(bool ground) {
+orientation_state Scene::get_random_orientation(bool ground, Entity * entity) {
     glm::vec3 center = world->get_random_point(ground);
 
     if (ground) {
         glm::vec2 wall = glm::diskRand(1.f);
-        return { center, glm::vec3(wall.x, 0.f, wall.y) };
+        return { center, entity->calculate_rotation(glm::vec3(wall.x, 0.f, wall.y))};
     } else {
         glm::vec3 wall = glm::sphericalRand(1.f);
-        return { center, wall };
+        return { center, entity->calculate_rotation(wall) };
     }
 }
 
@@ -142,12 +149,12 @@ void Scene::populate_roadmap(Entity * entity) {
     // Update milestones
     int count = 0;
 
-    roadmap->clear();
+    // roadmap->clear();
 
     while (count < NUM_MILESTONES-2) {
-        orientation_state milestone = get_random_orientation(true);
+        orientation_state milestone = get_random_orientation(true, entity);
 
-        if (!check_collisions(milestone, milestone, entity)) {
+        if (!check_collisions(milestone, entity)) {
             roadmap->add_milestone(milestone);
             count++;
         }
@@ -161,7 +168,7 @@ void Scene::populate_roadmap(Entity * entity) {
             if (i == j) continue;
 
             if (!check_collisions(milestones.at(i), milestones.at(j), entity)) {
-                roadmap->add_edge(i, j, glm::distance(milestones.at(i).first, milestones.at(j).first));
+                roadmap->add_edge(i, j, glm::distance(milestones.at(i).position, milestones.at(j).position));
             }
         }
     }
@@ -178,7 +185,7 @@ std::vector<orientation_state> Scene::find_path(orientation_state destination, E
     std::vector<orientation_state> path;
 
     if (!check_collisions(start, destination, entity)) {
-        path.push_back({destination.first, destination.first - start.first});
+        path.push_back({destination.position, entity->calculate_rotation(destination.position - start.position)});
         path.push_back(start);
         return path;
     }
@@ -187,9 +194,25 @@ std::vector<orientation_state> Scene::find_path(orientation_state destination, E
     int finish_id = roadmap->add_milestone(destination);
 
     populate_roadmap(entity);
+
+    // or roadmap->dijkstra_path(start_id, finish_id);
+    path = roadmap->a_star_path(start_id, finish_id);
+
+    // Smooth the orientations, if we can. This is done by testing if I can walk the next that path forward without spinning 
     
-    return roadmap->a_star_path(start_id, finish_id);
-    // return roadmap->dijkstra_path(start_id, finish_id);
+    for (std::vector<orientation_state>::reverse_iterator i = path.rbegin() + 1; i != path.rend(); ++i ) { 
+        glm::vec3 last_pos = i[-1].position;
+        glm::vec3 current_pos = i[0].position;
+
+        glm::quat forward = entity->calculate_rotation(current_pos - last_pos);
+
+        if (Globals::scene->check_collisions({current_pos, forward}, {last_pos, forward}, entity)) {
+            i->rotation = forward;
+        }
+    } 
+    
+    return path;
+    // return
 }
 
 void Scene::update(float dt) {
@@ -217,8 +240,12 @@ glm::vec3 Scene::find_target(glm::vec3 origin, glm::vec3 direction) {
 }
 
 
-std::vector<Entity*> Scene::get_nearby_entities(Entity * nearby, float radius) {
+std::vector<Entity*> Scene::get_nearby_entities(Entity * me, float radius) {
     return entities;
+    // std::vector<Entity*> nearby;
+    // std::copy_if (entities.begin(), entities.end(), std::back_inserter(nearby), [](Entity* i){return i->get_type() != BirdEntity;} );
+    // return nearby;
+    
 }
 
 Entity * Scene::find_entity(glm::vec3 origin, glm::vec3 direction) {
@@ -258,7 +285,6 @@ void Scene::key_down(int key) {}
 
 void Scene::reset() {
     for (size_t i = 0; i < entities.size(); i++) {
-        std::cout << entities.at(i) << std::endl;
         entities.at(i)->reset();
     }
 

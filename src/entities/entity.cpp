@@ -47,14 +47,6 @@ float Entity::get_radius() {
 void Entity::drag(const glm::vec3 & origin, const glm::vec3 & direction) {
 	dragging = true;
 	this->set_position(origin + glm::distance(origin, _origin) * direction);
-
-	orientation_state state = get_current_state();
-
-	if (Globals::scene->check_collisions(state, state, this)) {
-		std::cout << "Collision!" << std::endl;
-	} else {
-		std::cout << "Nope." << std::endl;
-	}
 }
 
 void Entity::stop_dragging() {
@@ -67,11 +59,14 @@ bool Entity::check_collision(const orientation_state & a, const orientation_stat
 	
 	// Check 10 times every 1 unit
 	float steps_per_unit = 10.f;
-	float step_size = 1.0f / (steps_per_unit * glm::distance(a.first, b.first));
+	float step_size = 1.0f / (steps_per_unit * glm::distance(a.position, b.position));
 	
+	orientation_state test;
 	for (float t = 0; t < 1.0f; t += step_size) {
-		orientation_state test = {glm::mix(a.first, b.first, t), glm::mix(a.second, b.second, t)};
-		if (check_collision(OBB(entity->get_model_bounding_box(), test, entity->get_rotation()))) {
+		test.position = glm::mix(a.position, b.position, t);
+		test.rotation = glm::mix(a.rotation, b.rotation, t);
+
+		if (check_collision(OBB(entity->get_model_bounding_box(), test))) {
 			return true;
 		}
 	}
@@ -82,7 +77,7 @@ bool Entity::check_collision(const orientation_state & a, const orientation_stat
 // Check if I would collide with bounding box with given orientation bound
 bool Entity::check_collision(const OBB & bbox) {
 	// Lets move the bbox towards me
-	return OBB(get_model_bounding_box(), get_current_state(), get_rotation()).test_obb_obb_collision(bbox);
+	return OBB(get_model_bounding_box(), get_current_state()).test_obb_obb_collision(bbox);
 }
 
 bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {

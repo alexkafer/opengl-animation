@@ -3,6 +3,7 @@
 
 #include "../common.h"
 #include "../entities/entity.h"
+#include "../utils/obb.h"
 
 #include <vector>
 
@@ -14,8 +15,6 @@ class FollowPathBehavior {
 
     float t_animation = 0.0f;
     float total_animation = 0.0f;
-    glm::quat start_rotation;
-    glm::quat target_rotation;
 public:
     FollowPathBehavior(Entity * entity);
     ~FollowPathBehavior();

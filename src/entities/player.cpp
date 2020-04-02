@@ -39,7 +39,7 @@ Player::~Player() {
 // }
 
 void Player::init(Shader & shader) {
-    _model = Globals::scene->load_model("character/walking.fbx", glm::vec3(0.5f));
+    _model = Globals::scene->load_model("character/Walking.fbx", glm::vec3(0.5f));
     Globals::scene->add_renderable(_model, this);
 }
 
@@ -62,10 +62,10 @@ std::vector<orientation_state> Player::get_current_path() {
     return path_behavior.get_current_path();
 }
 
-void Player::navigate_to(orientation_state pos) {
-    std::cout << "Navigating to " << glm::to_string(pos.first) << std::endl;
+void Player::navigate_to(orientation_state state) {
+    std::cout << "Navigating to " << glm::to_string(state.position) << std::endl;
 
-    path_behavior.navigate_to(pos);
+    path_behavior.navigate_to(state);
 }
 
 void Player::draw(Shader & shader) {}

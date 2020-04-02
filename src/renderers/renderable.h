@@ -2,13 +2,17 @@
 #define RENDERABLE_H
 
 #include "../common.h"
+
 #include <glm/vec3.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/string_cast.hpp>
+
 #include <vector> 
 #include <limits>       // std::numeric_limits
 
 #include "../utils/shader.h"
 #include "../utils/obb.h"
+
 
 class Renderable {
 private:
@@ -48,19 +52,7 @@ public:
     virtual void set_position(const glm::vec3 & pos) { _origin = pos; }
     virtual glm::vec3& get_position() { return _origin; }
 
-    glm::quat calculate_rotation(glm::vec3 direction) {
-        glm::quat rot1 = RotationBetweenVectors(_model_direction, direction);   
-
-        glm::vec3 desired_up(0.f, 1.f, 0.f);
-        glm::vec3 right = glm::cross(direction, desired_up);
-        desired_up = glm::cross(right, direction);
-
-        glm::vec3 newUp = rot1 * glm::vec3(0.0f, 1.0f, 0.0f);
-
-        glm::quat rot2 = RotationBetweenVectors(newUp, desired_up);
-
-        return rot2 * rot1;
-    }
+    glm::quat calculate_rotation(const glm::vec3 & direction);
 
     void update_model() {
         glm::mat4 translate_matrix = glm::translate( glm::mat4(1.0f), _origin);

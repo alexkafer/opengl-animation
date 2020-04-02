@@ -18,7 +18,7 @@ Box::~Box() {
 }
 
 void Box::navigate_to(orientation_state pos) {
-    set_position(pos.first);
+    set_position(pos.position);
 }
 
 void Box::init(Shader & shader) {

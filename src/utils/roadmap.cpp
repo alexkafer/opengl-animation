@@ -105,18 +105,11 @@ std::vector<orientation_state> Roadmap::dijkstra_path(int src, int dest) {
         i = parent[i];
     }
 
-    // Smooth the orientations, if we can. This is done by moving backwards through the path 
-    for (std::vector<orientation_state>::reverse_iterator i = path.rbegin() + 1; i != path.rend(); ++i ) { 
-        glm::vec3 last_pos = i[-1].first;
-        glm::vec3 current_pos = i[0].first;
-        i->second = glm::normalize(current_pos - last_pos);
-    } 
-
     return path;
 }
 
 float Roadmap::heuristic(int node, int goal) {
-    return glm::distance(_milestones[node].first, _milestones[goal].first);
+    return glm::distance(_milestones[node].position, _milestones[goal].position);
 }
 
 std::vector<orientation_state> Roadmap::a_star_path(int src, int dest) {
@@ -162,13 +155,6 @@ std::vector<orientation_state> Roadmap::a_star_path(int src, int dest) {
         path.push_back(_milestones[i]);
         i = parent[i];
     }
-
-    // Smooth the orientations, if we can. This is done by moving backwards through the path 
-    for (std::vector<orientation_state>::reverse_iterator i = path.rbegin() + 1; i != path.rend(); ++i ) { 
-        glm::vec3 last_pos = i[-1].first;
-        glm::vec3 current_pos = i[0].first;
-        i->second = glm::normalize(current_pos - last_pos);
-    } 
 
     return path;
 }

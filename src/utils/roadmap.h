@@ -4,7 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include "../common.h"
-
+#include "obb.h"
 typedef std::pair<int, float> weighted_edge;
 
 class Roadmap {

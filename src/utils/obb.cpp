@@ -5,7 +5,7 @@ OBB::OBB(const bounding_box & bbox, const orientation_state & state) {
     center = OBB::get_center(bbox) + state.position;
     half_size = OBB::get_half_size(bbox);
 
-    this->rotation = rotation;
+    this->rotation = state.rotation;
     glm::mat4 rotation_matrix = glm::toMat4(state.rotation);
 
     axis_x = rotation_matrix * glm::vec4(global_axis[0], 1);

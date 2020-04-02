@@ -8,7 +8,7 @@
 #include "../utils/roadmap.h"
 #include "../scene.h"
 
-Bird::Bird(float radius): Entity(BirdEntity, glm::vec3(0.f, 0.f, 1.f)), boid_behavior(this) {
+Bird::Bird(float radius): Entity(BirdEntity, glm::vec3(1.f, 0.f, 0.f)), boid_behavior(this) {
     _radius = radius;
 }
 
@@ -19,12 +19,12 @@ Bird::~Bird() {
 
 
 void Bird::init(Shader & shader) {
-    _model = Globals::scene->load_model("bird/Eagle.fbx", glm::vec3(0.005f));
+    _model = Globals::scene->load_model("bird/boid.fbx", glm::vec3(0.005f));
     Globals::scene->add_renderable(_model, this);
 }
 
-void Bird::navigate_to(orientation_state pos) {
-    set_position(pos.first);
+void Bird::navigate_to(orientation_state state) {
+    set_position(state.position);
 }
 
 bool Bird::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {
@@ -36,13 +36,13 @@ void Bird::reset() {
 }
 
 void Bird::update(float dt) {
-    Entity::update(dt);
+    // Entity::update(dt);  This would add gravity
 
     boid_behavior.update(dt);
 
     if (!boid_behavior.perching) {
-        time += dt;
-        _model->update_animation(1, time);
+        // time += dt;
+        // _model->update_animation(0, time / 100.f);
     }
 }
 

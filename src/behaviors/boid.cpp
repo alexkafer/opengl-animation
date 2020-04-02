@@ -1,11 +1,13 @@
 #include "boid.h"
 
 static const float BIRD_RANGE = 20.f;
-static const float BIRD_SPEED = 8.f;
+static const float BIRD_SPEED = 10.f;
 static const float ALIGNMENT_WEIGHT = 0.55f;
 static const float COHESION_WEIGHT = 1.3f;
 static const float SEPERATION_WEIGHT = 1.3f;
-static const float OBSTACLE_AVOIDANCE_WEIGHT = 0.075f;
+// static const float OBSTACLE_AVOIDANCE_WEIGHT = 0.075f;
+// static const float GOAL_SEEKING_WEIGHT = 0.f;
+static const float OBSTACLE_AVOIDANCE_WEIGHT = 0.f;
 static const float GOAL_SEEKING_WEIGHT = 0.f;
 
 static const float COUNTER_VELOCITY = 0.05f;
@@ -34,7 +36,7 @@ glm::vec3 BoidBehavior::bound_position() {
     if(pos.y < ground) {
         entity->_origin.y = ground;
         perching = true;
-        perch_timer =  static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(5.f)));
+        perch_timer =  static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(10.f)));
     } 
     
     if (pos.y < Ymin) {
@@ -142,6 +144,7 @@ void BoidBehavior::update(float dt) {
 
         entity->set_direction(glm::normalize(target_velocity));
     } else {
+        // entity->_direction = glm::normalize(target_velocity);
         entity->set_direction(glm::normalize(target_velocity));
         entity->_origin += dt * BIRD_SPEED * entity->_direction;
     }

@@ -32,10 +32,10 @@ void FollowPathBehavior::calculate_animation() {
         orientation_state start_orientation = _current_path.back();
         orientation_state target_orientation = _current_path.end()[-2];
 
-        glm::vec3 diff = start_orientation.first - target_orientation.first;
+        glm::vec3 diff = start_orientation.position - target_orientation.position;
 
-        start_rotation = entity->calculate_rotation(start_orientation.second);
-        target_rotation = entity->calculate_rotation(target_orientation.second);
+        // start_rotation = start_orientation.rotation;
+        // target_rotation = target_orientation.rotation;
         
         float distance = glm::length(diff);
         total_animation = distance / SPEED;
@@ -115,12 +115,13 @@ void FollowPathBehavior::update(float dt) {
     
             t_animation += dt;
 
+            orientation_state start = _current_path.back();
+            orientation_state end = _current_path[_current_path.size()-2];
+
             // LERP from the back to the second to back
-            entity->_origin = glm::mix(_current_path.back().first, _current_path[_current_path.size()-2].first, t_animation / total_animation);
-            
-            // SLERP the rotation
-            float faster_rotation = 1.f; // 4.f looks good
-            entity->set_rotation(RotateTowards(entity->_rotation, target_rotation, M_PI_2 * dt));
+            entity->set_position(glm::mix(start.position, end.position, t_animation / total_animation));
+            entity->set_rotation(RotateTowards(entity->_rotation, end.rotation, M_PI_2 * dt));
+
         } else {
             // Made it to the end. _origin is now the second to back, so drop the old back
             if (t_animation > total_animation) _current_path.pop_back();
@@ -132,9 +133,9 @@ void FollowPathBehavior::update(float dt) {
 
 void FollowPathBehavior::reset() {
     _current_path = std::vector<orientation_state>();
-    _current_path.push_back(std::make_pair(entity->get_position(), entity->get_direction()));
+
+    _current_path.push_back(entity->get_current_state());
 
     t_animation = 0.0f;
     total_animation = 0.0f;
-
 }
