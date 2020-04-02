@@ -67,7 +67,6 @@ namespace Globals {
 }
 
 Player * avatar;
-Ball * obstacle;
 Text2D * gui;
 
 static const float camera_height = 1.f;
@@ -249,14 +248,10 @@ void setup_scene() {
 	avatar->set_position(glm::vec3(-9.f, 0.0f, -9.f));
 	Globals::scene->add_entity(avatar);
 
-	for (size_t i = 0; i < 10; i++) {
+	for (size_t i = 0; i < 200; i++) {
 		Bird * bird = new Bird(0.25f);
 		Globals::scene->add_entity(bird);
 	}
-
-	obstacle = new Ball(5.f);
-	obstacle->set_position(glm::vec3(0.f, 0.f, 0.f));
-	Globals::scene->add_entity(obstacle);
 }
 
 //

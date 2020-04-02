@@ -8,7 +8,7 @@
 #include "../utils/roadmap.h"
 #include "../scene.h"
 
-Bird::Bird(float radius): Entity(BirdEntity, glm::vec3(radius), glm::vec3(1.f, 0.f, 0.f)), boid_behavior(this) {
+Bird::Bird(float radius): Entity(BirdEntity, glm::vec3(radius * 1.25f), glm::vec3(1.f, 0.f, 0.f)), boid_behavior(this) {
     _radius = radius;
    
 

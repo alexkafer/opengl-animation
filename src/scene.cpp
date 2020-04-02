@@ -27,7 +27,7 @@ Scene::Scene () {
         particles = new Particles();
         check_gl_error();
 
-        world = new World(25.f, 20.f, 25.f);
+        world = new World(50.f, 20.f, 50.f);
 }
 
 Model * Scene::load_model(const std::string path) {

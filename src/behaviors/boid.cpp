@@ -1,16 +1,16 @@
 #include "boid.h"
 
-static const float BIRD_RANGE = 20.f;
-static const float BIRD_SPEED = 10.f;
-static const float ALIGNMENT_WEIGHT = 0.55f;
-static const float COHESION_WEIGHT = 1.3f;
-static const float SEPERATION_WEIGHT = 1.3f;
-// static const float OBSTACLE_AVOIDANCE_WEIGHT = 0.075f;
+static const float BIRD_RANGE = 18.f;
+static const float BIRD_SPEED = 15.f;
+static const float ALIGNMENT_WEIGHT = 0.65f;
+static const float COHESION_WEIGHT = 1.25f;
+static const float SEPERATION_WEIGHT = 1.25f;
+// static const float OBSTACLE_AVOIDANCE_WEIGHTp = 0.075f;
 // static const float GOAL_SEEKING_WEIGHT = 0.f;
 static const float OBSTACLE_AVOIDANCE_WEIGHT = 0.f;
 static const float GOAL_SEEKING_WEIGHT = 0.f;
 
-static const float COUNTER_VELOCITY = 0.05f;
+static const float COUNTER_VELOCITY = 0.1f;
 BoidBehavior::BoidBehavior(Entity * entity) {
     this->entity  = entity;
     perching = false;
@@ -21,7 +21,7 @@ BoidBehavior::~BoidBehavior() {}
 
 glm::vec3 BoidBehavior::bound_position() {
     float ground = 0.0f;
-    float Xmin = -50.f, Xmax = 50.f, Ymin = 1.5f, Ymax = 50.f, Zmin = -50.f, Zmax = 50.f;
+    float Xmin = -25.f, Xmax = 25.f, Ymin = 1.5f, Ymax = 25.f, Zmin = -25.f, Zmax = 25.f;
 
     glm::vec3 pos = entity->get_position();
     glm::vec3 v(0.0f);
