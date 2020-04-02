@@ -40,13 +40,18 @@ bounding_box Renderable::get_model_bounding_box() {
 
 OBB Renderable::generate_bounding_box() {
     bounding_box box = get_model_bounding_box();
+    // orientation_state state = std::make_pair(_origin, _direction);
 
+    // glm::mat4 rotation_matrix = glm::toMat4(_rotation);
+
+    // Translation
+
+    // Box max and min
     glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), _scale);
-
     box.max = scale_matrix * glm::vec4(box.max, 1);
     box.min = scale_matrix * glm::vec4(box.min, 1);
 
-    return OBB(box, get_current_state());
+    return OBB(box, get_current_state(), _rotation);
 }
 
 // OBB Renderable::get_bounding_box(const orientation_state & for_state) {

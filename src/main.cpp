@@ -273,8 +273,8 @@ void setup_scene() {
 		Player * player = new Player(1.2f);
 
 		orientation_state state = Globals::scene->get_random_orientation(true);
-		player->set_position(state.first);
-		player->set_direction(state.second);
+		player->set_position(state.position);
+		player->set_rotation(state.rotation);
 
 		Globals::scene->add_entity(player);
 	}
@@ -284,7 +284,7 @@ void setup_scene() {
 	// 	// bird->set_position(glm::vec3(i * 2.f, 1.f, 0.f));
 
     // orientation_state state = Globals::scene->get_random_orientation(false);
-    // bird->set_position(state.first);
+    // bird->set_position(state.position);
     // bird->set_direction(state.second);
 	// 	Globals::scene->add_entity(bird);
 	// }
@@ -293,21 +293,21 @@ void setup_scene() {
 		Box * box = new Box(0.25f, Wide);
 		
 		orientation_state state = Globals::scene->get_random_orientation(true);
-		box->set_position(state.first);
-		box->set_direction(state.second);
+		box->set_position(state.position);
+		box->set_rotation(state.rotation);
 
 		Globals::scene->add_entity(box);
 	}
 
-	for (size_t i = 0; i < 3; i++) {
-		Box * box = new Box(0.25f, Single);
+	// for (size_t i = 0; i < 3; i++) {
+	// 	Box * box = new Box(0.25f, Single);
 		
-		orientation_state state = Globals::scene->get_random_orientation(true);
-		box->set_position(state.first);
-		box->set_direction(state.second);
+	// 	orientation_state state = Globals::scene->get_random_orientation(true);
+	// 	box->set_position(state.position);
+	// 	box->set_direction(state.second);
 
-		Globals::scene->add_entity(box);
-	}
+	// 	Globals::scene->add_entity(box);
+	// }
 }
 
 //

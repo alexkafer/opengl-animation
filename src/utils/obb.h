@@ -62,7 +62,7 @@ class OBB
     glm::vec3 get_half_size(const bounding_box& bbox);
     bool getSeparatingPlane(const glm::vec3& RPos, const glm::vec3& Plane, const OBB & box2);
 public:
-    OBB(const bounding_box & bbox, const orientation_state & rotation);
+    OBB(const bounding_box & bbox, const orientation_state & state, const glm::quat & rotation);
 
     glm::vec3 center;
 	glm::vec3 axis_x;
@@ -70,7 +70,7 @@ public:
 	glm::vec3 axis_z;
 	glm::vec3 half_size;
 
-    glm::mat4 rotation_matrix;
+    glm::quat rotation;
 
     bool test_obb_obb_collision(const OBB & box2);
 };

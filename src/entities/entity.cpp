@@ -71,7 +71,7 @@ bool Entity::check_collision(const orientation_state & a, const orientation_stat
 	
 	for (float t = 0; t < 1.0f; t += step_size) {
 		orientation_state test = {glm::mix(a.first, b.first, t), glm::mix(a.second, b.second, t)};
-		if (check_collision(OBB(entity->get_model_bounding_box(), test))) {
+		if (check_collision(OBB(entity->get_model_bounding_box(), test, entity->get_rotation()))) {
 			return true;
 		}
 	}
@@ -82,7 +82,7 @@ bool Entity::check_collision(const orientation_state & a, const orientation_stat
 // Check if I would collide with bounding box with given orientation bound
 bool Entity::check_collision(const OBB & bbox) {
 	// Lets move the bbox towards me
-	return OBB(get_model_bounding_box(), get_current_state()).test_obb_obb_collision(bbox);
+	return OBB(get_model_bounding_box(), get_current_state(), get_rotation()).test_obb_obb_collision(bbox);
 }
 
 bool Entity::test_ray(glm::vec3 ray_origin, glm::vec3 ray_direction, float& intersection_distance) {

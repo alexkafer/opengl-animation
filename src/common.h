@@ -2,7 +2,12 @@
 #include <glm/vec4.hpp> 
 #include <glm/mat4x4.hpp>
 
-typedef std::pair<glm::vec3, glm::vec3> orientation_state;
+// typedef std::pair<glm::vec3, glm::vec3> orientation_state;
+
+struct orientation_state {
+	glm::vec3 position;
+	glm::quat rotation;
+}
 
 //
 //	Global state variables

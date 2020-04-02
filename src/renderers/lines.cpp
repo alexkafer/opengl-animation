@@ -156,17 +156,10 @@ void LineRenderer::draw_path(const std::vector<glm::vec3> & edges, const glm::ve
 }
 
 void LineRenderer::draw_bounding_box(Renderable * renderable, const glm::vec4 color) {
-    // glm::mat4 model = renderable->get_last_model();
-
-    glm::mat4 translate_matrix = glm::translate( glm::mat4(1.0f), renderable->_origin);
-    glm::mat4 rotation_matrix = glm::toMat4(renderable->_rotation);
-    
-    glm::mat4 model = renderable->_to_parent_matrix * translate_matrix * rotation_matrix;
-
-    draw_bounding_box(renderable->generate_bounding_box(), model, color);
+    draw_bounding_box(renderable->generate_bounding_box(), color);
 }
 
-void LineRenderer::draw_bounding_box(const OBB & bbox, const glm::mat4 & model, const glm::vec4 color) {
+void LineRenderer::draw_bounding_box(const OBB & bbox, const glm::vec4 color) {
     check_gl_error();
 
     // Should be max min, so if min is bigger than max we've got nothing
@@ -176,16 +169,16 @@ void LineRenderer::draw_bounding_box(const OBB & bbox, const glm::mat4 & model, 
 
     glBindVertexArray(vao_bounding_box);
 
-  
     glm::mat4 box_translate_matrix = glm::translate( glm::mat4(1.0f), bbox.center);
+    glm::mat4 box_rotation_matrix = glm::toMat4(bbox.rotation);
     glm::mat4 box_scale_matrix = glm::scale(glm::mat4(1), 2.f * bbox.half_size);
 
-    glm::mat4 transform = box_translate_matrix * box_scale_matrix;
+    glm::mat4 transform = box_translate_matrix * box_rotation_matrix * box_scale_matrix;
     
     check_gl_error();
 
     /* Apply object's transformation matrix */
-    glm::mat4 m = model * transform;
+    glm::mat4 m = transform;
     glUniformMatrix4fv( shader.uniform("view"), 1, GL_FALSE, glm::value_ptr(Globals::view)  ); // viewing transformation
     glUniformMatrix4fv( shader.uniform("projection"), 1, GL_FALSE, glm::value_ptr(Globals::projection) ); // projection matrix
     glUniformMatrix4fv( shader.uniform("model"), 1, GL_FALSE, glm::value_ptr(m)); // model matrix

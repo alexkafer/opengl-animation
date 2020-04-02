@@ -113,7 +113,7 @@ bool Scene::check_collisions(const orientation_state & a, const orientation_stat
         if ((*t) == entity) continue;
 
         if (a == b) {
-            if ((*t)->check_collision(OBB(entity->get_model_bounding_box(), a))) {
+            if ((*t)->check_collision(OBB(entity->get_model_bounding_box(), a, entity->get_rotation()))) {
                 return true;
             }
         } else {
