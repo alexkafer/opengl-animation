@@ -7,6 +7,7 @@
 
 class BoidBehavior {
     Entity * entity;
+    float perch_timer;
     // glm::vec3 velocity;
 
     glm::vec3 get_separation();
@@ -16,7 +17,9 @@ public:
     BoidBehavior(Entity * entity);
     ~BoidBehavior();
 
+    bool perching;
     void update(float dt);
+    glm::vec3 bound_position();
 };
 
 #endif // BOID_H
